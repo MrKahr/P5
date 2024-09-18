@@ -29,7 +29,8 @@ class DataProcessor:
 # Load data
 dp = DataProcessor(
     Path(
-        Path(os.path.split(__file__)[0]).parents[0], "data/Eksperimentelle_sår_2014.csv"
+        Path(os.path.split(__file__)[0]).parents[0],
+        "data/eksperimentelle_sår_2024_regs.csv",
     )
 )
 
