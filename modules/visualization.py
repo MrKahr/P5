@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt  # Plotting
 import numpy as np
 
 plt.close("all")  # closes all currently active figures
+plt.ion()
 
 
 class AccuracyPlotter:
@@ -11,7 +12,7 @@ class AccuracyPlotter:
         plt.figure()
         plt.bar(label, y1, color="r")
         plt.bar(label, y2, color="b")
-        plt.show()
+        plt.show(block=False)
 
 # Plot attribute distribution over time
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
