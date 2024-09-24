@@ -6,6 +6,7 @@ dp = DataProcessor(Dataset.REGS)
 df = dp.dataFrame
 
 # Remove rows where value could not be determined
-df.drop(df[df["Granulationsvæv"] == 2].index, inplace = True)
+df.drop(df[df["Eksudat"] == 2].index, inplace = True)
 
-visualization.groupedBarPlot("Granulationsvæv", df)
+# Plot data over time
+visualization.groupedBarPlot("Eksudat", df)

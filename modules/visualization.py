@@ -34,7 +34,7 @@ def groupedBarPlot(attribute, dataFrame):
             categoryCountsByDays[value].append(categoryCounts.get(value, 0) / len(dayData) * 100) # Default to 0
 
     x = np.arange(len(uniqueDays))  # The label locations
-    width = 0.9 / len(uniqueValues)  # The width of the bars
+    width = 0.75 / len(uniqueValues)  # The width of the bars
     multiplier = 0
 
     # Create the plot
