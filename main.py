@@ -1,10 +1,10 @@
 # Main entry-point into our code base
-from modules.dataPreprocessing import DataProcessor, DataType
+from modules.dataPreprocessing import DataProcessor, Dataset
 from modules.models import GaussianNaiveBayes
 from modules.visualization import AccuracyPlotter
 
 # Process data
-dp = DataProcessor(DataType.MÅL)
+dp = DataProcessor(Dataset.MÅL)
 dp.showDataFrame()
 # Model data
 model = GaussianNaiveBayes(dp.dataFrame)
