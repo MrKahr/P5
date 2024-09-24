@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt  # Plotting
 import numpy as np
 
 plt.close("all")  # closes all currently active figures
-plt.ion()
+# plt.ion()
 
 
 class AccuracyPlotter:
@@ -18,21 +18,23 @@ class AccuracyPlotter:
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
 def groupedBarPlot(attribute, dataFrame):
     # Get all days with data
-    uniqueDays = np.sort(dataFrame["Dag "].unique())
+    uniqueDays = np.sort(dataFrame["Dag"].unique())
     # Get the categorical values of the attribute
     uniqueValues = np.sort(dataFrame[attribute].unique())
 
     # Initialize data structure for values
     categoryCountsByDays = {category: [] for category in uniqueValues}
 
+    # Fill out data structure with percentage distribution for each day
     for day in uniqueDays:
-        dayData = dataFrame[dataFrame["Dag "] == day]
+        dayData = dataFrame[dataFrame["Dag"] == day]
         categoryCounts = dayData[attribute].value_counts()
         for value in uniqueValues:
-            categoryCountsByDays[value].append(categoryCounts.get(value, 0) / len(dayData) * 100) # Default to 0, may lead to division by 0 in some cases
+            if len(dayData) == 0: continue # Don't divide by zero
+            categoryCountsByDays[value].append(categoryCounts.get(value, 0) / len(dayData) * 100) # Default to 0
 
-    x = np.arange(len(uniqueDays))  # the label locations
-    width = 0.9 / len(uniqueValues)  # the width of the bars
+    x = np.arange(len(uniqueDays))  # The label locations
+    width = 0.9 / len(uniqueValues)  # The width of the bars
     multiplier = 0
 
     # Create the plot
