@@ -1,9 +1,22 @@
 # Libraries
+from enum import Enum
+import os
+from pathlib import Path
 import pandas as pd  # CSV-reading, data manipulation and cleaning.
 
 
+class Dataset(Enum):
+    MÅL = "eksperimentelle_sår_2024_mål.csv"
+    REGS = "eksperimentelle_sår_2024_regs.csv"
+    OLD = "old_eksperimentelle_sår_2014_regs"
+
+
 class DataProcessor:
-    def __init__(self, path: str) -> None:
+    def __init__(self, type: Dataset) -> None:
+        path = Path(
+            Path(os.path.split(__file__)[0]).parents[0],
+            f"data/{type.value}",
+        )
         self.dataFrame = pd.read_csv(path, sep=";", comment="#")
         self.deleteNaN()
 
