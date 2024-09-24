@@ -3,7 +3,7 @@ from numpy.typing import ArrayLike
 import matplotlib.pyplot as plt  # Plotting
 
 plt.close("all")  # closes all currently active figures
-plt.ion()
+# plt.ion()
 
 
 class AccuracyPlotter:
@@ -11,4 +11,4 @@ class AccuracyPlotter:
         plt.figure()
         plt.bar(label, y1, color="r")
         plt.bar(label, y2, color="b")
-        plt.show(block=False)
+        plt.show(block=True)

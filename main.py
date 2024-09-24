@@ -4,7 +4,7 @@ from modules.models import GaussianNaiveBayes
 from modules.visualization import AccuracyPlotter
 
 # Process data
-dp = DataProcessor(Dataset.MÅL)
+dp = DataProcessor(Dataset.REGS)
 dp.showDataFrame()
 # Model data
 model = GaussianNaiveBayes(dp.dataFrame)

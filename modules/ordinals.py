@@ -1,16 +1,25 @@
 import matplotlib.pyplot as plt  # Plotting
+import numpy as np
 import pandas as pd
 
-from modules.dataPreprocessing import DataProcessor
+from dataPreprocessing import DataProcessor, Dataset
+from visualization import AccuracyPlotter
 
 
 class OrdinalPlotter:
-    def __init__(self, dataset: pd.DataFrame) -> None:
-        self.df = DataProcessor(dataset)
+    def __init__(self) -> None:
+        dp = DataProcessor(Dataset.REGS)
+        dp.deleteNaN()
+        self.df = dp.getDataFrame()
 
     def plotScab(self) -> None:
-        sub_df = self.df[["Dag", "Niveau sårvæv"]]
+        pass
 
     def plotWoundTissueLevel(self) -> None:
         # TODO: Reorder ordinals to have a 'natural' progression
         x = self.df["Niveau sårvæv"]
+
+
+if __name__ == "__main__":
+    op = OrdinalPlotter()
+    op.plotScab()
