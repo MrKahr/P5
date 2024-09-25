@@ -33,7 +33,7 @@ class Plotter:
             categoryCounts = dayData[attribute_y].value_counts()
 
             for value in uniqueValues:
-                if not dayData:
+                if len(dayData) == 0:
                     continue  # Don't divide by zero
                 categoryCountsByDays[value].append(
                     categoryCounts.get(value, 0) / len(dayData) * 100
