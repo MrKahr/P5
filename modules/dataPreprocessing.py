@@ -25,12 +25,9 @@ class DataProcessor:
 
     def deleteNaN(self) -> None:
         self.dataFrame.dropna(axis=1, how="all", inplace=True)  # Columns
+
+        # FIXME: Do NOT remove any rows with NaN!!!
         self.dataFrame.dropna(axis=0, how="any", inplace=True)  # Rows
 
-    def getCol(self, indices: list[str]) -> pd.DataFrame:
-        tempdf = self.dataFrame[indices]
-        print(tempdf)
-        return tempdf
-
-    def generateDecriptiveStats(self) -> pd.DataFrame:
-        return self.dataFrame.describe()
+    def getDataFrame(self) -> pd.DataFrame:
+        return self.dataFrame

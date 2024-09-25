@@ -1,10 +1,10 @@
 # Main entry-point into our code base
 from modules.dataPreprocessing import DataProcessor, Dataset
 from modules.models import GaussianNaiveBayes
-from modules.visualization import AccuracyPlotter
+from modules.visualization import Plotter
 
 # Process data
-dp = DataProcessor(Dataset.MÅL)
+dp = DataProcessor(Dataset.REGS)
 dp.showDataFrame()
 # Model data
 model = GaussianNaiveBayes(dp.dataFrame)
@@ -18,6 +18,6 @@ model.generatePrediction(
 )
 
 
-accplt = AccuracyPlotter()
+accplt = Plotter()
 xp, yp = model.getResults()
 accplt.barPlot("Accuracy", xp, yp)
