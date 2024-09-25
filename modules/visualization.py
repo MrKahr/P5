@@ -14,23 +14,23 @@ class AccuracyPlotter:
         plt.bar(label, y2, color="b")
         plt.show(block=False)
 
-def groupedBarPlot(attribute, dataFrame):
+def groupedBarPlot(yattribute, dataFrame, xattribute="Dag"):
     """Plot attribute distribution over time.
 
     Based on https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
     """
     # Get all days with data
-    uniqueDays = np.sort(dataFrame["Dag"].unique())
+    uniqueDays = np.sort(dataFrame[xattribute].unique())
     # Get the categorical values of the attribute
-    uniqueValues = np.sort(dataFrame[attribute].unique())
+    uniqueValues = np.sort(dataFrame[yattribute].unique())
 
     # Initialize data structure for values
     categoryCountsByDays = {category: [] for category in uniqueValues}
 
     # Fill out data structure with percentage distribution for each day
     for day in uniqueDays:
-        dayData = dataFrame[dataFrame["Dag"] == day]
-        categoryCounts = dayData[attribute].value_counts()
+        dayData = dataFrame[dataFrame[xattribute] == day]
+        categoryCounts = dayData[yattribute].value_counts()
         for value in uniqueValues:
             if len(dayData) == 0: continue # Don't divide by zero
             categoryCountsByDays[value].append(categoryCounts.get(value, 0) / len(dayData) * 100) # Default to 0
@@ -51,7 +51,7 @@ def groupedBarPlot(attribute, dataFrame):
     # Add labels
     ax.set_ylabel("Percentage in category")
     ax.set_xlabel("Day")
-    ax.set_title(f"Presence of \"{attribute}\" by day")
+    ax.set_title(f"Presence of \"{yattribute}\" by day")
     ax.set_xticks(x + width * (len(uniqueValues - 1)) / 2, uniqueDays)
     ax.legend(loc="upper left", bbox_to_anchor=(1, 1), title="Categories")
 

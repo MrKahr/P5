@@ -6,7 +6,7 @@ dp = DataProcessor(Dataset.REGS)
 df = dp.dataFrame
 
 # Remove rows where value could not be determined
-df.drop(df[(df["Kontraktion"] == 2) | (df["Kontraktion"] == 100)].index, inplace = True)
+df.drop(df[(df["Kontraktion"] == 2) | (df["Kontraktion"] == 100)].index, inplace = True) #TODO: Remove 100 during data cleaning
 
 # Plot data over time
 visualization.groupedBarPlot("Kontraktion", df)
