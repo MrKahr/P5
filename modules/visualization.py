@@ -14,9 +14,11 @@ class AccuracyPlotter:
         plt.bar(label, y2, color="b")
         plt.show(block=False)
 
-# Plot attribute distribution over time
-# https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
 def groupedBarPlot(attribute, dataFrame):
+    """Plot attribute distribution over time.
+
+    Based on https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
+    """
     # Get all days with data
     uniqueDays = np.sort(dataFrame["Dag"].unique())
     # Get the categorical values of the attribute
