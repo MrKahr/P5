@@ -77,8 +77,11 @@ class Plotter:
             dayData = dataFrame[dataFrame[xattribute] == day]
             categoryCounts = dayData[yattribute].value_counts()
             for value in uniqueValues:
-                if len(dayData) == 0: continue # Don't divide by zero
-                categoryCountsByDays[value].append(categoryCounts.get(value, 0) / len(dayData) * 100) # Default to 0
+                if len(dayData) == 0:
+                    continue  # Don't divide by zero
+                categoryCountsByDays[value].append(
+                    categoryCounts.get(value, 0) / len(dayData) * 100
+                )  # Default to 0
 
         x = np.arange(len(uniqueDays))  # The label locations
         width = 0.75 / len(uniqueValues)  # The width of the bars
@@ -96,8 +99,19 @@ class Plotter:
         # Add labels
         ax.set_ylabel("Percentage in category")
         ax.set_xlabel("Day")
-        ax.set_title(f"Presence of \"{yattribute}\" by day")
+        ax.set_title(f'Presence of "{yattribute}" by day')
         ax.set_xticks(x + width * (len(uniqueValues - 1)) / 2, uniqueDays)
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1), title="Categories")
+
+        plt.show()
+
+    def boxPlot(self, dataFrame: pd.DataFrame, colName: str, boxWidth=0.5) -> None:
+        fig, ax = plt.subplots()
+
+        plt.boxplot(dataFrame[colName], widths=boxWidth, notch=True)
+
+        # Add labels
+        ax.set_xlabel(colName)
+        ax.legend(colName, loc="upper right")
 
         plt.show()
