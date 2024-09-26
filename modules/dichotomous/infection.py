@@ -8,9 +8,15 @@ from modules.visualization import Plotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
-df = dp.dataFrame
+df = dp.df
 
 # Note: the dataset lists possible values as 1, 2 or 3, but only 1 and 2 are actually used
 
 # Plot data over time
-Plotter.groupedBarPlot(Plotter(), df, "Infektionsniveau")
+Plotter().groupedBarPlot(
+    df,
+    "Dag",
+    "Infektionsniveau",
+    show_percentage=False,
+    labels=["rent", "kontamineret", "manglende værdi"],
+)
