@@ -18,7 +18,7 @@ class DataProcessor:
             f"data/{type.value}",
         )
         self.dataFrame = pd.read_csv(path, sep=";", comment="#")
-        self.deleteNaN()
+        if(type == Dataset.REGS) : self.deleteNaN()
 
     def showDataFrame(self) -> None:
         print(self.dataFrame)

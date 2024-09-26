@@ -2,10 +2,12 @@
 from modules.dataPreprocessing import DataProcessor, Dataset
 from modules.models import GaussianNaiveBayes
 from modules.visualization import Plotter
+from modules.continuousVariables import ContinuousPlotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
-dp.showDataFrame()
+condp = DataProcessor(Dataset.MÅL)
+condp.showDataFrame()
 # Model data
 model = GaussianNaiveBayes(dp.dataFrame)
 
@@ -20,4 +22,9 @@ model.generatePrediction(
 
 accplt = Plotter()
 xp, yp = model.getResults()
-accplt.barPlot("Accuracy", xp, yp)
+#accplt.barPlot("Accuracy", xp, yp)
+
+conplt = ContinuousPlotter()
+
+conplt.continousPlot(condp.dataFrame["Sårrand (cm)"], condp.dataFrame["Midte (cm)"], condp.dataFrame["Dag"])
+
