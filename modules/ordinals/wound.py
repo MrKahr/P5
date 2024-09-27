@@ -19,6 +19,7 @@ class WoundTissueLevelPlotter:
             dataframe=self.df, attribute_x="Dag", attribute_y="Niveau sårvæv"
         )
         # TODO: Reorder ordinals to have a 'natural' progression
+        # TODO: Add labels when reordering is done
         """"
         1: under niveau
         2: i niveau

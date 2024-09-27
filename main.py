@@ -5,9 +5,10 @@ from modules.visualization import Plotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
+dp.showNaN()
 dp.showDataFrame()
 # Model data
-model = GaussianNaiveBayes(dp.dataFrame)
+model = GaussianNaiveBayes(dp.df)
 
 # Get prediction from training and test sets
 model.generatePrediction(
@@ -16,7 +17,6 @@ model.generatePrediction(
     model.testData[["Kontraktion", "Hyperæmi", "Ødem", "Eksudat"]],
     model.testData["Infektionsniveau"],
 )
-
 
 accplt = Plotter()
 xp, yp = model.getResults()
