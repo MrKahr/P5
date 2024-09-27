@@ -245,3 +245,14 @@ class Plotter:
         )
         ax.set_xticks(x + width * (len(unique_y_values - 1)) / 2, unique_x_values)
         plt.show()
+
+    def boxPlot(self, dataFrame: pd.DataFrame, colName: str, boxWidth=0.5) -> None:
+        fig, ax = plt.subplots()
+
+        plt.boxplot(dataFrame[colName], widths=boxWidth, notch=True)
+
+        # Add labels
+        ax.set_xlabel(colName)
+        ax.legend(colName, loc="upper right")
+
+        plt.show()
