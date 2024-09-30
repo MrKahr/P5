@@ -1,5 +1,4 @@
 from dataPreprocessing import DataProcessor, Dataset
-import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
@@ -37,7 +36,7 @@ def ratio(attribute: str) -> dict:
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
-df = dp.dataFrame
+df = dp.getDataFrame()
 
 df.drop(["Gris ID", "Sår ID"], axis = 1, inplace = True)
 
@@ -61,5 +60,7 @@ while sumBars <= lowestPercentage:
     patches[i].set_color("r")
     sumBars += n[i]
     i += 1
-
+plt.xlabel("AVF score")
+plt.ylabel("Datapoints in range")
+plt.suptitle("Lowest 1% of scores shown in red")
 plt.show()
