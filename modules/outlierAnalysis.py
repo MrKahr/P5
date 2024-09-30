@@ -30,7 +30,7 @@ def ratio(attribute: str) -> dict:
     for i in column:
         sums[i] += 1
     for i in values:
-        sums[i] = sums[i] / len(column)
+        sums[i] = sums[i] #/ len(column)
     return sums
 
 
@@ -60,6 +60,7 @@ while sumBars <= lowestPercentage:
     patches[i].set_color("r")
     sumBars += n[i]
     i += 1
+print("length:", len(listAVF))
 plt.xlabel("AVF score")
 plt.ylabel("Datapoints in range")
 plt.suptitle("Lowest 1% of scores shown in red")
