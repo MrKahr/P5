@@ -3,6 +3,7 @@ from enum import Enum
 import os
 from pathlib import Path
 import pandas as pd  # CSV-reading, data manipulation and cleaning.
+from numpy.typing import NDArray
 
 
 class Dataset(Enum):
@@ -101,3 +102,11 @@ class DataProcessor:
                     self.df[(self.df[label] == 2)].index,
                     inplace=True,
                 )
+
+    def getTrainingData(self) -> NDArray:
+        return self.df.drop(
+            ["Gris ID", "Sår ID", "Dag"], axis=1, inplace=False
+        ).to_numpy()
+
+    def getTargetData(self) -> NDArray:
+        return self.df["Dag"].to_numpy(copy=True)
