@@ -256,3 +256,6 @@ class Plotter:
         ax.legend(colName, loc="upper right")
 
         plt.show()
+
+    
+
