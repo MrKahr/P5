@@ -256,3 +256,42 @@ class Plotter:
         ax.legend(colName, loc="upper right")
 
         plt.show()
+
+    def scatterPlot(
+            self,
+            dataFrame: pd.DataFrame,
+            attribute_x: str,
+            attribute_y: str,
+            colName: str,
+        ) -> None:
+
+        fig, ax = plt.subplots()
+
+        groups= np.sort(dataFrame[colName].unique())
+        group_xMean = []
+        group_yMean = []
+        group_label = []
+
+        for group in groups:
+            p = dataFrame[dataFrame[colName] == group]
+            ax.scatter(p[attribute_x], p[attribute_y], label=group)
+
+            attribute_xMean = np.mean(p[attribute_x])
+            attribute_yMean = np.mean(p[attribute_y])
+
+            group_xMean.append(attribute_xMean)
+            group_yMean.append(attribute_yMean)
+            group_label.append(int(group))
+
+        
+        ax.plot(group_xMean, group_yMean, label=group_label, marker='.', c="black")
+
+        for i, txt in enumerate(group_label):
+            ax.annotate(txt, (group_xMean[i], group_yMean[i]))
+
+        ax.set_xlabel(attribute_x)
+        ax.set_ylabel(attribute_y)
+        ax.legend(loc='lower right', title=colName)
+        ax.grid(True)
+
+        plt.show()
