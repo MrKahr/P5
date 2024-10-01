@@ -101,3 +101,31 @@ class Plotter:
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1), title="Categories")
 
         plt.show()
+    def plotContinuous(self, dataFrame, y1,y2,x):
+        """ plots continuous variables"""
+        df = dataFrame
+        plt.figure()
+        ax = plt.subplot()
+        ax.set_ylabel("Sårrand/Sårmidte (cm)")
+        ax.set_xlabel("Dag")
+        for color in ['tab:blue', 'tab:orange']:
+            if (color == 'tab:blue'):
+                ax.scatter(df[x], df[y1],s= 120.0, c=color, label=y1,
+                    alpha=1,linewidths=0.2, edgecolors='none')
+            else:
+                ax.scatter(df[x], df[y2],s= 70.0, c=color, label=y2,
+                    alpha=1,linewidths=0.2, edgecolors='black')
+        uniquedays = np.sort(df[x].unique())
+        y1MeanValues = []
+        y2MeanValues = []
+        for day in uniquedays:
+            daydata = df[df[x] == day]
+            y1Mean = np.mean(daydata[y1])
+            y1MeanValues.append(y1Mean)
+            y2Mean = np.mean(daydata[y2])
+            y2MeanValues.append(y2Mean)
+        #ax.plot(uniquedays,y1MeanValues, 'o-',label=y1)
+        #ax.plot(uniquedays,y2MeanValues, 'o-',label=y2)
+        ax.legend()
+
+        plt.show()
