@@ -267,30 +267,34 @@ class Plotter:
 
         fig, ax = plt.subplots()
 
+        # sort variables into group
         groups= np.sort(dataFrame[colName].unique())
-        group_xMean = []
+        group_xMean = [] # Lists to save the mean variables and groups
         group_yMean = []
         group_label = []
 
         for group in groups:
-            p = dataFrame[dataFrame[colName] == group]
+            p = dataFrame[dataFrame[colName] == group] # Get all variables within current group and plot group
             ax.scatter(p[attribute_x], p[attribute_y], label=group)
 
-            attribute_xMean = np.mean(p[attribute_x])
+            attribute_xMean = np.mean(p[attribute_x]) # Get mean for current group
             attribute_yMean = np.mean(p[attribute_y])
 
-            group_xMean.append(attribute_xMean)
+            group_xMean.append(attribute_xMean) # Save mean for current group in lists
             group_yMean.append(attribute_yMean)
-            group_label.append(int(group))
+            group_label.append(int(group)) # Save groups for labeling of coordinates
 
         
         ax.plot(group_xMean, group_yMean, label=group_label, marker='.', c="black")
 
+        # Add labels to coordinates
         for i, txt in enumerate(group_label):
             ax.annotate(txt, (group_xMean[i], group_yMean[i]))
 
+        # Add labels
         ax.set_xlabel(attribute_x)
         ax.set_ylabel(attribute_y)
+        ax.set_title(f"Relation between '{attribute_x}' and '{attribute_y}'")
         ax.legend(loc='lower right', title=colName)
         ax.grid(True)
 
