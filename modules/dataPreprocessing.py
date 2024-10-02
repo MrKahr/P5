@@ -29,6 +29,9 @@ class DataProcessor:
         self.df = pd.read_csv(path, sep=";", comment="#")
         self.deleteNaN()
 
+    def _formatTrainingData(self) -> pd.DataFrame:
+        return self.df.drop(["Gris ID", "Sår ID", "Dag"], axis=1, inplace=False)
+
     def showDataFrame(self) -> None:
         print(self.df)
 
@@ -104,9 +107,15 @@ class DataProcessor:
                 )
 
     def getTrainingData(self) -> NDArray:
-        return self.df.drop(
-            ["Gris ID", "Sår ID", "Dag"], axis=1, inplace=False
-        ).to_numpy()
+        return self._formatTrainingData().to_numpy()
 
     def getTargetData(self) -> NDArray:
         return self.df["Dag"].to_numpy(copy=True)
+
+    def getTrainingLabels(self) -> list[str]:
+        return self._formatTrainingData().columns.values
+
+    def getTargetMaxValue(self) -> int:
+        ndarr = self.df["Dag"].unique()
+        i = ndarr.argmax()
+        return ndarr[i]
