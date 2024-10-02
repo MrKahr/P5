@@ -50,21 +50,53 @@ class KNNAnalysis:
             if (not indegrees.get(i)) or indegrees[i] <= T:
                 outliers.append(i)
         return outliers
+    
+    def PlotNeighborMultiHist(self,nearestNeighbors: list | int, threshold = 0, rows=3, cols = 1) -> None:
+        # Plot multiple historgrams for different number of columns and rows 
+        if rows * cols != len(nearestNeighbors):
+            raise Exception(f"Cannot plot {rows * cols} plots with only {len(nearestNeighbors)}k's")
+        fig, axes = plt.subplots(nrows = rows, ncols = cols, layout="constrained")
+        if rows == 1 and cols == 1:
+            self.getOutliers(nearestNeighbors[0], threshold)
+            indegrees = self.getIndegrees()
+            for i in range(len(self.df)):
+                if not indegrees.get(i):
+                    indegrees[i] = 0
+            n, bins, patches = axes.hist(indegrees.values(), bins = 60)
+            for i in range(threshold + 1):
+                patches[i].set_color("r")
+            axes.set_title(f"Indegree distribution of {nearestNeighbors[0]} neighbours with threshold {threshold}")
+        elif cols == 1:
+            for indexRow in range(0, len(nearestNeighbors)):
+                self.getOutliers(nearestNeighbors[indexRow], threshold)
+                indegrees = self.getIndegrees()
+                for i in range(len(self.df)):
+                    if not indegrees.get(i):
+                        indegrees[i] = 0
+                n, bins, patches = axes[indexRow].hist(indegrees.values(), bins = 60)
+                for i in range(threshold + 1):
+                    patches[i].set_color("r")
+                axes[indexRow].set_title(f"Indegree distribution of {nearestNeighbors[indexRow]} neighbours with threshold {threshold}")
+        else:
+            k = 0
+            for indexCol in range(cols):
+                for indexRow in range(rows):
+                    self.getOutliers(nearestNeighbors[k], threshold)
+                    indegrees = self.getIndegrees()
+                    for i in range(len(self.df)):
+                        if not indegrees.get(i):
+                            indegrees[i] = 0
+                    n, bins, patches = axes[indexRow, indexCol].hist(indegrees.values(), bins = 60)
+                    for i in range(threshold + 1):
+                        patches[i].set_color("r")
+                    axes[indexRow, indexCol].set_title(f"Indegree distribution of {nearestNeighbors[k]} neighbours with threshold {threshold}")
+                    k += 1
+        plt.show()
 
 
 if __name__ == "__main__":
     op = KNNAnalysis()
     threshold = 0
-    k = 30
-    outliers = op.getOutliers(k, threshold)
-    indegrees = op.getIndegrees()
-    for i in range(len(op.df)):
-        if not indegrees.get(i):
-            indegrees[i] = 0
-    n, bins, patches = plt.hist(indegrees.values(), bins=40)
-    for i in range(threshold + 1):
-        patches[i].set_color("r")
-    plt.xlabel("Indegree")
-    plt.ylabel("Frequency")
-    plt.suptitle(f"Indegree distribution of {k} neighbors with threshold {threshold}")
-    plt.show()
+    k = [10,20,30, 40]
+
+    op.PlotNeighborMultiHist(k, 0, 2, 2)
