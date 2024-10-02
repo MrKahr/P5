@@ -20,7 +20,6 @@ class KNNAnalysis:
         dp.oneHotEncoding(["Eksudattype", "Hyperæmi"])
         self.df = dp.getDataFrame()
         self.df.drop(["Gris ID", "Sår ID"], axis = 1, inplace = True)
-        # print(self.df)
     
     def KNN(self,degree: int) -> None: 
         neighbourModel = NearestNeighbors(n_neighbors=degree)
@@ -65,7 +64,6 @@ if __name__ == "__main__":
     n, bins, patches = plt.hist(indegrees.values(), bins=40)
     for i in range(threshold + 1):
         patches[i].set_color("r")
-    print(len(outliers))
     plt.xlabel("Indegree")
     plt.ylabel("Frequency")
     plt.suptitle(f"Indegree distribution of {k} neighbors with threshold {threshold}")

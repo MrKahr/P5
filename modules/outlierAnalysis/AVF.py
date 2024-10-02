@@ -14,6 +14,7 @@ class AVFPlotter:
     def __init__(self) -> None:
         dp = DataProcessor(Dataset.REGS)
         dp.deleteNaN()
+        dp.oneHotEncoding(["Eksudattype", "Hyperæmi"])
         self.df = dp.getDataFrame()
         self.df.drop(["Gris ID", "Sår ID"], axis = 1, inplace = True)
         self.plotAVFs(self.df, 0.01)
@@ -61,8 +62,6 @@ class AVFPlotter:
             avg = sum / len(listAVF)
             lowestPercentage = math.floor(len(listAVF) * cutoffPercentile)
             print("average:", avg)
-            sortedList = sorted(listAVF)[:lowestPercentage]
-            print("outliers:", sortedList)
 
             n, bins, patches = plt.hist(listAVF, bins=40)
             sumBars = 0
