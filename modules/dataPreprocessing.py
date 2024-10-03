@@ -125,6 +125,16 @@ class DataProcessor:
                     self.df[(self.df[label] == 2)].index,
                     inplace=True,
                 )
+                
+    def oneHotEncoding(self, variableNames: list ) -> None:
+        """One-hot encode one or more categorical attributes
+
+        Based on https://stackoverflow.com/questions/37292872/how-can-i-one-hot-encode-in-python
+        """
+        for variable in variableNames:
+            one_hot = pd.get_dummies(self.df[variable], prefix=variable)
+            self.df.drop(variable, inplace=True, axis = 1)
+            self.df = self.df.join(one_hot)
 
     def getTrainingData(self) -> NDArray:
         return self._formatTrainingData().to_numpy()
@@ -139,3 +149,4 @@ class DataProcessor:
         ndarr = self.df[self.time_label].unique()
         i = ndarr.argmax()
         return ndarr[i]
+
