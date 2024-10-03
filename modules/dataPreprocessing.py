@@ -22,10 +22,10 @@ class DataProcessor:
             Path(os.path.split(__file__)[0]).parents[0],
             f"data/{type.value}",
         )
+        self.df = pd.read_csv(path, sep=";", comment="#")
         self.remove_missing = remove_missing
         self.remove_undetermined = remove_undetermined
         self.dataset_type = type
-        self.df = pd.read_csv(path, sep=";", comment="#")
         self.deleteNaN()
 
     def showDataFrame(self) -> None:
