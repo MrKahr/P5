@@ -5,8 +5,7 @@ from modules.visualization import Plotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
-dp.showNaN()
-dp.showDataFrame()
+
 # Model data
 model = GaussianNaiveBayes(dp.df)
 
@@ -21,3 +20,5 @@ model.generatePrediction(
 accplt = Plotter()
 xp, yp = model.getResults()
 accplt.barPlot("Accuracy", xp, yp)
+
+

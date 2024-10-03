@@ -257,5 +257,73 @@ class Plotter:
 
         plt.show()
 
-    
+    def scatterPlot(
+            self,
+            dataFrame: pd.DataFrame,
+            attribute_x: str,
+            attribute_y: str,
+            colName: str,
+        ) -> None:
 
+        fig, ax = plt.subplots()
+
+        # sort variables into group
+        groups= np.sort(dataFrame[colName].unique())
+        group_xMean = [] # Lists to save the mean variables and groups
+        group_yMean = []
+        group_label = []
+
+        for group in groups:
+            p = dataFrame[dataFrame[colName] == group] # Get all variables within current group and plot group
+            ax.scatter(p[attribute_x], p[attribute_y], label=group)
+
+            attribute_xMean = np.mean(p[attribute_x]) # Get mean for current group
+            attribute_yMean = np.mean(p[attribute_y])
+
+            group_xMean.append(attribute_xMean) # Save mean for current group in lists
+            group_yMean.append(attribute_yMean)
+            group_label.append(int(group)) # Save groups for labeling of coordinates
+
+        
+        ax.plot(group_xMean, group_yMean, label=group_label, marker='.', c="black")
+
+        # Add labels to coordinates
+        for i, txt in enumerate(group_label):
+            ax.annotate(txt, (group_xMean[i], group_yMean[i]))
+
+        # Add labels
+        ax.set_xlabel(attribute_x)
+        ax.set_ylabel(attribute_y)
+        ax.set_title(f"Relation between '{attribute_x}' and '{attribute_y}'")
+        ax.legend(loc='lower right', title=colName)
+        ax.grid(True)
+
+        plt.show()
+    def plotContinuous(self, dataFrame, y1,y2,x):
+        """ plots continuous variables"""
+        df = dataFrame
+        plt.figure()
+        ax = plt.subplot()
+        ax.set_ylabel("Sårrand/Sårmidte (cm)")
+        ax.set_xlabel("Dag")
+        for color in ['tab:blue', 'tab:orange']:
+            if (color == 'tab:blue'):
+                ax.scatter(df[x], df[y1],s= 120.0, c=color, label=y1,
+                    alpha=1,linewidths=0.2, edgecolors='none')
+            else:
+                ax.scatter(df[x], df[y2],s= 70.0, c=color, label=y2,
+                    alpha=1,linewidths=0.2, edgecolors='black')
+        uniquedays = np.sort(df[x].unique())
+        y1MeanValues = []
+        y2MeanValues = []
+        for day in uniquedays:
+            daydata = df[df[x] == day]
+            y1Mean = np.mean(daydata[y1])
+            y1MeanValues.append(y1Mean)
+            y2Mean = np.mean(daydata[y2])
+            y2MeanValues.append(y2Mean)
+        #ax.plot(uniquedays,y1MeanValues, 'o-',label=y1)
+        #ax.plot(uniquedays,y2MeanValues, 'o-',label=y2)
+        ax.legend()
+
+        plt.show()

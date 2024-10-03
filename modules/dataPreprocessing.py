@@ -2,13 +2,15 @@
 from enum import Enum
 import os
 from pathlib import Path
+import re
 import pandas as pd  # CSV-reading, data manipulation and cleaning.
+from numpy.typing import NDArray
 
 
 class Dataset(Enum):
     MÅL = "eksperimentelle_sår_2024_mål.csv"
     REGS = "eksperimentelle_sår_2024_regs.csv"
-    OLD = "old_eksperimentelle_sår_2014_regs"
+    OLD = "old_eksperimentelle_sår_2014_regs.csv"
 
 
 class DataProcessor:
@@ -22,11 +24,33 @@ class DataProcessor:
             Path(os.path.split(__file__)[0]).parents[0],
             f"data/{type.value}",
         )
+        self.df = pd.read_csv(path, sep=";", comment="#")
         self.remove_missing = remove_missing
         self.remove_undetermined = remove_undetermined
         self.dataset_type = type
-        self.df = pd.read_csv(path, sep=";", comment="#")
         self.deleteNaN()
+        if type == Dataset.OLD:
+            self.time_label = "Tid"
+            self._deleteFromOld()
+        else:
+            self.time_label = "Dag"
+
+    def _formatTrainingData(self) -> pd.DataFrame:
+        return self.df.drop(
+            ["Gris ID", "Sår ID", self.time_label], axis=1, inplace=False
+        )
+
+    def _deleteFromOld(self) -> None:
+        indexes = []
+        for i, value in self.df[self.time_label].items():
+            match_obj = re.search("time", value)
+            if match_obj:
+                indexes.append(i)
+        if indexes:
+            # Drop all rows where "Tid" cell is less than 1 day
+            self.df.drop(axis=0, index=indexes, inplace=True)
+        # The orignal "Tid" column was all strings. Convert them to integers
+        self.df[self.time_label] = pd.to_numeric(self.df[self.time_label])
 
     def showDataFrame(self) -> None:
         print(self.df)
@@ -101,6 +125,7 @@ class DataProcessor:
                     self.df[(self.df[label] == 2)].index,
                     inplace=True,
                 )
+                
     def oneHotEncoding(self, variableNames: list ) -> None:
         """One-hot encode one or more categorical attributes
 
@@ -110,4 +135,18 @@ class DataProcessor:
             one_hot = pd.get_dummies(self.df[variable], prefix=variable)
             self.df.drop(variable, inplace=True, axis = 1)
             self.df = self.df.join(one_hot)
-        
+
+    def getTrainingData(self) -> NDArray:
+        return self._formatTrainingData().to_numpy()
+
+    def getTargetData(self) -> NDArray:
+        return self.df[self.time_label].to_numpy(copy=True)
+
+    def getTrainingLabels(self) -> list[str]:
+        return self._formatTrainingData().columns.values
+
+    def getTargetMaxValue(self) -> int:
+        ndarr = self.df[self.time_label].unique()
+        i = ndarr.argmax()
+        return ndarr[i]
+
