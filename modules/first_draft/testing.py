@@ -16,7 +16,7 @@ plt.ion()
 
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
-from modules.dataPreprocessing import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
 
 
 # NOTE: The random state should be set to a constant integer to get reproducible results across iterations

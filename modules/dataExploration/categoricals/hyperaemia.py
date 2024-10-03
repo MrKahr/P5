@@ -3,8 +3,8 @@ import os
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing import DataProcessor, Dataset
-from modules.visualization import Plotter
+from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataExploration.visualization import Plotter
 
 """
 0: nej

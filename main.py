@@ -1,7 +1,7 @@
 # Main entry-point into our code base
-from modules.dataPreprocessing import DataProcessor, Dataset
-from modules.models import GaussianNaiveBayes
-from modules.visualization import Plotter
+from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.modelSelection.model_selection import GaussianNaiveBayes
+from modules.dataExploration.visualization import Plotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
@@ -20,5 +20,3 @@ model.generatePrediction(
 accplt = Plotter()
 xp, yp = model.getResults()
 accplt.barPlot("Accuracy", xp, yp)
-
-
