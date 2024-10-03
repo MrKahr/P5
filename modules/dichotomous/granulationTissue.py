@@ -8,10 +8,10 @@ from modules.visualization import Plotter
 
 # Process data
 dp = DataProcessor(Dataset.REGS)
-df = dp.dataFrame
+df = dp.df
 
-# Remove rows where value could not be determined
-df.drop(df[df["Granulationsvæv"] == 2].index, inplace = True)
 
 # Plot data over time
-Plotter.groupedBarPlot(Plotter(), df, "Granulationsvæv")
+Plotter().groupedBarPlot(
+    df, "Dag", "Granulationsvæv", show_percentage=True, labels=["nej", "ja"]
+)

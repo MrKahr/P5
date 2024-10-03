@@ -16,7 +16,19 @@ class ExudateTypePlotter:
     def plotExudateType(self) -> None:
         p = Plotter()
         p.stackedBarPlot(
-            dataframe=self.df, attribute_x="Dag", attribute_y="Eksudattype"
+            dataframe=self.df,
+            attribute_x="Dag",
+            attribute_y="Eksudattype",
+            show_percentage=False,
+            labels=[
+                "serøst",
+                "mukøst",
+                "purulent",
+                "hæmorrhagisk",
+                "serohæmorrhagisk",
+                "seromukøst",
+                "seropurulent",
+            ],
         )
 
 
