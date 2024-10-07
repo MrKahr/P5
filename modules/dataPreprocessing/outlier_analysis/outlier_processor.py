@@ -1,10 +1,11 @@
 from typing import Callable
-from modules.dataPreprocessing.preprocessor import DataPreprocessor
+
+import pandas as pd
 
 
-class OutlierProcessor(DataPreprocessor):
-    def __init__(self) -> None:
-        super().__init__()
+class OutlierProcessor:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df
 
     def avf(self) -> None:
         pass

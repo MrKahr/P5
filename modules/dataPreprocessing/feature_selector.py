@@ -1,6 +1,6 @@
-from modules.dataPreprocessing.preprocessor import DataPreprocessor
+import pandas as pd
 
 
-class FeatureSelector(DataPreprocessor):
-    def __init__(self) -> None:
-        super().__init__()
+class FeatureSelector:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df

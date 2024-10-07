@@ -1,11 +1,9 @@
 import pandas as pd
 
-from modules.dataPreprocessing.preprocessor import DataPreprocessor
 
-
-class DataTransformer(DataPreprocessor):
-    def __init__(self) -> None:
-        super().__init__()
+class DataTransformer:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df
 
     def oneHotEncoding(self, labels: list[str]) -> None:
         """One-hot encode one or more categorical attributes
@@ -22,6 +20,5 @@ class DataTransformer(DataPreprocessor):
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
 
-    # TODO: Implement mode imputation
     def modeImputation(self) -> None:
         pass
