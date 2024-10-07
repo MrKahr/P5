@@ -1,26 +1,25 @@
 import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
+
 from modules.dataPreprocessing.dataset_enums import Dataset
 
 
 class DataPreprocessor:
-    def __init__(self, data: Dataset | pd.DataFrame) -> None:
-        # Ensure dataset is loaded correctly
-        if not isinstance(data, pd.DataFrame):
-            path = Path("data", data.value).absolute()
-            self.df = pd.read_csv(path, sep=";", comment="#")
-        else:
-            self.df = data
+    """This is the main entry point for data processing
+    This class contains the main dataframe.
+    The other preprocessor classes work akin to a function, taking an input and returning an output
+    """
+
+    def __init__(self, data: Dataset) -> None:
+        path = Path("data", data.value).absolute()
+        self.df = pd.read_csv(path, sep=";", comment="#")
 
     def _formatTrainingData(self) -> pd.DataFrame:
         return self.df.drop(["Gris ID", "Sår ID", "Dag"], axis=1, inplace=False)
 
-    def showDataFrame(self) -> None:
-        print(self.df)
-
-    def getDataFrame(self) -> pd.DataFrame:
-        return self.df
+    # TODO: Example method (follow-up with other models)
+    def preprocessForNaiveBayes(self) -> pd.DataFrame: ...
 
     def getTrainingData(self) -> NDArray:
         return self._formatTrainingData().to_numpy()
