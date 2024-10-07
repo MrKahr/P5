@@ -1,23 +1,22 @@
 import sys
 import os
-from time import time
-
-from matplotlib import pyplot as plt
+sys.path.insert(0, os.getcwd())
 
 import pandas as pd
+from time import time
+from matplotlib import pyplot as plt
+
+plt.ion()
+
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-
-sys.path.insert(0, os.getcwd())
-plt.ion()
-
-
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.dataset_enums import Dataset
 
+from modules.dataPreprocessing.preprocessor import DataPreprocessor
 
 # NOTE: The random state should be set to a constant integer to get reproducible results across iterations
 #       However, be aware of: https://scikit-learn.org/stable/common_pitfalls.html#robustness-of-cross-validation-results
@@ -32,7 +31,7 @@ TEST_Y_MAX = 0
 def load_training_data(type: Dataset = Dataset.REGS):
     global TRAIN_Y_MAX
     print("Loading training data")
-    dp = DataProcessor(type)
+    dp = DataPreprocessor(type)
     TRAIN_Y_MAX = dp.getTargetMaxValue()
     return (
         dp.getTrainingData(),
@@ -44,7 +43,7 @@ def load_training_data(type: Dataset = Dataset.REGS):
 def load_testing_data(type: Dataset = Dataset.OLD):
     global TEST_Y_MAX
     print("Loading testing data")
-    dp = DataProcessor(type)
+    dp = DataPreprocessor(type)
     TEST_Y_MAX = dp.getTargetMaxValue()
     return (
         dp.getTrainingData(),
@@ -211,7 +210,7 @@ def testing(estimator, X, y):
 if __name__ == "__main__":
     is_tuning = False
     X_train, Y_train, train_labels = load_training_data(Dataset.REGS)
-    model = the_model("nb")
+    model = the_model("rfc")
     cv = cross_validator("skf")
     fitted_model = training(model, X_train, Y_train, cv, tuning=is_tuning)
     feature_importance(fitted_model, X_train, Y_train, train_labels)
