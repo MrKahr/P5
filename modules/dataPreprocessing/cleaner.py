@@ -1,14 +1,13 @@
 import re
 import pandas as pd
 from modules.dataPreprocessing.dataset_enums import Dataset
-from modules.dataPreprocessing.preprocessor import DataPreprocessor
 
 
-class DataCleaner(DataPreprocessor):
-    def __init__(self, data: Dataset | pd.DataFrame) -> None:
-        super().__init__(data)
+class DataCleaner:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df
 
-    def _deleteNaN(self) -> None:
+    def _deleteNan(self) -> None:
         """Remove columns where all entries are missing"""
         self.df.dropna(axis=1, how="all", inplace=True)
 
@@ -48,8 +47,8 @@ class DataCleaner(DataPreprocessor):
                     inplace=True,
                 )
 
-    def cleanREGS(self, threshold: int = 4, fillna: int = 100) -> None:
-        self._deleteNaN()
+    def cleanRegs(self, threshold: int = 4, fillna: int = 100) -> None:
+        self._deleteNan()
         # Drop rows for pigs with at least 4 entries are missing (i.e. the dead pigs)
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
 
@@ -57,23 +56,23 @@ class DataCleaner(DataPreprocessor):
             self.df["Infektionsniveau"].fillna(fillna, axis=0).values
         )
 
-    def cleanOLD(self):
-        self._deleteNaN()
+    def cleanOld(self):
+        self._deleteNan()
         # Find all indeces of rows containing "time"
         indexes = []
-        for i, value in self.df[self.time_label].items():
+        for i, value in self.df["Dag"].items():
             match_obj = re.search("time", value)
             if match_obj:
                 indexes.append(i)
         if indexes:
             # Change time to 0 for rows with hours
-            self.df["Dag"][indexes] = 0  # TODO: Test this, by printing the old dataset
+            self.df.loc[indexes, "Dag"] = 0
             # self.df.drop(axis=0, index=indexes, inplace=True) # Drop all rows where "Tid" cell is less than 1 day
         # The orignal "Tid" column was all strings. Convert them to integers
-        self.df[self.time_label] = pd.to_numeric(self.df[self.time_label])
+        self.df["Dag"] = pd.to_numeric(self.df["Dag"])
 
-    def cleanMÅL(self) -> None:
-        self._deleteNaN()
+    def cleanMål(self) -> None:
+        self._deleteNan()
         # Remove unnecessary data
         self.df.drop(
             columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
@@ -86,11 +85,11 @@ class DataCleaner(DataPreprocessor):
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
 
-    def fillna(self, fill_value: int = 100) -> None:
+    def fillNan(self, fill_value: int = 100) -> None:
         # Replace all missing single values with 100 (indicating a missing value)
         self.df.fillna(fill_value)
 
-    def showNaN(self) -> None:
+    def showNan(self) -> None:
         nan_df = self.df[self.df.isna().any(axis=1)]
         if len(nan_df) == 0:
             print("Empty dataframe (no NaN values to display)")
