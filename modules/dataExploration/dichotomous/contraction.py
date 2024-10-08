@@ -11,8 +11,9 @@ from modules.dataExploration.visualization import Plotter
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
 cleaner.cleanRegs()
+cleaner._deleteMissing()
 df = dp.df
-df.drop(df[(df["Kontraktion"] == 100)].index,inplace=True)
+
 
 
 # Plot data over time
@@ -21,5 +22,5 @@ Plotter().groupedBarPlot(
     "Dag",
     "Kontraktion",
     show_percentage=False,
-    labels=["nej", "ja", "kan ikke vurderes", "100"],
+    labels=["nej", "ja", "kan ikke vurderes"],
 )
