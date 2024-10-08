@@ -3,7 +3,8 @@ import os
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataExploration.visualization import Plotter
 
 """
@@ -18,9 +19,10 @@ from modules.dataExploration.visualization import Plotter
 
 class HyperaemiaPlotter:
     def __init__(self) -> None:
-        dp = DataProcessor(Dataset.REGS)
-        dp.deleteNaN()
-        self.df = dp.getDataFrame()
+        dp = DataPreprocessor(Dataset.REGS)
+        cleaner = DataCleaner(dp.df)
+        cleaner.cleanRegs()
+        self.df = dp.df
 
     def plotHyperaemia(self) -> None:
         p = Plotter()

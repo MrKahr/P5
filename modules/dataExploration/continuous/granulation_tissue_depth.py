@@ -3,11 +3,14 @@ import os
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataExploration.visualization import Plotter
 
 
-dp = DataProcessor(Dataset.MÅL)
+dp = DataPreprocessor(Dataset.MÅL)
+cleaner = DataCleaner(dp.df)
+cleaner.cleanMål()
 df = dp.df
 
 p = Plotter()

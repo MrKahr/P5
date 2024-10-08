@@ -8,7 +8,8 @@ from numpy.typing import ArrayLike
 import matplotlib.pyplot as plt  # Plotting
 
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataExploration.visualization import Plotter
 
 plt.close("all")  # closes all currently active figures
@@ -16,8 +17,10 @@ plt.close("all")  # closes all currently active figures
 
 class ContinuousPlotter:
     def __init__(self) -> None:
-        dp = DataProcessor(Dataset.MÅL)
-        self.df = dp.getDataFrame()
+        dp = DataPreprocessor(Dataset.MÅL)
+        cleaner = DataCleaner(dp.df)
+        cleaner.cleanMål()
+        self.df = dp.df
 
     def plotContinuous(self) -> None:
         p = Plotter()
