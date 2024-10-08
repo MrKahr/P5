@@ -3,23 +3,41 @@ import os
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataExploration.visualization import Plotter
 
 
 class WoundTissueLevelPlotter:
     def __init__(self) -> None:
-        dp = DataProcessor(Dataset.REGS)
-        dp.deleteNaN()
-        self.df = dp.getDataFrame()
+        dp = DataPreprocessor(Dataset.REGS)
+        cleaner = DataCleaner(dp.df)
+        cleaner.cleanRegs()
+        self.df = dp.df
+
+    # TODO: Move function to more appropriate class and call it here
+    def swapValues(self, attribute, value1, value2) -> None:
+        """Swap all instances of value1 and value2 in attribute
+
+        Parameters
+        ----------
+        attribute : str
+            Name of the attribute to swap values in
+        value1 : float
+            First value
+        value2 : float
+            Second value
+        """
+        i = 0
+        for value in self.df[attribute]:
+            if value == value1:
+                self.df.loc[self.df.index[i], attribute] = value2
+            elif value == value2:
+                self.df.loc[self.df.index[i], attribute] = value1
+            i += 1
 
     def plotWoundTissueLevel(self) -> None:
-        p = Plotter()
-        p.stackedBarPlot(
-            dataframe=self.df, attribute_x="Dag", attribute_y="Niveau sårvæv"
-        )
-        # TODO: Reorder ordinals to have a 'natural' progression
-        # TODO: Add labels when reordering is done
+        # Swaps values to the following:
         """"
         1: under niveau
         2: i niveau
@@ -35,6 +53,22 @@ class WoundTissueLevelPlotter:
         4: over og i niveau
         5: over niveau
         """
+        self.swapValues("Niveau sårvæv", 2, 4)
+        self.swapValues("Niveau sårvæv", 3, 4)
+        self.swapValues("Niveau sårvæv", 4, 5)
+
+        p = Plotter()
+        p.stackedBarPlot(
+            dataframe=self.df, 
+            attribute_x="Dag", 
+            attribute_y="Niveau sårvæv",
+            labels=["under niveau",
+                    "under og i niveau",
+                    "i niveau",
+                    "over og i niveau",
+                    "over niveau"]
+        )
+
 
 
 if __name__ == "__main__":
