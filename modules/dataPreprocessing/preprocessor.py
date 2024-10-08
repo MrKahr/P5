@@ -16,7 +16,7 @@ class DataPreprocessor:
         self.df = pd.read_csv(path, sep=";", comment="#")
 
     def _formatTrainingData(self) -> pd.DataFrame:
-        return self.df.drop(["Gris ID", "Sår ID", "Dag"], axis=1, inplace=False)
+        return self.df.drop(["Dag"], axis=1, inplace=False)
 
     # TODO: Example method (follow-up with other models)
     def preprocessForNaiveBayes(self) -> pd.DataFrame: ...
