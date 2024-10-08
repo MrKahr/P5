@@ -1,6 +1,7 @@
 import re
 import pandas as pd
-from modules.dataPreprocessing.dataset_enums import Dataset
+
+from modules.logging import logger
 
 
 class DataCleaner:
@@ -62,7 +63,7 @@ class DataCleaner:
         Displays row removal ratio from starting start to present state of dataframe
         """
         percentage_row_removal = (1 - (self.df.shape[0] / self.initial_row_count)) * 100
-        print(
+        logger.debug(
             f"Row removal ratio is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
         )
 
