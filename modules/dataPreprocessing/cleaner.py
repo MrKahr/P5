@@ -1,18 +1,31 @@
 import re
 import pandas as pd
-from modules.dataPreprocessing.dataset_enums import Dataset
+
+from modules.logging import logger
 
 
 class DataCleaner:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
+        self.initial_row_count = self.df.shape[0]
 
     def _deleteNan(self) -> None:
         """Remove columns where all entries are missing"""
         self.df.dropna(axis=1, how="all", inplace=True)
 
+    def _deleteNonfeatures(self) -> pd.DataFrame:
+        """
+        Removes pig ID and sår ID from dataset because we consider neither a feature.
+
+        Return
+        -------
+        pd.DataFrame
+            Dataframe with two columns removed
+        """
+        return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
+
     def _deleteMissing(self) -> None:
-        """Drop all rows that contains value `100` in dataset `REGS`.
+        """Drop all rows that contains value `100`.
         NOTE: This prunes ~80 entries in the dataset.
         """
         labels = [
@@ -22,15 +35,14 @@ class DataCleaner:
             "Eksudat",
             "Granulationsvæv",
         ]
-        if self.dataset_type == Dataset.REGS:
-            for label in labels:
-                self.df.drop(
-                    self.df[(self.df[label] == 100)].index,
-                    inplace=True,
-                )
+        for label in labels:
+            self.df.drop(
+                self.df[(self.df[label] == 100)].index,
+                inplace=True,
+            )
 
     def _deleteUndetermined(self) -> None:
-        """Drop all rows that contains value `2` in dataset `REGS`.
+        """Drop all rows that contains value `2`.
         NOTE: This prunes ~50% of the dataset
         """
         labels = [
@@ -40,12 +52,20 @@ class DataCleaner:
             "Eksudat",
             "Granulationsvæv",
         ]
-        if self.dataset_type == Dataset.REGS:
-            for label in labels:
-                self.df.drop(
-                    self.df[(self.df[label] == 2)].index,
-                    inplace=True,
-                )
+        for label in labels:
+            self.df.drop(
+                self.df[(self.df[label] == 2)].index,
+                inplace=True,
+            )
+
+    def _showCurrentRowCount(self) -> None:
+        """
+        Displays row removal ratio from starting start to present state of dataframe
+        """
+        percentage_row_removal = (1 - (self.df.shape[0] / self.initial_row_count)) * 100
+        logger.debug(
+            f"Row removal ratio is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
+        )
 
     def cleanRegs(self, threshold: int = 4, fillna: int = 100) -> None:
         self._deleteNan()
