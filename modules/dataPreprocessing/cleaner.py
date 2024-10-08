@@ -76,7 +76,7 @@ class DataCleaner:
         Displays row removal ratio from starting start to present state of dataframe
         """
         percentage_row_removal = (1 - (self.df.shape[0] / self.initial_row_count)) * 100
-        logger.debug(
+        logger.info(
             f"Row removal ratio is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
         )
 
