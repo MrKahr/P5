@@ -5,6 +5,6 @@ from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
-cleaner._deleteMissingValue()
+cleaner.deleteMissingValue()
 cleaner.removeFeaturelessRows()
 cleaner.showRowRemovalRatio()

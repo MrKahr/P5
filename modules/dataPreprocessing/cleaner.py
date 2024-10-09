@@ -14,11 +14,9 @@ class DataCleaner:
         """Remove columns where all entries are missing"""
         self.current_row_count = self.df.shape[0]
         self.df.dropna(axis=1, how="all", inplace=True)
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
-    def _deleteNonfeatures(self) -> pd.DataFrame:
+    def deleteNonfeatures(self) -> pd.DataFrame:
         """
         Removes pig ID and sår ID from dataset because we consider neither a feature.
 
@@ -29,7 +27,7 @@ class DataCleaner:
         """
         return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
 
-    def _deleteMissingValue(self) -> None:
+    def deleteMissingValue(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi.
         NOTE: This prunes ~80 entries in the dataset.
         """
@@ -46,11 +44,9 @@ class DataCleaner:
                 self.df[(self.df[label] == 100)].index,
                 inplace=True,
             )
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
-    def _deleteUndeterminedValue(self) -> None:
+    def deleteUndeterminedValue(self) -> None:
         """Drop all rows that contains value `2`: Kan ikke vurderes
         NOTE: This prunes ~50% of the dataset
         """
@@ -67,9 +63,7 @@ class DataCleaner:
                 self.df[(self.df[label] == 2)].index,
                 inplace=True,
             )
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
     def showRowRemovalRatio(self) -> None:
         """
@@ -92,22 +86,32 @@ class DataCleaner:
             the value to fill in NA-cells, by default 100
         """
         self.current_row_count = self.df.shape[0]
-        self._deleteNanCols()
         # Drop rows for pigs with at least 4 entries are missing (i.e. the dead pigs)
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
 
-        self.df["Infektionsniveau"] = (
-            self.df["Infektionsniveau"].fillna(fillna, axis=0).values
-        )
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
-    # TODO - Check whether the current dataset is indeed old, otherwise do nohting
-    def cleanOldDataset(self):
-        """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
+    # TODO: reimplement cleanRegs and split functionality from clean old and clean mål
+    def cleanRegs(self, threshold: int = 4, fillna: int = 100) -> None:
+        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets
+        Removes rows containing a critical number of NaN
+        #NOTE - This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
+        Parameters
+        ----------
+        threshold : int, optional
+            the critical count of nans in a row before it is removed, by default 4
+        fillna : int, optional
+            the value to fill in NA-cells, by default 100
+        """
         self.current_row_count = self.df.shape[0]
         self._deleteNanCols()
+        self.removeFeaturelessRows()
+        self.fillNan(fillna)
+        logger.info(f" Removed {self.current_row_count - self.df.shape[0]} rows")
+
+    def transformHourToDay(self) -> None:
+        """Cleans cells in a dataset containing hours < one day"""
+        self.current_row_count = self.df.shape[0]
         # Find all indeces of rows containing "time"
         indexes = []
         for i, value in self.df["Dag"].items():
@@ -120,9 +124,15 @@ class DataCleaner:
         # self.df.drop(axis=0, index=indexes, inplace=True) # Drop all rows where "Tid" cell is less than 1 day
         # The orignal "Tid" column was all strings. Convert them to integers
         self.df["Dag"] = pd.to_numeric(self.df["Dag"])
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f" Removed {self.current_row_count - self.df.shape[0]} rows")
+
+    # TODO - Check whether the current dataset is indeed old, otherwise do nohting
+    def cleanOldDataset(self):
+        """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
+        self.current_row_count = self.df.shape[0]
+        self._deleteNanCols()
+        self.transformHourToDay()
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
     # TODO: check whether the current dataset is mål, otherwise do nothing
     def cleanMålDataset(self) -> None:
@@ -140,9 +150,7 @@ class DataCleaner:
         )
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
-        logger.info(
-            f"{__name__} removed {self.current_row_count - self.df.shape[0]} rows"
-        )
+        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
     def fillNan(self, fill_value: int = 100) -> None:
         """Fills all nan values in the dataset with an arbitrary fill value
@@ -164,10 +172,10 @@ class DataCleaner:
             print(nan_df)
 
     def getDataframe(self) -> pd.DataFrame:
-        """Get the transformed dataframe as a deep copy.
+        """Get the cleaned dataframe as a deep copy.
         Returns
         -------
         pd.DataFrame
-            The transformed dataframe
+            The cleaned dataframe
         """
         return self.df.copy(deep=True)
