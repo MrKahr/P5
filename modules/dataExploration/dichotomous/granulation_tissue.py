@@ -11,7 +11,7 @@ from modules.dataExploration.visualization import Plotter
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
 cleaner.cleanRegsDataset()
-cleaner._deleteMissing()
+cleaner.deleteMissingValues()
 df = dp.df
 df.drop(df[(df["Granulationsvæv"] == 2)].index, inplace=True)
 
