@@ -109,7 +109,7 @@ class DataCleaner:
         self.fillNan(fillna)
         logger.info(f" Removed {self.current_row_count - self.df.shape[0]} rows")
 
-    def transformHourToDay(self) -> None:
+    def convertHourToDay(self) -> None:
         """Cleans cells in a dataset containing hours < one day"""
         self.current_row_count = self.df.shape[0]
         # Find all indeces of rows containing "time"
@@ -121,17 +121,16 @@ class DataCleaner:
         if indexes:
             # Change time to 0 for rows with hours
             self.df.loc[indexes, "Dag"] = 0
-        # self.df.drop(axis=0, index=indexes, inplace=True) # Drop all rows where "Tid" cell is less than 1 day
         # The orignal "Tid" column was all strings. Convert them to integers
         self.df["Dag"] = pd.to_numeric(self.df["Dag"])
-        logger.info(f" Removed {self.current_row_count - self.df.shape[0]} rows")
+        logger.info(f" Converted {len(indexes)} rows")
 
     # TODO - Check whether the current dataset is indeed old, otherwise do nohting
     def cleanOldDataset(self):
         """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
         self.current_row_count = self.df.shape[0]
         self._deleteNanCols()
-        self.transformHourToDay()
+        self.convertHourToDay()
         logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
     # TODO: check whether the current dataset is mål, otherwise do nothing
@@ -178,4 +177,5 @@ class DataCleaner:
         pd.DataFrame
             The cleaned dataframe
         """
+        self.showRowRemovalRatio()
         return self.df.copy(deep=True)

@@ -3,8 +3,6 @@ from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 
 
-dp = DataPreprocessor(Dataset.REGS)
+dp = DataPreprocessor(Dataset.OLD)
 cleaner = DataCleaner(dp.df)
-cleaner.deleteMissingValue()
-cleaner.removeFeaturelessRows()
-cleaner.showRowRemovalRatio()
+cleaner.cleanOldDataset()
