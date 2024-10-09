@@ -23,6 +23,7 @@ class ExudateTypePlotter:
             attribute_y="Eksudattype",
             show_percentage=False,
             labels=[
+                "ikke til stede",
                 "serøst",
                 "mukøst",
                 "purulent",
