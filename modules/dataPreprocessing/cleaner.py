@@ -119,7 +119,7 @@ class DataCleaner:
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
         self._deleteNanCols()
-        self.current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]
         # Remove data not used in training
         self.df.drop(
             columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
@@ -131,7 +131,7 @@ class DataCleaner:
         )
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
+        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def fillNan(self, fill_value: int = 100) -> None:
         """Fills all nan values in the dataset with an arbitrary fill value
@@ -141,10 +141,10 @@ class DataCleaner:
         fill_value : int, optional
             values to replace empty cells in the dataset, by default 100
         """
-        self.current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]
         self.df.fillna(fill_value, inplace=True)
         logger.info(
-            f"Filled {self.current_row_count - self.df.shape[0]} rows with '{fill_value}'"
+            f"Filled {current_row_count - self.df.shape[0]} rows with '{fill_value}'"
         )
 
     def showNan(self) -> None:
