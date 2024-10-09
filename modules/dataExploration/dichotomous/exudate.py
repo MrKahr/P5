@@ -10,12 +10,16 @@ from modules.dataExploration.visualization import Plotter
 # Process data
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
-cleaner.cleanRegs()
+cleaner.cleanRegsDataset()
 cleaner._deleteMissing()
 df = dp.df
 
 
 # Plot data over time
 Plotter().groupedBarPlot(
-    df, "Dag", "Eksudat", show_percentage=False, labels=["nej", "ja", "kan ikke vurderes"]
+    df,
+    "Dag",
+    "Eksudat",
+    show_percentage=False,
+    labels=["nej", "ja", "kan ikke vurderes"],
 )

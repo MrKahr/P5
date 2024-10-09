@@ -10,7 +10,7 @@ from modules.dataExploration.visualization import Plotter
 # Process data
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
-cleaner.cleanRegs()
+cleaner.cleanRegsDataset()
 cleaner._deleteMissing()
 df = dp.df
 # df.drop(df[(df["Epithelialisering"] == 2)].index,inplace=True)
@@ -18,5 +18,9 @@ df = dp.df
 
 # Plot data over time
 Plotter().groupedBarPlot(
-    df, "Dag", "Epithelialisering", show_percentage=True, labels=["nej", "ja", "kan ikke vurderes"]
+    df,
+    "Dag",
+    "Epithelialisering",
+    show_percentage=True,
+    labels=["nej", "ja", "kan ikke vurderes"],
 )
