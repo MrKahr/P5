@@ -27,7 +27,7 @@ class DataCleaner:
         """
         return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
 
-    def deleteMissingValue(self) -> None:
+    def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi.
         """
         current_row_count = self.df.shape[0]
