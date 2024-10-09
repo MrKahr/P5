@@ -11,12 +11,16 @@ from modules.dataExploration.visualization import Plotter
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
 cleaner.cleanRegs()
-cleaner._deleteMissing()
+cleaner.deleteMissingValues()
 df = dp.df
 # df.drop(df[(df["Epithelialisering"] == 2)].index,inplace=True)
 
 
 # Plot data over time
 Plotter().groupedBarPlot(
-    df, "Dag", "Epithelialisering", show_percentage=True, labels=["nej", "ja", "kan ikke vurderes"]
+    df,
+    "Dag",
+    "Epithelialisering",
+    show_percentage=True,
+    labels=["nej", "ja", "kan ikke vurderes"],
 )

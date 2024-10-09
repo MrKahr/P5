@@ -19,7 +19,7 @@ class ContinuousPlotter:
     def __init__(self) -> None:
         dp = DataPreprocessor(Dataset.MÅL)
         cleaner = DataCleaner(dp.df)
-        cleaner.cleanMål()
+        cleaner.cleanMålDataset()
         self.df = dp.df
 
     def plotContinuous(self) -> None:

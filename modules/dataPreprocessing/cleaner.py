@@ -27,7 +27,7 @@ class DataCleaner:
         """
         return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
 
-    def deleteMissingValue(self) -> None:
+    def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi.
         NOTE: This prunes ~80 entries in the dataset.
         """
@@ -160,7 +160,7 @@ class DataCleaner:
             values to replace empty cells in the dataset, by default 100
         """
         # Replace all missing single values with 100 (indicating a missing value)
-        self.df.fillna(fill_value)
+        self.df.fillna(fill_value, inplace=True)
 
     def showNan(self) -> None:
         """Subsets and shows the current dataframe to include only"""
