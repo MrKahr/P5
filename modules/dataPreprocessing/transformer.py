@@ -47,3 +47,23 @@ class DataTransformer:
                     column = same_day_rows[label]
                     mode = column.mode()
                     df.at(row.index, label) = mode
+
+    def zeroOneDistance(label1: str, label2: str) -> int:
+        """A simple implementation of zero-one distance measuring
+
+        Parameters
+        ----------
+        label1 : str
+            a string to compare
+        label2 : str
+            the string to compare with
+
+        Returns
+        -------
+        int
+            0 if the labels are the same, otherwise 1
+        """
+        if label1 == label2:
+            return 0
+        else:
+            return 1
