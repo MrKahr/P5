@@ -63,7 +63,4 @@ class DataTransformer:
         int
             0 if the labels are the same, otherwise 1
         """
-        if label1 == label2:
-            return 0
-        else:
-            return 1
+        return 0 if label1 == label2 else 1
