@@ -12,7 +12,7 @@ class ExudateTypePlotter:
     def __init__(self) -> None:
         dp = DataPreprocessor(Dataset.REGS)
         cleaner = DataCleaner(dp.df)
-        cleaner.cleanRegs()
+        cleaner.cleanRegsDataset()
         self.df = dp.df
 
     def plotExudateType(self) -> None:
@@ -23,6 +23,7 @@ class ExudateTypePlotter:
             attribute_y="Eksudattype",
             show_percentage=False,
             labels=[
+                "ikke til stede",
                 "serøst",
                 "mukøst",
                 "purulent",

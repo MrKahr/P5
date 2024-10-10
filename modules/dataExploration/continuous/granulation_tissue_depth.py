@@ -10,7 +10,7 @@ from modules.dataExploration.visualization import Plotter
 
 dp = DataPreprocessor(Dataset.MÅL)
 cleaner = DataCleaner(dp.df)
-cleaner.cleanMål()
+cleaner.cleanMålDataset()
 df = dp.df
 
 p = Plotter()

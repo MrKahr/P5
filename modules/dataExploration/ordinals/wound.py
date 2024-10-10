@@ -12,7 +12,7 @@ class WoundTissueLevelPlotter:
     def __init__(self) -> None:
         dp = DataPreprocessor(Dataset.REGS)
         cleaner = DataCleaner(dp.df)
-        cleaner.cleanRegs()
+        cleaner.cleanRegsDataset()
         self.df = dp.df
 
     # TODO: Move function to more appropriate class and call it here
@@ -38,7 +38,7 @@ class WoundTissueLevelPlotter:
 
     def plotWoundTissueLevel(self) -> None:
         # Swaps values to the following:
-        """"
+        """ "
         1: under niveau
         2: i niveau
         3: over niveau
@@ -59,16 +59,17 @@ class WoundTissueLevelPlotter:
 
         p = Plotter()
         p.stackedBarPlot(
-            dataframe=self.df, 
-            attribute_x="Dag", 
+            dataframe=self.df,
+            attribute_x="Dag",
             attribute_y="Niveau sårvæv",
-            labels=["under niveau",
-                    "under og i niveau",
-                    "i niveau",
-                    "over og i niveau",
-                    "over niveau"]
+            labels=[
+                "under niveau",
+                "under og i niveau",
+                "i niveau",
+                "over og i niveau",
+                "over niveau",
+            ],
         )
-
 
 
 if __name__ == "__main__":

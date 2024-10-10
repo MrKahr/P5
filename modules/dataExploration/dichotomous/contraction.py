@@ -10,10 +10,9 @@ from modules.dataExploration.visualization import Plotter
 # Process data
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
-cleaner.cleanRegs()
-cleaner._deleteMissing()
+cleaner.cleanRegsDataset()
+cleaner.deleteMissingValues()
 df = dp.df
-
 
 
 # Plot data over time

@@ -10,8 +10,8 @@ from modules.dataExploration.visualization import Plotter
 # Process data
 dp = DataPreprocessor(Dataset.REGS)
 cleaner = DataCleaner(dp.df)
-cleaner.cleanRegs()
-cleaner._deleteMissing()
+cleaner.cleanRegsDataset()
+cleaner.deleteMissingValues()
 df = dp.df
 
 # Note: the dataset lists possible values as 1, 2 or 3, but only 1 and 2 are actually used

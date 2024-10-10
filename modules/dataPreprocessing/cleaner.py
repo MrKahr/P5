@@ -8,13 +8,13 @@ class DataCleaner:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
         self.initial_row_count = self.df.shape[0]
-        self.current_row_count = self.df.shape[0]  # We need stepwise row removal counts
 
     def _deleteNanCols(self) -> None:
         """Remove columns where all entries are missing"""
-        self.current_row_count = self.df.shape[0]
+        current_col_count = self.df.shape[1]
         self.df.dropna(axis=1, how="all", inplace=True)
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
+        amount = current_col_count - self.df.shape[1]
+        logger.info(f"Removed {amount} NaN {"columns" if amount != 1 else "column"}")
 
     def deleteNonfeatures(self) -> pd.DataFrame:
         """
@@ -27,30 +27,24 @@ class DataCleaner:
         """
         return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
 
-    def deleteMissingValue(self) -> None:
+    def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi.
-        NOTE: This prunes ~80 entries in the dataset.
         """
-        self.current_row_count = self.df.shape[0]
-        labels = [
-            "Kontraktion",
-            "Ødem",
-            "Epithelialisering",
-            "Eksudat",
-            "Granulationsvæv",
-        ]
-        for label in labels:
-            self.df.drop(
-                self.df[(self.df[label] == 100)].index,
-                inplace=True,
-            )
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
+        current_row_count = self.df.shape[0]
+        for label in self.df.columns.values:
+            if label:
+                self.df.drop(
+                    self.df[(self.df[label] == 100)].index,
+                    inplace=True,
+                )
+        logger.info(
+            f"Removed {current_row_count - self.df.shape[0]} rows containing '100' (Manglende værdi)"
+        )
 
     def deleteUndeterminedValue(self) -> None:
         """Drop all rows that contains value `2`: Kan ikke vurderes
-        NOTE: This prunes ~50% of the dataset
         """
-        self.current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]
         labels = [
             "Kontraktion",
             "Ødem",
@@ -63,55 +57,47 @@ class DataCleaner:
                 self.df[(self.df[label] == 2)].index,
                 inplace=True,
             )
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
+        logger.info(
+            f"Removed {current_row_count - self.df.shape[0]} rows containing '2' (Kan ikke vurderes)"
+        )
 
     def showRowRemovalRatio(self) -> None:
         """
-        Displays row removal ratio from starting start to present state of dataframe
+        Displays row removal ratio from start to present state of dataframe
         """
         percentage_row_removal = (1 - (self.df.shape[0] / self.initial_row_count)) * 100
         logger.info(
             f"Row removal ratio is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
         )
 
-    def removeFeaturelessRows(self, threshold: int = 4, fillna: int = 100) -> None:
+    def removeFeaturelessRows(self, threshold: int = 4) -> None:
         """Removes rows containing a critical number of NaN
         #NOTE - This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
 
         Parameters
         ----------
         threshold : int, optional
-            the critical count of nans in a row before it is removed, by default 4
-        fillna : int, optional
-            the value to fill in NA-cells, by default 100
+            The critical count of NaN in a row before it is removed, by default `4`
         """
-        self.current_row_count = self.df.shape[0]
-        # Drop rows for pigs with at least 4 entries are missing (i.e. the dead pigs)
+        current_row_count = self.df.shape[0]
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
+        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
-
-    # TODO: reimplement cleanRegs and split functionality from clean old and clean mål
-    def cleanRegs(self, threshold: int = 4, fillna: int = 100) -> None:
-        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets
-        Removes rows containing a critical number of NaN
+    def cleanRegsDataset(self, fillna: int = 100) -> None:
+        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
+        Removes rows containing a critical number of NaN.
         #NOTE - This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
         Parameters
         ----------
-        threshold : int, optional
-            the critical count of nans in a row before it is removed, by default 4
         fillna : int, optional
-            the value to fill in NA-cells, by default 100
+            The value to fill in NA-cells, by default 100
         """
-        self.current_row_count = self.df.shape[0]
         self._deleteNanCols()
         self.removeFeaturelessRows()
         self.fillNan(fillna)
-        logger.info(f" Removed {self.current_row_count - self.df.shape[0]} rows")
 
     def convertHourToDay(self) -> None:
         """Cleans cells in a dataset containing hours < one day"""
-        self.current_row_count = self.df.shape[0]
         # Find all indeces of rows containing "time"
         indexes = []
         for i, value in self.df["Dag"].items():
@@ -123,22 +109,18 @@ class DataCleaner:
             self.df.loc[indexes, "Dag"] = 0
         # The orignal "Tid" column was all strings. Convert them to integers
         self.df["Dag"] = pd.to_numeric(self.df["Dag"])
-        logger.info(f" Converted {len(indexes)} rows")
+        logger.info(f"Converted {len(indexes)} rows from hour to day")
 
-    # TODO - Check whether the current dataset is indeed old, otherwise do nohting
     def cleanOldDataset(self):
         """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
-        self.current_row_count = self.df.shape[0]
         self._deleteNanCols()
         self.convertHourToDay()
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
 
-    # TODO: check whether the current dataset is mål, otherwise do nothing
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        self.current_row_count = self.df.shape[0]
         self._deleteNanCols()
-        # Remove unnecessary data
+        current_row_count = self.df.shape[0]
+        # Remove data not used in training
         self.df.drop(
             columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
             inplace=True,
@@ -149,7 +131,7 @@ class DataCleaner:
         )
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
-        logger.info(f"Removed {self.current_row_count - self.df.shape[0]} rows")
+        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def fillNan(self, fill_value: int = 100) -> None:
         """Fills all nan values in the dataset with an arbitrary fill value
@@ -159,8 +141,11 @@ class DataCleaner:
         fill_value : int, optional
             values to replace empty cells in the dataset, by default 100
         """
-        # Replace all missing single values with 100 (indicating a missing value)
-        self.df.fillna(fill_value)
+        current_row_count = self.df.shape[0]
+        self.df.fillna(fill_value, inplace=True)
+        logger.info(
+            f"Filled {current_row_count - self.df.shape[0]} rows with '{fill_value}'"
+        )
 
     def showNan(self) -> None:
         """Subsets and shows the current dataframe to include only"""
