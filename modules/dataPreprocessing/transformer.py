@@ -30,5 +30,17 @@ class DataTransformer:
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
 
-    def modeImputation(self) -> None:
+    def modeImputationByDay(self) -> None:
         pass
+        # TODO for this method
+        # get dataset
+        # for every row
+        # if there is a missing value, find its day
+        # find the most common value in that column for that day
+        # replace the missing value
+        # repeat
+        df = self.df
+        labels = df.keys
+        for row in df.iterrows():
+            for label in labels:
+                pass
