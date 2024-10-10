@@ -31,7 +31,6 @@ class DataTransformer:
             self.df = self.df.join(one_hot)
 
     def modeImputationByDay(self) -> None:
-        pass
         # TODO for this method
         # get dataset
         # for every row
@@ -40,7 +39,11 @@ class DataTransformer:
         # replace the missing value
         # repeat
         df = self.df
-        labels = df.keys
         for row in df.iterrows():
-            for label in labels:
-                pass
+            for label in df.columns.values:
+                if row[label] == 100:
+                    day = row["Dag"]
+                    same_day_rows = df[(df["Dag"] == day)]
+                    column = same_day_rows[label]
+                    mode = column.mode()
+                    df.at(row.index, label) = mode
