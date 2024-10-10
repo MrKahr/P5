@@ -1,23 +1,22 @@
 import sys
 import os
 
+import pandas as pd
+
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
+from modules.dataPreprocessing.transformer import DataTransformer
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
 
-class AVFPlotter:
-    def __init__(self) -> None:
-        dp = DataProcessor(Dataset.REGS)
-        dp.deleteNaN()
-        dp.oneHotEncoding(["Eksudattype", "Hyperæmi"])
-        self.df = dp.getDataFrame()
-        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
-        self.plotAVFs(self.df, 0.01)
+class AVFAnalysis:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df
+        
 
     def AVF(self, row) -> float:
         sum = 0
@@ -47,20 +46,26 @@ class AVFPlotter:
         # for i in values:
         #     sums[i] = sums[i] / len(column)
         return sums
+    
+    def calculateAVF(self) -> list:
+        """Generates list of AVF scores for a dataframe
 
-    def plotAVFs(self, df: pd.DataFrame, cutoffPercentile: float) -> None:
+        -------
+        returns list of AVF scores
+        """
+        listAVF = []
+        for index, row in self.df.iterrows():
+            AVFelem = self.AVF(row)
+            listAVF.append(AVFelem)
+        return listAVF
+
+    def plotAVFs(self, cutoffPercentile: float) -> None:
         """Plots outliers based on cutoffPercentile
         e.g. for 0.01, the lowest 1% AVFs scores determine the outlier cutoff bin
         """
-        listAVF = []
-        sum = 0
-        for index, row in df.iterrows():
-            AVFelem = self.AVF(row)
-            listAVF.append(AVFelem)
-            sum += AVFelem
-        avg = sum / len(listAVF)
+        listAVF= self.calculateAVF()
+
         lowestPercentage = math.floor(len(listAVF) * cutoffPercentile)
-        print("average:", avg)
 
         n, bins, patches = plt.hist(listAVF, bins=40)
         sumBars = 0
@@ -69,7 +74,7 @@ class AVFPlotter:
             patches[i].set_color("r")
             sumBars += n[i]
             i += 1
-        print("length:", len(listAVF))
+        # print("length:", len(listAVF))
         plt.xlabel("AVF score")
         plt.ylabel("Datapoints in range")
         plt.suptitle("AVF score distribution")
@@ -77,4 +82,15 @@ class AVFPlotter:
 
 
 if __name__ == "__main__":
-    op = AVFPlotter()
+    dp = DataPreprocessor(Dataset.REGS)
+
+    cleaner = DataCleaner(dp.df)
+    cleaner.cleanRegsDataset()
+    cleaner.deleteMissingValues()
+
+    transformer = DataTransformer(dp.df)
+    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
+
+    op = AVFAnalysis(cleaner.getDataframe())
+    op.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+    op.plotAVFs(0.01)

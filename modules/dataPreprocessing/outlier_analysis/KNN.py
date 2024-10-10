@@ -3,24 +3,19 @@
 # What should the k-nearest neighbours threshhold be?
 import sys
 import os
-import pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
+from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
-    def __init__(self) -> None:
-        dp = DataProcessor(Dataset.REGS)
-        dp.deleteNaN()
-        dp.oneHotEncoding(["Eksudattype", "Hyperæmi"])
-        self.df = dp.getDataFrame()
-        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+    def __init__(self, df) -> None:
+        self.df = df
 
     def KNN(self, degree: int) -> None:
         neighbourModel = NearestNeighbors(n_neighbors=degree)
@@ -51,6 +46,7 @@ class KNNAnalysis:
         for i in range(len(self.df)):
             if (not indegrees.get(i)) or indegrees[i] <= T:
                 outliers.append(i)
+        # print(f"For k={k}: {len(outliers)} outliers")
         return outliers
 
     def PlotNeighborMultiHist(
@@ -59,7 +55,7 @@ class KNNAnalysis:
         # Plot multiple historgrams for different number of columns and rows
         if rows * cols != len(nearestNeighbors):
             raise Exception(
-                f"Cannot plot {rows * cols} plots with only {len(nearestNeighbors)}k's"
+                f"Cannot plot {rows * cols} plots with only {len(nearestNeighbors)} k's"
             )
         fig, axes = plt.subplots(nrows=rows, ncols=cols, layout="constrained")
         if rows == 1 and cols == 1:
@@ -109,8 +105,18 @@ class KNNAnalysis:
 
 
 if __name__ == "__main__":
-    op = KNNAnalysis()
-    threshold = 0
-    k = [10, 20, 30, 40]
+    dp = DataPreprocessor(Dataset.REGS)
 
-    op.PlotNeighborMultiHist(k, 0, 2, 2)
+    cleaner = DataCleaner(dp.df)
+    cleaner.cleanRegsDataset()
+    cleaner.deleteMissingValues()
+
+    transformer = DataTransformer(dp.df)
+    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
+
+    op = KNNAnalysis(cleaner.getDataframe())
+    op.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+    threshold = 0
+    k = [10, 20, 30]
+
+    op.PlotNeighborMultiHist(k, 0, 3, 1)
