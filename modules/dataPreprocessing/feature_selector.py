@@ -6,6 +6,7 @@ from sklearn.feature_selection import (
     mutual_info_classif,
 )
 from numpy.typing import NDArray
+from sklearn.inspection import permutation_importance
 
 from modules.logging import logger
 
@@ -14,6 +15,28 @@ from modules.logging import logger
 # Tree-based: https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html#sphx-glr-auto-examples-ensemble-plot-forest-importances-py
 
 # https://scikit-learn.org/stable/auto_examples/compose/plot_compare_reduction.html#sphx-glr-auto-examples-compose-plot-compare-reduction-py
+
+
+# SECTION
+# GRID SEARCH (hyperparameter tuning) {On any hyperparamter}
+
+# How-to grid search
+# https://scikit-learn.org/stable/modules/grid_search.html#exhaustive-grid-search
+
+# Custom refit strategy of a grid search with cross-validation
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html
+
+# Running GridSearchCV using multiple evaluation metrics
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_multi_metric_evaluation.html#sphx-glr-auto-examples-model-selection-plot-multi-metric-evaluation-py
+
+# Statistical comparison of models:
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
+
+# SECTION
+# RECURSIVE FEATURE ELIMINATION WITH CROSS-VALIDATION (hyperparameter tuning) {On cross-validation hyperparameters}
+
+# How-to RFECV
+# https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html
 
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
@@ -38,7 +61,7 @@ class FeatureSelector:
         irrelevant for classification.
 
         Notes
-        ---------
+        -----
         The chi-squared test should only be applied to non-negative features.
 
         Parameters
@@ -68,7 +91,7 @@ class FeatureSelector:
         Compute the Analysis of Variance (ANOVA) F-value for the provided sample.
 
         Notes
-        ---------
+        -----
         F-test estimate the degree of linear dependency between two random variables.
 
         Parameters
@@ -113,7 +136,7 @@ class FeatureSelector:
         The function relies on nonparametric methods based on entropy estimation from k-nearest neighbors distances.
 
         Notes
-        ---------
+        -----
         - The term “discrete features” is used instead of naming them “categorical”, because it describes the essence more accurately.
         - Mutual information methods can capture any kind of statistical dependency, but being nonparametric, they require more samples for accurate estimation.
         - Also note, that treating a continuous variable as discrete and vice versa will usually give incorrect results, so be attentive about that.
@@ -182,8 +205,8 @@ class FeatureSelector:
         Univariate feature selector with configurable strategy.\n
         This allows to select the best univariate selection strategy with hyper-parameter search estimator.
 
-        Important
-        ---------
+        Notes
+        -----
         In inductive learning, where the goal is to learn a generalized model that can be applied to new data,
         users should be careful not to apply fit_transform to the entirety of a dataset (i.e. training and test data together)
         before further modelling, as this results in data leakage.
@@ -243,7 +266,7 @@ class FeatureSelector:
         logger.info(f"Running feature selection using ({mode}, {param})")
         old_columns = (
             x_labels
-            if len(x_labels) != 0
+            if len(x_labels) > 0
             else [f"Feature {i}" for i in range(X.shape[1])]
         )
         selector = GenericUnivariateSelect(scoreFunc, mode=mode, param=param)
@@ -258,9 +281,17 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance
         pass
 
-    def permutationFeatureImportance(self, estimator) -> Any:
-        """Can be used on any estimator.
-
+    def permutationFeatureImportance(
+        self,
+        fitted_estimator: Any,
+        X: NDArray,
+        y: NDArray,
+        scoring: Union[list[str], Callable],
+        n_repeats: int,
+        n_jobs: int = -1,
+        random_state: int = 23,
+    ) -> Any:
+        """
         Permutation feature importance is a model inspection technique
         that measures the contribution of each feature to a fitted model's
         statistical performance on a given tabular dataset. This technique is
@@ -269,16 +300,62 @@ class FeatureSelector:
         degradation of the model's score. By breaking the relationship between the
         feature and the target, we determine how much the model relies on such particular feature.
 
-        See: https://scikit-learn.org/stable/modules/permutation_importance.html#permutation-importance
+        Notes
+        -----
+        Permutation importance does not reflect the intrinsic predictive value of a
+        feature by itself but how important this feature is for a particular model.
+
+        Parameters
+        ----------
+        fitted_estimator : Any
+            A fitted estimator.
+
+        X : NDArray
+            Training data.
+
+        y : NDArray
+            Target data.
+
+        scoring : Union[list[str], Callable]
+            The score method used to measure feature importance.
+            To use a preset score method (i.e. `list[str]`), please see:\n
+            https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values\n
+            for a table of all score methods.
+
+        n_repeats : int
+            Number of times to permute a feature.
+
+        n_jobs : int, optional
+            CPU cores used (`-1` means ALL).
+            By default -1.
+
+        random_state : int, optional
+            Pseudo-random number generator to control the permutations of each feature.
+            Pass an int to get reproducible results across function calls.
+            By default 23.
 
         Returns
         -------
         Any
             _description_
+
+        Links
+        -----
+        - https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html
+        - https://scikit-learn.org/stable/modules/permutation_importance.html#permutation-importance
+
         """
         # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
         # TODO: Verify that the model is better than a RNG: https://scikit-learn.org/stable/auto_examples/model_selection/plot_permutation_tests_for_classification.html#sphx-glr-auto-examples-model-selection-plot-permutation-tests-for-classification-py
-        pass
+        result = permutation_importance(
+            fitted_estimator,
+            X,
+            y,
+            scoring=scoring,
+            n_repeats=n_repeats,
+            n_jobs=n_jobs,
+            random_state=random_state,
+        )
 
     def checkOverfitting(self) -> Any:
         # NOTE: This appears to only work for tree-based models
