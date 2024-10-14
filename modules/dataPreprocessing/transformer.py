@@ -1,5 +1,7 @@
 import pandas as pd
 
+from modules.logging import logger
+
 
 class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
@@ -42,12 +44,17 @@ class DataTransformer:
         for row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == 100:
+                    logger.info(
+                        f"Found missing {label} at row {row.index}. Imputing..."
+                    )
                     day = row["Dag"]
                     same_day_rows = df[(df["Dag"] == day)]
                     column = same_day_rows[label]
                     mode = column.mode()
                     df.at(row.index, label) = mode
-
+                    logger.info(
+                        f"Replaced missing value with {mode}."
+                    )
     def zeroOneDistance(label1: str, label2: str) -> int:
         """A simple implementation of zero-one distance measuring
 
@@ -64,3 +71,6 @@ class DataTransformer:
             0 if the labels are the same, otherwise 1
         """
         return 0 if label1 == label2 else 1
+    
+    def matrixDistance(label: str, value_1: int, value_2) -> int:
+        pass
