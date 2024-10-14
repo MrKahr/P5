@@ -59,22 +59,44 @@ class DataTransformer:
                     
                     logger.info(f"Replaced missing value with {mode}.")
 
-    def zeroOneDistance(label1: str, label2: str) -> int:
-        """A simple implementation of zero-one distance measuring
+    # def zeroOneDistance(label1: str, label2: str) -> int:
+    #     """A simple implementation of zero-one distance measuring
+    # 
+    #     Parameters
+    #     ----------
+    #     label1 : str
+    #         a string to compare
+    #     label2 : str
+    #         the string to compare with
+    # 
+    #     Returns
+    #     -------
+    #     int
+    #         0 if the labels are the same, otherwise 1
+    #     """
+    #     return 0 if label1 == label2 else 1
+    
+    def zeroOneDistance(x, y, missing_values = 100) -> int:
+        """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
 
         Parameters
         ----------
-        label1 : str
-            a string to compare
-        label2 : str
-            the string to compare with
+        x : 1D numerical array
+            A representation of a row in the dataset as an array of numbers
+        y : 1D numerical array
+            A representation of a row in the dataset as an array of numbers
+        missing_values :
+            What value should be considered missing and ineligible for comparison, not really relevant here but it's in the documentation so I thought it best to include, by default 100 (np.nan in the official documentation)
 
         Returns
         -------
         int
-            0 if the labels are the same, otherwise 1
+            The distance from x to y measured by counting the number of different entries in the two arrays.
         """
-        return 0 if label1 == label2 else 1
-
-    def matrixDistance(label: str, value_1: int, value_2) -> int:
+        distance = 0
+        for index, entry in enumerate(x):  # NOTE enumerate makes the index available
+            if entry != y[index]: distance += 1
+        return distance
+    
+    def matrixDistance(x, y, missing_values = 100) -> int:
         pass
