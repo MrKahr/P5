@@ -33,7 +33,7 @@ class DataTransformer:
             self.df = self.df.join(one_hot)
 
     def modeImputationByDay(self) -> None:
-        # TODO for this method
+        # for this method
         # get dataset
         # for every row
         # if there is a missing value, find its day
@@ -46,11 +46,11 @@ class DataTransformer:
                 if row[label] == 100:
                     day = row["Dag"]
                     
-                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {day} (Internal Index {index}). Imputing...")
-                    
+                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {day} (Internal Index {index}). Imputing...") # NOTE 'Internal Index' is the index of the row in the dataframe.
+                                                                                                                                                                # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
                     same_day_rows = df[df["Dag"] == day]
                     column = same_day_rows[label]
-                    mode = column.mode()[0] # mode() returns a dataframe, actually. Since we use it for a single column, there is only one value, and indexing with 0 gets us that value.
+                    mode = column.mode()[0] # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
                     
                     logger.info(f"Mode of {label} is {mode}.")
                     if mode == 100: logger.warning("Mode is a missing value! Cannot properly impute!")
