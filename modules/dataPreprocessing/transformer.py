@@ -41,20 +41,24 @@ class DataTransformer:
         # replace the missing value
         # repeat
         df = self.df
-        for row in df.iterrows():
+        for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == 100:
-                    logger.info(
-                        f"Found missing {label} at row {row.index}. Imputing..."
-                    )
                     day = row["Dag"]
-                    same_day_rows = df[(df["Dag"] == day)]
+                    
+                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {day} (Internal Index {index}). Imputing...")
+                    
+                    same_day_rows = df[df["Dag"] == day]
                     column = same_day_rows[label]
-                    mode = column.mode()
-                    df.at(row.index, label) = mode
-                    logger.info(
-                        f"Replaced missing value with {mode}."
-                    )
+                    mode = column.mode()[0] # mode() returns a dataframe, actually. Since we use it for a single column, there is only one value, and indexing with 0 gets us that value.
+                    
+                    logger.info(f"Mode of {label} is {mode}.")
+                    if mode == 100: logger.warning("Mode is a missing value! Cannot properly impute!")
+                    
+                    df.at[index, label] = mode
+                    
+                    logger.info(f"Replaced missing value with {mode}.")
+
     def zeroOneDistance(label1: str, label2: str) -> int:
         """A simple implementation of zero-one distance measuring
 
@@ -71,6 +75,6 @@ class DataTransformer:
             0 if the labels are the same, otherwise 1
         """
         return 0 if label1 == label2 else 1
-    
+
     def matrixDistance(label: str, value_1: int, value_2) -> int:
         pass
