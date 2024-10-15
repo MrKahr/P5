@@ -86,7 +86,7 @@ class DataTransformer:
         y : 1D numerical array
             A representation of a row in the dataset as an array of numbers
         missing_values :
-            What value should be considered missing and ineligible for comparison, not really relevant here but it's in the documentation so I thought it best to include, by default 100 (np.nan in the official documentation)
+            What value should be considered missing and ineligible for comparison, by default 100 (np.nan in the official documentation)
 
         Returns
         -------
@@ -95,7 +95,7 @@ class DataTransformer:
         """
         distance = 0
         for index, entry in enumerate(x):  # NOTE enumerate makes the index available
-            if entry != y[index]: distance += 1
+            if entry != y[index] and not (entry == missing_values or y[index] == missing_values): distance += 1
         return distance
     
     def matrixDistance(x, y, missing_values = 100) -> int:
