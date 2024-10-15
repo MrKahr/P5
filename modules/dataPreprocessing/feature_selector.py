@@ -110,7 +110,7 @@ class FeatureSelector:
 
         Links
         -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html#sklearn.feature_selection.f_classif
+        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html
         - https://en.wikipedia.org/wiki/F-test
 
         """
@@ -179,7 +179,7 @@ class FeatureSelector:
 
         Links
         -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html#sklearn.feature_selection.mutual_info_classif
+        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html
         """
         logger.info("Computing estimates of mutual information")
         mi = mutual_info_classif(
