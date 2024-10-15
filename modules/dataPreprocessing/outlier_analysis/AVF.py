@@ -22,7 +22,19 @@ class AVFAnalysis:
             self.df.drop("Sår ID", axis=1, inplace=True)
         
 
-    def AVF(self, row) -> float:
+    def AVF(self, row: dict) -> float:
+        """Calculate AVF score for a row
+
+        Parameters
+        ----------
+        row : dict
+            Generated from iterrows() on a DataFrame
+
+        Returns
+        -------
+        float
+            AVF score
+        """
         sum = 0
         keys = row.keys()
         i = 0
@@ -32,13 +44,25 @@ class AVFAnalysis:
         return (1 / len(row)) * sum
 
     def frequency(self, value, attribute, frequencies={}) -> float:
+
         # frequencies is only initialized once
         if not frequencies.get(attribute):
             frequencies[attribute] = self.valueOccurences(attribute)
         return frequencies[attribute][value]
 
     def valueOccurences(self, attribute: str) -> dict:
-        """Calculates the number of times each value appears for an attribute and stores this in a dict"""
+        """Calculates the number of times each value appears for an attribute and stores this in a dict
+
+        Parameters
+        ----------
+        attribute : str
+            Name of an attribute/feature/value
+
+        Returns
+        -------
+        dict
+            A dict containing keys of all attributes and values for how many times they occur
+        """
         column = self.df[attribute]
         values = column.unique()
         sums = {}
@@ -84,6 +108,11 @@ class AVFAnalysis:
     def plotAVFs(self, cutoffPercentile: float) -> None:
         """Plots outliers based on cutoffPercentile
         e.g. for 0.01, the lowest 1% AVFs scores determine the outlier cutoff bin
+
+        Parameters
+        ----------
+        cutoffPercentile : float
+            Lower percentile to consider as outliers
         """
         listAVF= self.calculateAVF()
 

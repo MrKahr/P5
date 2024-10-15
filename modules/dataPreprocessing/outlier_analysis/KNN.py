@@ -25,19 +25,25 @@ class KNNAnalysis:
         
 
     def KNN(self, degree: int) -> None:
-        neighbourModel = NearestNeighbors(n_neighbors=degree)
-        neighbourModel.fit(self.df)
-        self.distances, self.neighbours = neighbourModel.kneighbors()
+        """Generate a k nearest neighbors graph and store it in the KNN class as self.distances and self.neighbors
 
-    def getIndegrees(self):
-        """Generate dict storing indegree of every point with their key as index"""
+        Parameters
+        ----------
+        degree : int
+            number of neighbors
+        """
+        neighborModel = NearestNeighbors(n_neighbors=degree)
+        neighborModel.fit(self.df)
+        self.distances, self.neighbors = neighborModel.kneighbors()
+
+    def getIndegrees(self) -> dict:
         indegrees = {}
-        for point in self.neighbours:
-            for neighbour in point:
-                if not indegrees.get(neighbour):
-                    indegrees[neighbour] = 1
+        for point in self.neighbors:
+            for neighbor in point:
+                if not indegrees.get(neighbor):
+                    indegrees[neighbor] = 1
                 else:
-                    indegrees[neighbour] = indegrees[neighbour] + 1
+                    indegrees[neighbor] = indegrees[neighbor] + 1
         # print(indegrees)
         return indegrees
 
