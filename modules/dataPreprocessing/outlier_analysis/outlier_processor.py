@@ -1,8 +1,6 @@
 import sys
 import os
 
-from modules.dataPreprocessing.transformer import DataTransformer
-
 sys.path.insert(0, os.getcwd())
 
 import pandas as pd
