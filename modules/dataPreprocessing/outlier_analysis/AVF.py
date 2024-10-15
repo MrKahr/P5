@@ -2,6 +2,7 @@ import sys
 import os
 
 import pandas as pd
+from sklearn import preprocessing
 
 sys.path.insert(0, os.getcwd())
 
@@ -16,6 +17,10 @@ import math
 class AVFAnalysis:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
+        if "Gris ID" in self.df:
+            self.df.drop("Gris ID", axis=1, inplace=True)
+        if "Sår ID" in self.df:
+            self.df.drop("Sår ID", axis=1, inplace=True)
         
 
     def AVF(self, row) -> float:
@@ -58,6 +63,24 @@ class AVFAnalysis:
             AVFelem = self.AVF(row)
             listAVF.append(AVFelem)
         return listAVF
+    
+    def getOutliers(self, k: int) -> list:
+        """Generates list of k outliers using AVF
+
+        Parameters
+        ----------
+        k : int
+            number of outliers
+
+        Returns
+        -------
+        list
+            list of outlier indexes
+        """
+        scores = self.calculateAVF()
+        # https://www.geeksforgeeks.org/python-find-the-indices-for-k-smallest-elements/
+        indexes = sorted(range(len(scores)), key=lambda sub: scores[sub])[:k]
+        return indexes
 
     def plotAVFs(self, cutoffPercentile: float) -> None:
         """Plots outliers based on cutoffPercentile
@@ -80,7 +103,6 @@ class AVFAnalysis:
         plt.suptitle("AVF score distribution")
         plt.show()
 
-
 if __name__ == "__main__":
     dp = DataPreprocessor(Dataset.REGS)
 
@@ -92,5 +114,4 @@ if __name__ == "__main__":
     transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
 
     op = AVFAnalysis(cleaner.getDataframe())
-    op.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
     op.plotAVFs(0.01)

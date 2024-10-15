@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn import preprocessing
 
 
 class DataTransformer:
@@ -32,3 +33,13 @@ class DataTransformer:
 
     def modeImputation(self) -> None:
         pass
+
+    def minMaxNormalization(self, feature: str) -> None:
+        """Uses min-max normalization on a single feature
+
+        Parameters
+        ----------
+        feature : str
+            The feature to be normalized 
+        """
+        self.df[feature] = (self.df[feature] - self.df[feature].min()) / (self.df[feature].max() - self.df[feature].min())

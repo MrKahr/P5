@@ -1,8 +1,6 @@
-# Distance between variables (is minkowski appropriate for categorical variables)?
-# Should one hot coding be applied before distances are found?
-# What should the k-nearest neighbours threshhold be?
 import sys
 import os
+import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 
@@ -14,8 +12,17 @@ from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
-    def __init__(self, df) -> None:
-        self.df = df
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df=df
+        if "Gris ID" in self.df:
+            self.df.drop("Gris ID", axis=1, inplace=True)
+        if "Sår ID" in self.df:
+            self.df.drop("Sår ID", axis=1, inplace=True)
+        
+        transformer = DataTransformer(self.df)
+        transformer.minMaxNormalization("Dag")
+        self.df = transformer.getDataframe()
+        
 
     def KNN(self, degree: int) -> None:
         neighbourModel = NearestNeighbors(n_neighbors=degree)
@@ -38,6 +45,18 @@ class KNNAnalysis:
         """ODIN algorithm for outlier detection using k nearest neighbors with threshold T
 
         Based on https://ieeexplore-ieee-org.zorac.aub.aau.dk/stamp/stamp.jsp?tp=&arnumber=1334558
+
+        Parameters
+        ----------
+        k : int
+            number of neighbors
+        T : int
+            indegree threshold for when a point is considered an outlier
+
+        Returns
+        -------
+        list
+            list of outlier indexes
         """
         self.KNN(k)
         indegrees = self.getIndegrees()
@@ -111,12 +130,10 @@ if __name__ == "__main__":
     cleaner.cleanRegsDataset()
     cleaner.deleteMissingValues()
 
-    transformer = DataTransformer(dp.df)
+    transformer = DataTransformer(cleaner.getDataframe())
     transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
 
-    op = KNNAnalysis(cleaner.getDataframe())
-    op.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+    op = KNNAnalysis(transformer.getDataframe())
     threshold = 0
     k = [10, 20, 30]
-
     op.PlotNeighborMultiHist(k, 0, 3, 1)
