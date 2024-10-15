@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.impute import KNNImputer
 
+
 from modules.logging import logger
 
 
@@ -77,7 +78,7 @@ class DataTransformer:
     #     """
     #     return 0 if label1 == label2 else 1
     
-    def zeroOneDistance(x, y, missing_values = 100) -> int:
+    def zeroOneDistance(self, x, y, *args, missing_values = 100) -> int:
         """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
 
         Parameters
@@ -99,7 +100,7 @@ class DataTransformer:
             if entry != y[index] and not (entry == missing_values or y[index] == missing_values): distance += 1
         return distance
     
-    def matrixDistance(x, y, missing_values = 100) -> int:
+    def matrixDistance(self, x, y, *args, missing_values = 100) -> int:
         dag_matrix = [[]]
         niveau_sårvæv_matrix = [[]]
         sårskorpe_matrix = [[]]
@@ -114,5 +115,21 @@ class DataTransformer:
 
     def KNNImputation(self) -> None:
         df = self.df
+        self.LogMissingValues(df)
         imputer = KNNImputer(missing_values=100, n_neighbors=5, weights='uniform', metric=self.zeroOneDistance, copy=False)
-        df[:] = imputer.fit_transform(df)
+        imputer.set_output(transform="pandas")
+        working_df = df.drop(["Gris ID", "Sår ID"], axis=1) # remove ID columns so we don't use those for distance calculations
+        working_df = imputer.fit_transform(working_df) # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
+        df = df.merge(working_df, how = "right") # A bit overkill for just a few missing values, but this is guaranteed to work for any number of missing values
+        self.LogMissingValues(df)
+
+    def LogMissingValues(self, df) -> None:
+        # give me a data frame and i'll find entries with value 100!
+        logger.info("Checking for missing values...")
+        missing = 0
+        for index, row in df.iterrows():
+            for label in df.columns.values:
+                if row[label] == 100:
+                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {row["Dag"]} (Internal Index {index}).")
+                    missing += 1
+        logger.info(f"Found {missing} missing value(s).")
