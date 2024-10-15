@@ -99,4 +99,14 @@ class DataTransformer:
         return distance
     
     def matrixDistance(x, y, missing_values = 100) -> int:
-        pass
+        dag_matrix = [[]]
+        niveau_sårvæv_matrix = [[]]
+        sårskorpe_matrix = [[]]
+        granulationsvæv_matrix = [[]]
+        epithelialisering_matrix = [[]]
+        kontraktion_matrix = [[]]
+        hyperæmi_matrix = [[]]
+        ødem_matrix = [[]]
+        eksudat_matrix = [[]]
+        eksudattype_matrix = [[]]
+        infektionsniveau_matrix = [[]]
