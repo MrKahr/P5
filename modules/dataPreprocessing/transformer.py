@@ -116,11 +116,13 @@ class DataTransformer:
     def KNNImputation(self) -> None:
         df = self.df
         self.LogMissingValues(df)
+        logger.info("Starting KNN-Imputation.")
         imputer = KNNImputer(missing_values=100, n_neighbors=5, weights='uniform', metric=self.zeroOneDistance, copy=False)
         imputer.set_output(transform="pandas")
         working_df = df.drop(["Gris ID", "Sår ID"], axis=1) # remove ID columns so we don't use those for distance calculations
         working_df = imputer.fit_transform(working_df) # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
         df = df.merge(working_df, how = "right") # A bit overkill for just a few missing values, but this is guaranteed to work for any number of missing values
+        logger.info("Imputation done.")
         self.LogMissingValues(df)
 
     def LogMissingValues(self, df) -> None:
