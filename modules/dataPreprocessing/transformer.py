@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.impute import KNNImputer
 
 from modules.logging import logger
 
@@ -110,3 +111,8 @@ class DataTransformer:
         eksudat_matrix = [[]]
         eksudattype_matrix = [[]]
         infektionsniveau_matrix = [[]]
+
+    def KNNImputation(self) -> None:
+        df = self.df
+        imputer = KNNImputer(missing_values=100, n_neighbors=5, weights='uniform', metric=self.zeroOneDistance, copy=False)
+        df[:] = imputer.fit_transform(df)
