@@ -68,6 +68,7 @@ class WoundTissueLevelPlotter:
                 "i niveau",
                 "over og i niveau",
                 "over niveau",
+                "over og under niveau"
             ],
         )
 
