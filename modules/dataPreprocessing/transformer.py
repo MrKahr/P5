@@ -1,4 +1,8 @@
 import pandas as pd
+from sklearn.impute import KNNImputer
+from numpy.typing import ArrayLike
+
+from modules.logging import logger
 
 
 class DataTransformer:
@@ -29,9 +33,156 @@ class DataTransformer:
             one_hot = pd.get_dummies(self.df[variable], prefix=variable)
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
+    
+    def modeImputationByDay(self) -> None:
+        """Imputes missing values by replacing them with the most common value for the day where the value is missing.
+        Takes no arguments and modifies the Dataframe on the class itself.
 
-    def modeImputation(self) -> None:
-        pass
+        Returns
+        -------
+        Nothing
+        """
+        # for this method
+        # get dataset
+        # for every row
+        # if there is a missing value, find its day
+        # find the most common value in that column for that day
+        # replace the missing value
+        # repeat
+        df = self.df
+        for index, row in df.iterrows():
+            for label in df.columns.values:
+                if row[label] == 100:
+                    day = row["Dag"]
+
+                    logger.info(
+                        f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
+                    )  # NOTE 'Internal Index' is the index of the row in the dataframe.
+                    # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
+                    same_day_rows = df[df["Dag"] == day]
+                    column = same_day_rows[label]
+                    mode = column.mode()[
+                        0
+                    ]  # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
+
+                    logger.info(f"Mode of {label} is {mode}.")
+                    if mode == 100:
+                        logger.warning(
+                            "Mode is a missing value! Cannot properly impute!"
+                        )
+
+                    df.at[index, label] = mode
+
+                    logger.info(f"Replaced missing value with {mode}.")
+
+    def zeroOneDistance(
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+    ) -> int:
+        """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
+
+        Parameters
+        ----------
+        x : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        y : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        missing_values :
+            What value should be considered missing and ineligible for comparison, by default 100
+
+        Returns
+        -------
+        int
+            The distance from x to y measured by counting the number of different entries in the two arrays.
+        """
+        distance = 0
+        for index, entry in enumerate(x):  # NOTE enumerate makes the index available
+            if entry != y[index] and not (
+                entry == missing_values or y[index] == missing_values
+            ):
+                distance += 1
+        return distance
+
+    def matrixDistance(
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+    ) -> int:
+        """An implementation of a distance metric in a format scikit's KNNImputer can use. This one is uses distance matrices for each variable
+
+        Parameters
+        ----------
+        x : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        y : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        missing_values :
+            What value should be considered missing and ineligible for comparison, by default 100
+
+        Returns
+        -------
+        int
+            The distance from x to y measured by counting the number of different entries in the two arrays.
+        """
+        dag_matrix = [[]]
+        niveau_sårvæv_matrix = [[]]
+        sårskorpe_matrix = [[]]
+        granulationsvæv_matrix = [[]]
+        epithelialisering_matrix = [[]]
+        kontraktion_matrix = [[]]
+        hyperæmi_matrix = [[]]
+        ødem_matrix = [[]]
+        eksudat_matrix = [[]]
+        eksudattype_matrix = [[]]
+        infektionsniveau_matrix = [[]]
+
+    def KNNImputation(self) -> None:
+        """Imputes missing values using Scikit's KNNImputer. Takes no arguments and modifies the Dataframe on the class itself.
+
+        Returns
+        -------
+        Nothing
+        """
+        df = self.df
+        self.LogValues(df)
+        logger.info("Starting KNN-Imputation.")
+        imputer = KNNImputer(
+            missing_values=100,
+            n_neighbors=5,
+            weights="uniform",
+            metric=self.zeroOneDistance,
+            copy=False,
+        )
+        imputer.set_output(transform="pandas")
+        working_df = df.drop(
+            ["Gris ID", "Sår ID"], axis=1
+        )  # remove ID columns so we don't use those for distance calculations
+        working_df = imputer.fit_transform(
+            working_df
+        )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
+        df = df.merge(
+            working_df, how="right"
+        )  # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
+        logger.info("Imputation done.")
+        self.LogValues(df)
+
+    def LogValues(self, df: pd.DataFrame, value=100) -> None:
+        """Finds and logs a specified value in a dataframe for every ocurrence
+
+        Parameters
+        ----------
+        df : DataFrame
+            The DataFrame to search
+        value : The value to find and log using the logger. Default is 100 to help find missing values
+        """
+        logger.info(f"Checking for {value}...")
+        count = 0
+        for index, row in df.iterrows():
+            for label in df.columns.values:
+                if row[label] == value:
+                    logger.info(
+                        f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
+                    )
+                    count += 1
+        logger.info(f"Counted {count} occurences of {value}.")
+
 
     def minMaxNormalization(self, feature: str) -> None:
         """Uses min-max normalization on a single feature
