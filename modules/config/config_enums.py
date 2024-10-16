@@ -1,12 +1,8 @@
 from enum import Enum
 
 
-class Config:
-    class General(Enum):
-        SHOW_PLOT = 0
-
-    class DataCleaning(Enum):
-        DEL_MISSING_VALUE = 0
-
-    class FeatureSelection(Enum):
-        PERMUTATION = 0
+class Model(Enum):
+    DECISION_TREE_C = 0
+    RANDOM_FOREST_C = 1
+    NEURAL_NETWORK_C = 2
+    NAIVE_BAYES_C = 3
