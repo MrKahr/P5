@@ -174,6 +174,8 @@ class DataTransformer:
         """
         logger.info(f"Checking for {value}...")
         count = 0
+        last_index = -1
+        rows = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == value:
@@ -181,4 +183,10 @@ class DataTransformer:
                         f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
                     )
                     count += 1
-        logger.info(f"Counted {count} occurences of {value}.")
+                    if index != last_index:
+                        rows += 1
+                        last_index = index
+        logger.info(
+            f"Counted {count} occurences of {value} in {rows} rows out of {len(df.index)}."
+        )
+        print(df)
