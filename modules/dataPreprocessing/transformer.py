@@ -33,7 +33,7 @@ class DataTransformer:
             one_hot = pd.get_dummies(self.df[variable], prefix=variable)
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
-    
+
     def modeImputationByDay(self) -> None:
         """Imputes missing values by replacing them with the most common value for the day where the value is missing.
         Takes no arguments and modifies the Dataframe on the class itself.
@@ -74,6 +74,7 @@ class DataTransformer:
                     df.at[index, label] = mode
 
                     logger.info(f"Replaced missing value with {mode}.")
+        self.df = df
 
     def zeroOneDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
@@ -157,11 +158,11 @@ class DataTransformer:
         working_df = imputer.fit_transform(
             working_df
         )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
-        df = df.merge(
-            working_df, how="right"
-        )  # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
+        for column in working_df.columns:
+            df[column] = working_df[column]
         logger.info("Imputation done.")
         self.LogValues(df)
+        self.df = df
 
     def LogValues(self, df: pd.DataFrame, value=100) -> None:
         """Finds and logs a specified value in a dataframe for every ocurrence
@@ -174,6 +175,8 @@ class DataTransformer:
         """
         logger.info(f"Checking for {value}...")
         count = 0
+        last_index = -1
+        rows = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == value:
@@ -181,8 +184,12 @@ class DataTransformer:
                         f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
                     )
                     count += 1
-        logger.info(f"Counted {count} occurences of {value}.")
-
+                    if index != last_index:
+                        rows += 1
+                        last_index = index
+        logger.info(
+            f"Counted {count} occurences of {value} in {rows} rows out of {len(df.index)}."
+        )
 
     def minMaxNormalization(self, feature: str) -> None:
         """Uses min-max normalization on a single feature
@@ -190,9 +197,11 @@ class DataTransformer:
         Parameters
         ----------
         feature : str
-            The feature to be normalized 
+            The feature to be normalized
         """
-        self.df[feature] = (self.df[feature] - self.df[feature].min()) / (self.df[feature].max() - self.df[feature].min())
+        self.df[feature] = (self.df[feature] - self.df[feature].min()) / (
+            self.df[feature].max() - self.df[feature].min()
+        )
 
     def swapValues(self, attribute, value1, value2) -> None:
         """Swap all instances of value1 and value2 in attribute
