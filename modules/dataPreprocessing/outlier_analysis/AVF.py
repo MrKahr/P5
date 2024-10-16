@@ -8,6 +8,7 @@ sys.path.insert(0, os.getcwd())
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
+from modules.logging import logger
 
 import matplotlib.pyplot as plt
 import math
@@ -16,10 +17,14 @@ import math
 class AVFAnalysis:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
-        if "Gris ID" in self.df:
+        try:
             self.df.drop("Gris ID", axis=1, inplace=True)
-        if "Sår ID" in self.df:
+        except KeyError:
+            logger.info("Tried to remove 'Gris ID', but feature was already removed")
+        try:
             self.df.drop("Sår ID", axis=1, inplace=True)
+        except KeyError:
+            logger.info("Tried to remove 'Sår ID', but feature was already removed")
         
 
     def AVF(self, row: dict) -> float:

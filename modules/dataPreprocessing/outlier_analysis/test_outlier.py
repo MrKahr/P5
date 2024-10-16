@@ -17,18 +17,20 @@ if __name__ == "__main__":
 
     transformer = DataTransformer(cleaner.getDataframe())
     transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
-    # transformer.minMaxNormalization()
 
     outlier_remover = OutlierProcessor(transformer.getDataframe())
 
 
     # outlier_remover.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True) # Outlier removal will remove these in a shallow copy, but still works if they have been removed beforehand
 
+    # Use to update these numbers in report, in case of changes
     # print(len(outlier_remover.odin(10, 0)))
     # print(len(outlier_remover.odin(20, 0)))
     # print(len(outlier_remover.odin(30, 0)))
 
+    # Use to check different/combined outlier removal methods
     outlier_remover.removeOutliers(outliers=outlier_remover.avf(10))
     outlier_remover.removeOutliers(outliers=outlier_remover.odin(30, 0))
 
+    # Use to check DataFrame after removing outliers
     # print(outlier_remover.df)

@@ -78,7 +78,6 @@ class KNNAnalysis:
         for i in range(len(self.df)):
             if (not indegrees.get(i)) or indegrees[i] <= T:
                 outliers.append(i)
-        # print(f"For k={k}: {len(outliers)} outliers")
         return outliers
 
     def PlotNeighborMultiHist(
