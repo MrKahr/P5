@@ -74,6 +74,7 @@ class DataTransformer:
                     df.at[index, label] = mode
 
                     logger.info(f"Replaced missing value with {mode}.")
+        self.df = df
 
     def zeroOneDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
@@ -157,11 +158,11 @@ class DataTransformer:
         working_df = imputer.fit_transform(
             working_df
         )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
-        df = df.merge(
-            working_df, how="right"
-        )  # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
+        for column in working_df.columns:
+            df[column] = working_df[column]
         logger.info("Imputation done.")
         self.LogValues(df)
+        self.df = df
 
     def LogValues(self, df: pd.DataFrame, value=100) -> None:
         """Finds and logs a specified value in a dataframe for every ocurrence
@@ -189,4 +190,3 @@ class DataTransformer:
         logger.info(
             f"Counted {count} occurences of {value} in {rows} rows out of {len(df.index)}."
         )
-        print(df)
