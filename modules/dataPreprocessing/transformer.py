@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.impute import KNNImputer
-
+from numpy.typing import ArrayLike
 
 from modules.logging import logger
 
@@ -35,6 +35,13 @@ class DataTransformer:
             self.df = self.df.join(one_hot)
 
     def modeImputationByDay(self) -> None:
+        """Imputes missing values by replacing them with the most common value for the day where the value is missing.
+        Takes no arguments and modifies the Dataframe on the class itself.
+
+        Returns
+        -------
+        Nothing
+        """
         # for this method
         # get dataset
         # for every row
@@ -61,34 +68,17 @@ class DataTransformer:
                     
                     logger.info(f"Replaced missing value with {mode}.")
 
-    # def zeroOneDistance(label1: str, label2: str) -> int:
-    #     """A simple implementation of zero-one distance measuring
-    # 
-    #     Parameters
-    #     ----------
-    #     label1 : str
-    #         a string to compare
-    #     label2 : str
-    #         the string to compare with
-    # 
-    #     Returns
-    #     -------
-    #     int
-    #         0 if the labels are the same, otherwise 1
-    #     """
-    #     return 0 if label1 == label2 else 1
-    
-    def zeroOneDistance(self, x, y, *args, missing_values = 100) -> int:
+    def zeroOneDistance(self, x: ArrayLike, y: ArrayLike, *args, missing_values = 100) -> int:
         """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
 
         Parameters
         ----------
-        x : 1D numerical array
+        x : 1D Numpy Array
             A representation of a row in the dataset as an array of numbers
-        y : 1D numerical array
+        y : 1D Numpy Array
             A representation of a row in the dataset as an array of numbers
         missing_values :
-            What value should be considered missing and ineligible for comparison, by default 100 (np.nan in the official documentation)
+            What value should be considered missing and ineligible for comparison, by default 100
 
         Returns
         -------
@@ -100,7 +90,23 @@ class DataTransformer:
             if entry != y[index] and not (entry == missing_values or y[index] == missing_values): distance += 1
         return distance
     
-    def matrixDistance(self, x, y, *args, missing_values = 100) -> int:
+    def matrixDistance(self, x: ArrayLike, y: ArrayLike, *args, missing_values = 100) -> int:
+        """An implementation of a distance metric in a format scikit's KNNImputer can use. This one is uses distance matrices for each variable
+
+        Parameters
+        ----------
+        x : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        y : 1D Numpy Array
+            A representation of a row in the dataset as an array of numbers
+        missing_values :
+            What value should be considered missing and ineligible for comparison, by default 100
+
+        Returns
+        -------
+        int
+            The distance from x to y measured by counting the number of different entries in the two arrays.
+        """
         dag_matrix = [[]]
         niveau_sårvæv_matrix = [[]]
         sårskorpe_matrix = [[]]
@@ -114,24 +120,37 @@ class DataTransformer:
         infektionsniveau_matrix = [[]]
 
     def KNNImputation(self) -> None:
+        """Imputes missing values using Scikit's KNNImputer. Takes no arguments and modifies the Dataframe on the class itself.
+
+        Returns
+        -------
+        Nothing
+        """
         df = self.df
-        self.LogMissingValues(df)
+        self.LogValues(df)
         logger.info("Starting KNN-Imputation.")
         imputer = KNNImputer(missing_values=100, n_neighbors=5, weights='uniform', metric=self.zeroOneDistance, copy=False)
         imputer.set_output(transform="pandas")
         working_df = df.drop(["Gris ID", "Sår ID"], axis=1) # remove ID columns so we don't use those for distance calculations
         working_df = imputer.fit_transform(working_df) # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
-        df = df.merge(working_df, how = "right") # A bit overkill for just a few missing values, but this is guaranteed to work for any number of missing values
+        df = df.merge(working_df, how = "right") # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
         logger.info("Imputation done.")
-        self.LogMissingValues(df)
+        self.LogValues(df)
 
-    def LogMissingValues(self, df) -> None:
-        # give me a data frame and i'll find entries with value 100!
-        logger.info("Checking for missing values...")
-        missing = 0
+    def LogValues(self, df: pd.DataFrame, value=100) -> None:
+        """Finds and logs a specified value in a dataframe for every ocurrence
+
+        Parameters
+        ----------
+        df : DataFrame
+            The DataFrame to search
+        value : The value to find and log using the logger. Default is 100 to help find missing values
+        """
+        logger.info(f"Checking for {value}...")
+        count = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
-                if row[label] == 100:
-                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {row["Dag"]} (Internal Index {index}).")
-                    missing += 1
-        logger.info(f"Found {missing} missing value(s).")
+                if row[label] == value:
+                    logger.info(f"Found {value} in {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {row["Dag"]} (Internal Index {index}).")
+                    count += 1
+        logger.info(f"Counted {count} occurences of {value}.")
