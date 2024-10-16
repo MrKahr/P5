@@ -54,21 +54,30 @@ class DataTransformer:
             for label in df.columns.values:
                 if row[label] == 100:
                     day = row["Dag"]
-                    
-                    logger.info(f"Found missing {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {day} (Internal Index {index}). Imputing...") # NOTE 'Internal Index' is the index of the row in the dataframe.
-                                                                                                                                                                # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
+
+                    logger.info(
+                        f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
+                    )  # NOTE 'Internal Index' is the index of the row in the dataframe.
+                    # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
                     same_day_rows = df[df["Dag"] == day]
                     column = same_day_rows[label]
-                    mode = column.mode()[0] # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
-                    
+                    mode = column.mode()[
+                        0
+                    ]  # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
+
                     logger.info(f"Mode of {label} is {mode}.")
-                    if mode == 100: logger.warning("Mode is a missing value! Cannot properly impute!")
-                    
+                    if mode == 100:
+                        logger.warning(
+                            "Mode is a missing value! Cannot properly impute!"
+                        )
+
                     df.at[index, label] = mode
-                    
+
                     logger.info(f"Replaced missing value with {mode}.")
 
-    def zeroOneDistance(self, x: ArrayLike, y: ArrayLike, *args, missing_values = 100) -> int:
+    def zeroOneDistance(
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+    ) -> int:
         """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
 
         Parameters
@@ -87,10 +96,15 @@ class DataTransformer:
         """
         distance = 0
         for index, entry in enumerate(x):  # NOTE enumerate makes the index available
-            if entry != y[index] and not (entry == missing_values or y[index] == missing_values): distance += 1
+            if entry != y[index] and not (
+                entry == missing_values or y[index] == missing_values
+            ):
+                distance += 1
         return distance
-    
-    def matrixDistance(self, x: ArrayLike, y: ArrayLike, *args, missing_values = 100) -> int:
+
+    def matrixDistance(
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+    ) -> int:
         """An implementation of a distance metric in a format scikit's KNNImputer can use. This one is uses distance matrices for each variable
 
         Parameters
@@ -129,11 +143,23 @@ class DataTransformer:
         df = self.df
         self.LogValues(df)
         logger.info("Starting KNN-Imputation.")
-        imputer = KNNImputer(missing_values=100, n_neighbors=5, weights='uniform', metric=self.zeroOneDistance, copy=False)
+        imputer = KNNImputer(
+            missing_values=100,
+            n_neighbors=5,
+            weights="uniform",
+            metric=self.zeroOneDistance,
+            copy=False,
+        )
         imputer.set_output(transform="pandas")
-        working_df = df.drop(["Gris ID", "Sår ID"], axis=1) # remove ID columns so we don't use those for distance calculations
-        working_df = imputer.fit_transform(working_df) # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
-        df = df.merge(working_df, how = "right") # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
+        working_df = df.drop(
+            ["Gris ID", "Sår ID"], axis=1
+        )  # remove ID columns so we don't use those for distance calculations
+        working_df = imputer.fit_transform(
+            working_df
+        )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
+        df = df.merge(
+            working_df, how="right"
+        )  # Computationally expensive, but this is guaranteed to work for any number of missing values, and we'll hopefully only need to do this once
         logger.info("Imputation done.")
         self.LogValues(df)
 
@@ -151,6 +177,8 @@ class DataTransformer:
         for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == value:
-                    logger.info(f"Found {value} in {label} at Pig ID {row["Gris ID"]}, Wound ID {row["Sår ID"]}, Day {row["Dag"]} (Internal Index {index}).")
+                    logger.info(
+                        f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
+                    )
                     count += 1
         logger.info(f"Counted {count} occurences of {value}.")
