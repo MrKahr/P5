@@ -43,7 +43,23 @@ class AVFAnalysis:
             i += 1
         return (1 / len(row)) * sum
 
-    def frequency(self, value, attribute, frequencies={}) -> float:
+    def frequency(self, value: any, attribute: str, frequencies={}) -> float:
+        """Calculate frequency of values in the dataset and store it for future calls to frequency()
+
+        Parameters
+        ----------
+        value : any
+            A value present in our dataset
+        attribute : str
+            The name of the attribute/feature containing the value
+        frequencies : dict, optional
+            Dict to store the frequencies for future calls, by default {}. When the function is called with default value, frequencies is only initialized once, and read on future calls
+
+        Returns
+        -------
+        float
+            The number of times the value appears in the DataFrame
+        """
 
         # frequencies is only initialized once
         if not frequencies.get(attribute):

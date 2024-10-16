@@ -15,10 +15,36 @@ class OutlierProcessor:
         self.df = df
 
     def avf(self, k: int) -> list:
+        """Generates indexes of outliers using frequency of attribute values without modifying the DataFrame
+
+        Parameters
+        ----------
+        k : int
+            Number of outliers to generate
+
+        Returns
+        -------
+        list
+            Indexes of outliers in DataFrame
+        """
         classifier = AVFAnalysis(self.df.copy(deep=False)) # Shallow copy used so ID can be removed for outlier detection, without affecting dataframe in self.df
         return classifier.getOutliers(k)
 
     def odin(self, k: int, T: int) -> list:
+        """Generates indexes of outliers using k-nearest-neighbors without modifying the DataFrame
+
+        Parameters
+        ----------
+        k : int
+            Number of neighbors
+        T : int
+            Indegree threshold
+
+        Returns
+        -------
+        list
+            Indexes of outliers in DataFrame
+        """
         classifier = KNNAnalysis(self.df.copy(deep=False))
         return classifier.getOutliers(k, T)
 

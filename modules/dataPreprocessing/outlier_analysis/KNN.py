@@ -25,7 +25,7 @@ class KNNAnalysis:
         
 
     def KNN(self, degree: int) -> None:
-        """Generate a k nearest neighbors graph and store it in the KNN class as self.distances and self.neighbors
+        """Generate a k nearest neighbors graph and store it in the KNN class as ndarrays self.distances and self.neighbors
 
         Parameters
         ----------
@@ -37,6 +37,13 @@ class KNNAnalysis:
         self.distances, self.neighbors = neighborModel.kneighbors()
 
     def getIndegrees(self) -> dict:
+        """Calculate indegrees for all points in self.neighbors
+
+        Returns
+        -------
+        dict
+            Keys of point indexes and values of the point's indegree
+        """
         indegrees = {}
         for point in self.neighbors:
             for neighbor in point:
@@ -77,6 +84,24 @@ class KNNAnalysis:
     def PlotNeighborMultiHist(
         self, nearestNeighbors: list | int, threshold=0, rows=3, cols=1
     ) -> None:
+        """Plot histogram of indegrees and mark outliers in red
+
+        Parameters
+        ----------
+        nearestNeighbors : list | int
+            One value for k neighbours in each graph
+        threshold : int, optional
+            Max indegree to consider outlier, by default 0
+        rows : int, optional
+            Number of rows for the subplots, by default 3
+        cols : int, optional
+            Number of columns for the subplots, by default 1
+
+        Raises
+        ------
+        Exception
+            Exception raised if number of plots cannot fit in the given number of rows and columns
+        """
         # Plot multiple historgrams for different number of columns and rows
         if rows * cols != len(nearestNeighbors):
             raise Exception(
