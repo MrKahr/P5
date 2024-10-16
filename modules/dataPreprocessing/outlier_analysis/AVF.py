@@ -1,25 +1,45 @@
 import sys
 import os
 
+import pandas as pd
+
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataProcessor, Dataset
+from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
+from modules.dataPreprocessing.cleaner import DataCleaner
+from modules.dataPreprocessing.transformer import DataTransformer
+from modules.logging import logger
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
 
-class AVFPlotter:
-    def __init__(self) -> None:
-        dp = DataProcessor(Dataset.REGS)
-        dp.deleteNaN()
-        dp.oneHotEncoding(["Eksudattype", "Hyperæmi"])
-        self.df = dp.getDataFrame()
-        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
-        self.plotAVFs(self.df, 0.01)
+class AVFAnalysis:
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.df = df
+        try:
+            self.df.drop("Gris ID", axis=1, inplace=True)
+        except KeyError:
+            logger.info("Tried to remove 'Gris ID', but feature was already removed")
+        try:
+            self.df.drop("Sår ID", axis=1, inplace=True)
+        except KeyError:
+            logger.info("Tried to remove 'Sår ID', but feature was already removed")
+        
 
-    def AVF(self, row) -> float:
+    def AVF(self, row: dict) -> float:
+        """Calculate AVF score for a row
+
+        Parameters
+        ----------
+        row : dict
+            Generated from iterrows() on a DataFrame
+
+        Returns
+        -------
+        float
+            AVF score
+        """
         sum = 0
         keys = row.keys()
         i = 0
@@ -28,14 +48,42 @@ class AVFPlotter:
             i += 1
         return (1 / len(row)) * sum
 
-    def frequency(self, value, attribute, frequencies={}) -> float:
+    def frequency(self, value: any, attribute: str, frequencies={}) -> float:
+        """Calculate frequency of values in the dataset and store it for future calls to frequency()
+
+        Parameters
+        ----------
+        value : any
+            A value present in our dataset
+        attribute : str
+            The name of the attribute/feature containing the value
+        frequencies : dict, optional
+            Dict to store the frequencies for future calls, by default {}. When the function is called with default value, frequencies is only initialized once, and read on future calls
+
+        Returns
+        -------
+        float
+            The number of times the value appears in the DataFrame
+        """
+
         # frequencies is only initialized once
         if not frequencies.get(attribute):
             frequencies[attribute] = self.valueOccurences(attribute)
         return frequencies[attribute][value]
 
     def valueOccurences(self, attribute: str) -> dict:
-        """Calculates the number of times each value appears for an attribute and stores this in a dict"""
+        """Calculates the number of times each value appears for an attribute and stores this in a dict
+
+        Parameters
+        ----------
+        attribute : str
+            Name of an attribute/feature/value
+
+        Returns
+        -------
+        dict
+            A dict containing keys of all attributes and values for how many times they occur
+        """
         column = self.df[attribute]
         values = column.unique()
         sums = {}
@@ -47,20 +95,49 @@ class AVFPlotter:
         # for i in values:
         #     sums[i] = sums[i] / len(column)
         return sums
+    
+    def calculateAVF(self) -> list:
+        """Generates list of AVF scores for a dataframe
 
-    def plotAVFs(self, df: pd.DataFrame, cutoffPercentile: float) -> None:
-        """Plots outliers based on cutoffPercentile
-        e.g. for 0.01, the lowest 1% AVFs scores determine the outlier cutoff bin
+        -------
+        returns list of AVF scores
         """
         listAVF = []
-        sum = 0
-        for index, row in df.iterrows():
+        for index, row in self.df.iterrows():
             AVFelem = self.AVF(row)
             listAVF.append(AVFelem)
-            sum += AVFelem
-        avg = sum / len(listAVF)
+        return listAVF
+    
+    def getOutliers(self, k: int) -> list:
+        """Generates list of k outliers using AVF
+
+        Parameters
+        ----------
+        k : int
+            number of outliers
+
+        Returns
+        -------
+        list
+            list of outlier indexes
+        """
+        scores = self.calculateAVF()
+        # https://www.geeksforgeeks.org/python-find-the-indices-for-k-smallest-elements/
+        indexes = sorted(range(len(scores)), key=lambda sub: scores[sub])[:k]
+        return indexes
+
+    def plotAVFs(self, cutoffPercentile: float) -> None:
+        """Plots outliers based on cutoffPercentile
+        e.g. for 0.01, the lowest 1% AVFs scores determine the outlier cutoff bin
+
+        Parameters
+        ----------
+        cutoffPercentile : float
+            Lower percentile to consider as outliers
+        """
+        listAVF= self.calculateAVF()
+
         lowestPercentage = math.floor(len(listAVF) * cutoffPercentile)
-        print("average:", avg)
 
         n, bins, patches = plt.hist(listAVF, bins=40)
         sumBars = 0
@@ -69,12 +146,21 @@ class AVFPlotter:
             patches[i].set_color("r")
             sumBars += n[i]
             i += 1
-        print("length:", len(listAVF))
+        # print("length:", len(listAVF))
         plt.xlabel("AVF score")
         plt.ylabel("Datapoints in range")
         plt.suptitle("AVF score distribution")
         plt.show()
 
-
 if __name__ == "__main__":
-    op = AVFPlotter()
+    dp = DataPreprocessor(Dataset.REGS)
+
+    cleaner = DataCleaner(dp.df)
+    cleaner.cleanRegsDataset()
+    cleaner.deleteMissingValues()
+
+    transformer = DataTransformer(dp.df)
+    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
+
+    op = AVFAnalysis(cleaner.getDataframe())
+    op.plotAVFs(0.01)
