@@ -6,17 +6,17 @@ from pathlib import Path
 from datetime import datetime
 from typing import Self
 
+from modules.config.setup_config import SetupConfig
 from modules.logging.coloredformatter import ColoredFormatter
 from modules.logging.colorcodefilter import ColorCodeFilter
 
 
 class Logger:
     _instance = None
-    app_name = "P5"
-    app_dir = Path.cwd()
-    log_dir = Path(app_dir, "logs")
-    log_format = "%(asctime)s - %(module)s - %(lineno)s - %(levelname)s - %(message)s"  # %(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    log_format_color = "%(asctime)s - %(module)s - %(lineno)s - %(levelname)s - %(message)s"  # %(asctime)s - %(module)s - %(lineno)s - %(levelname)s - %(message)s'
+    app_name = SetupConfig.app_name
+    log_dir = SetupConfig.log_dir
+    log_format = SetupConfig.log_format
+    log_format_color = SetupConfig.log_format_color
 
     def __new__(cls) -> Self:
         if cls._instance is None:
