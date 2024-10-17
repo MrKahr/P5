@@ -3,6 +3,7 @@ from pathlib import Path
 from numpy.typing import NDArray
 
 from modules.dataPreprocessing.dataset_enums import Dataset
+from modules.logging import logger
 
 
 class DataPreprocessor:
@@ -12,6 +13,7 @@ class DataPreprocessor:
     """
 
     def __init__(self, data: Dataset) -> None:
+        logger.info(f"Loading '{data.name}' dataset")
         path = Path("data", data.value).absolute()
         self.df = pd.read_csv(path, sep=";", comment="#")
 
@@ -27,7 +29,7 @@ class DataPreprocessor:
     def getTargetData(self) -> NDArray:
         return self.df["Dag"].to_numpy(copy=True)
 
-    def getTrainingLabels(self) -> list[str]:
+    def getTrainingLabels(self) -> NDArray:
         return self._formatTrainingData().columns.values
 
     def getTargetMaxValue(self) -> int:

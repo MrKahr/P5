@@ -16,16 +16,11 @@ class DataCleaner:
         amount = current_col_count - self.df.shape[1]
         logger.info(f"Removed {amount} NaN {"columns" if amount != 1 else "column"}")
 
-    def deleteNonfeatures(self) -> pd.DataFrame:
+    def deleteNonfeatures(self) -> None:
         """
         Removes pig ID and sår ID from dataset because we consider neither a feature.
-
-        Return
-        -------
-        pd.DataFrame
-            Dataframe with two columns removed
         """
-        return self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=False)
+        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
 
     def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi.
@@ -72,7 +67,7 @@ class DataCleaner:
 
     def removeFeaturelessRows(self, threshold: int = 4) -> None:
         """Removes rows containing a critical number of NaN
-        #NOTE - This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
+        This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
 
         Parameters
         ----------
@@ -82,19 +77,6 @@ class DataCleaner:
         current_row_count = self.df.shape[0]
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
         logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
-
-    def cleanRegsDataset(self, fillna: int = 100) -> None:
-        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
-        Removes rows containing a critical number of NaN.
-        #NOTE - This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
-        Parameters
-        ----------
-        fillna : int, optional
-            The value to fill in NA-cells, by default 100
-        """
-        self._deleteNanCols()
-        self.removeFeaturelessRows()
-        self.fillNan(fillna)
 
     def convertHourToDay(self) -> None:
         """Cleans cells in a dataset containing hours < one day"""
@@ -110,28 +92,6 @@ class DataCleaner:
         # The orignal "Tid" column was all strings. Convert them to integers
         self.df["Dag"] = pd.to_numeric(self.df["Dag"])
         logger.info(f"Converted {len(indexes)} rows from hour to day")
-
-    def cleanOldDataset(self):
-        """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
-        self._deleteNanCols()
-        self.convertHourToDay()
-
-    def cleanMålDataset(self) -> None:
-        """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        self._deleteNanCols()
-        current_row_count = self.df.shape[0]
-        # Remove data not used in training
-        self.df.drop(
-            columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
-            inplace=True,
-        )
-        # Remove any NaN value in granulation tissue data
-        self.df.dropna(
-            axis=0, how="any", subset=["Sårrand (cm)", "Midte (cm)"], inplace=True
-        )
-        # Insert missing IDs for pigs using the single existing ID
-        self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
-        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def fillNan(self, fill_value: int = 100) -> None:
         """Fills all nan values in the dataset with an arbitrary fill value
@@ -154,6 +114,40 @@ class DataCleaner:
             print("Empty dataframe (no NaN values to display)")
         else:
             print(nan_df)
+
+    def cleanRegsDataset(self, fillna: int = 100) -> None:
+        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
+
+        Parameters
+        ----------
+        fillna : int, optional
+            The value to fill in NA-cells, by default 100
+        """
+        self._deleteNanCols()
+        self.removeFeaturelessRows()
+        self.fillNan(fillna)
+
+    def cleanMålDataset(self) -> None:
+        """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
+        self._deleteNanCols()
+        current_row_count = self.df.shape[0]
+        # Remove data not used in training
+        self.df.drop(
+            columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
+            inplace=True,
+        )
+        # Remove any NaN value in granulation tissue data
+        self.df.dropna(
+            axis=0, how="any", subset=["Sårrand (cm)", "Midte (cm)"], inplace=True
+        )
+        # Insert missing IDs for pigs using the single existing ID
+        self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
+        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
+
+    def cleanOldDataset(self):
+        """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
+        self._deleteNanCols()
+        self.convertHourToDay()
 
     def getDataframe(self) -> pd.DataFrame:
         """Get the cleaned dataframe as a deep copy.
