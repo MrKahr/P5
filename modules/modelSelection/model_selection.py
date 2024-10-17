@@ -1,9 +1,10 @@
 # Modelselection method takes model name enum as option, returns unfitted model of the chosen type.
-from model_name_enum import ModelName
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
+
+from modules.modelSelection.model_name_enum import ModelName
 
 
 def model_selection(mname: ModelName):

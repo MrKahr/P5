@@ -1,5 +1,7 @@
 # cross_vaidator_selection method takes CrossValidatorName enum as option, returns CrossValidator of the chosen type.
-from scoring_function_enum import ScoringFunctionName
+
+
+from modules.modelTraining.scoring_function_enum import ScoringFunctionName
 
 
 def threshold(result, y, th: int = 5):
@@ -20,7 +22,11 @@ def distance(result, y, max_prediction=0):
 
 
 def scoring_function(
-    estimator, X, y, max_prediction=None, sfname: ScoringFunctionName = None
+    estimator,
+    X,
+    y,
+    max_prediction=None,
+    sfname: ScoringFunctionName = ScoringFunctionName.THRESHOLDACCURACY,
 ):
 
     match sfname:

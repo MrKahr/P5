@@ -1,10 +1,12 @@
 # model training
-from modelSelection import model_name_enum
+
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.feature_selection import RFE
 from sklearn.feature_selection import RFECV
 from sklearn.tree import DecisionTreeClassifier
+
+from modules.modelSelection import model_name_enum
 
 
 def model_training(
@@ -25,4 +27,4 @@ def model_training(
         case "RecursiveFeatureValidationCV":
             return RFECV(estimator, scoring=scoringFunction)
         case "fit":
-            return estimator.fit(X=Xtrain, Y=Ytrain, scoring=scoringFunction)
+            return estimator.fit(X=Xtrain, y=Ytrain)
