@@ -10,7 +10,7 @@ class SetupConfig:
 
     # Files
     config_name = "Pipeline Config"
-    config_file = "pipeline_config.toml"
+    config_file = "pipeline_config.json"
 
     # Logging
     log_dir = Path(app_dir, "logs")
