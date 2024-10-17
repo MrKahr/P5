@@ -39,10 +39,10 @@ from modules.dataPreprocessing.transformer import DataTransformer
 # )
 
 config = Config()
-dataprocessor = DataPreprocessor(Dataset.REGS)
+dataProcessor = DataPreprocessor(Dataset.REGS)
 processor = Processor(
     config.getValue("Cleaning"),
-    pipeline_component=DataCleaner(dataprocessor.df),
+    pipeline_component=DataCleaner(dataProcessor.df),
     strategy=StrategySkip(),
 )
 processor.performAlgorithm()
