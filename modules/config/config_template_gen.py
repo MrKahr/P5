@@ -20,11 +20,20 @@ class ConfigTemplate(object):
 
     @classmethod
     def _createTemplate(self) -> dict:
+        # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
                 "loglevel": "DEBUG",
             },
-            "DataPreprocessing": {"test1": ""},
+            "DataPreprocessing": {
+                "Cleaning": {
+                    "_deleteNanCols": "",
+                    "deleteNonfeatures": "B",
+                },
+                "OutlierAnalysis": {"Method": "Odin", "RemoveOutliers": ""},
+                "Transformer": {"OneHotEncode": "", "modeImputeByDay": ""},
+                "FeatureSelection": {"ChiIndependence": ""},
+            },
             "ModelSelection": {"test2": ""},
             "ModelTraining": {"test3": ""},
             "ModelTesting": {"test4": ""},

@@ -3,6 +3,10 @@ import os
 import sys
 from pathlib import Path
 
+from modules.dataPreprocessing.processor import Processor
+from modules.dataPreprocessing.strategy_skip import StrategySkip
+from modules.dataPreprocessing.strategy_parse_config import parseConfig
+
 ##########################
 ### Initial Path Setup ###
 ##########################
@@ -34,7 +38,11 @@ from modules.dataPreprocessing.transformer import DataTransformer
 #     x_labels=x_labels,
 # )
 
-
 config = Config()
-print(config.getValue("loglevel"))
-config.setValue("loglevel", "INFO")
+dataprocessor = DataPreprocessor(Dataset.REGS)
+processor = Processor(
+    config.getValue("Cleaning"),
+    pipeline_component=DataCleaner(dataprocessor.df),
+    strategy=StrategySkip(),
+)
+processor.performAlgorithm()

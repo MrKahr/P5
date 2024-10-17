@@ -1,10 +1,13 @@
 import re
 import pandas as pd
 
+from modules.config.config import Config
+from modules.dataPreprocessing.processor import Processor
+from modules.dataPreprocessing.strategy import Strategy
 from modules.logging import logger
 
 
-class DataCleaner:
+class DataCleaner(Processor):
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
         self.initial_row_count = self.df.shape[0]
@@ -23,8 +26,7 @@ class DataCleaner:
         self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
 
     def deleteMissingValues(self) -> None:
-        """Drop all rows that contains value `100`: Manglende Værdi.
-        """
+        """Drop all rows that contains value `100`: Manglende Værdi."""
         current_row_count = self.df.shape[0]
         for label in self.df.columns.values:
             if label:
@@ -37,8 +39,7 @@ class DataCleaner:
         )
 
     def deleteUndeterminedValue(self) -> None:
-        """Drop all rows that contains value `2`: Kan ikke vurderes
-        """
+        """Drop all rows that contains value `2`: Kan ikke vurderes"""
         current_row_count = self.df.shape[0]
         labels = [
             "Kontraktion",

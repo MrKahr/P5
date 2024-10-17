@@ -2,10 +2,11 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
+from modules.dataPreprocessing.processor import Processor
 from modules.logging import logger
 
 
-class DataTransformer:
+class DataTransformer(Processor):
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 

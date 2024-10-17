@@ -8,6 +8,7 @@ from sklearn.feature_selection import (
 from numpy.typing import NDArray
 from sklearn.inspection import permutation_importance
 
+from modules.dataPreprocessing.processor import Processor
 from modules.logging import logger
 
 # SECTION
@@ -40,7 +41,7 @@ from modules.logging import logger
 
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
-class FeatureSelector:
+class FeatureSelector(Processor):
     def __init__(self, X, y) -> None:
         self.X = X
         self.y = y
