@@ -6,5 +6,5 @@ from modules.logging import logger
 
 class StrategySkip(Strategy):
 
-    def performAlgorithm(self, config_file: Config, piplineComponent: Any) -> None:
+    def performAlgorithm(self, config_file: dict, PipelineComponent: Any) -> None:
         logger.warning(f"Skipping step {config_file}")

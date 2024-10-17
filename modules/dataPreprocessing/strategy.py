@@ -5,5 +5,5 @@ from modules.config.config import Config
 
 class Strategy:
     @abstractmethod
-    def performAlgorithm(self, config_file: Config, piplineComponent: Any) -> None:
+    def performAlgorithm(self, config_file: dict, PipelineComponent: Any) -> None:
         pass

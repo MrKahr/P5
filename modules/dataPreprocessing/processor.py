@@ -5,18 +5,16 @@ from modules.dataPreprocessing.strategy import Strategy
 
 
 class Processor:
-    def __init__(
-        self, config_file: Config, pipeline_component: Any, strategy: Strategy
-    ):
+    def __init__(self, config_file: dict, PipelineComponent: Any, Strategy: Strategy):
         self.config_file = config_file
-        self.pipeline_component = pipeline_component
-        self.strategy = strategy
+        self.pipeline_component = PipelineComponent
+        self.Strategy = Strategy
 
     def getStrategy(self) -> None:
-        return self.strategy
+        return self.Strategy
 
-    def setStrategy(self, strategy: Strategy) -> None:
-        self.strategy = strategy
+    def setStrategy(self, Strategy: Strategy) -> None:
+        self.Strategy = Strategy
 
     def performAlgorithm(self) -> None:
-        self.strategy.performAlgorithm(self.config_file, self.pipeline_component)
+        self.Strategy.performAlgorithm(self.config_file, self.pipeline_component)
