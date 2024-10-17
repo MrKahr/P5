@@ -31,7 +31,7 @@ class ModelSelector:
         return SVC(**kwargs)
 
     @classmethod
-    def _getNaiveBayes(cls, kwargs) -> GaussianNB:
+    def _getNaiveBayes(cls, kwargs) -> None:
         raise NotImplementedError()
         return GaussianNB(**kwargs)
 
@@ -39,6 +39,13 @@ class ModelSelector:
     def getModel(
         cls,
     ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:  # , GaussianNB, SVC]:
+        """Get an instance of the model as specified in the config file.
+
+        Returns
+        -------
+        Union[DecisionTreeClassifier, RandomForestClassifier]
+            An instance of the model selected in the config file.
+        """
         cls._config = Config()
         parent_key = "ModelSelection"
         selected_model = cls._config.getValue("model", parent_key)
