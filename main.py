@@ -14,7 +14,7 @@ from modules.config.config import Config
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.feature_selector import FeatureSelector
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
-
+from modules.dataPreprocessing.transformer import DataTransformer
 
 # dp = DataPreprocessor(Dataset.REGS)
 # cleaner = DataCleaner(dp.df)
