@@ -38,20 +38,19 @@ class ModelSelector:
     @classmethod
     def getModel(
         cls,
-    ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:  # , GaussianNB, SVC]:
-        """Get an instance of the model as specified in the config file.
+    ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
+        """Get an unfit instance of the model as specified in the config file.
 
         Returns
         -------
         Union[DecisionTreeClassifier, RandomForestClassifier]
-            An instance of the model selected in the config file.
+            An unfit instance of the model as specified in the config file.
         """
         cls._config = Config()
         parent_key = "ModelSelection"
         selected_model = cls._config.getValue("model", parent_key)
 
         if selected_model == Model.DECISION_TREE.name:
-            print(cls._config.getValue("DecisionTree", parent_key))
             return cls._getDecisionTree(
                 cls._config.getValue("DecisionTree", parent_key)
             )
@@ -65,3 +64,5 @@ class ModelSelector:
             return cls._getSupportVectorMachine()
         elif selected_model == Model.NEURAL_NETWORK.name:
             return cls._getNeuralNetwork()
+        else:
+            raise NotImplementedError(f"No support for model '{selected_model}'")
