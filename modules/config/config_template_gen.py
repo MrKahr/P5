@@ -1,6 +1,6 @@
 from typing import Self
 
-from modules.config.config_enums import Model
+from modules.config.config_enums import CrossValidator, Model
 
 
 class ConfigTemplate(object):
@@ -31,13 +31,13 @@ class ConfigTemplate(object):
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
                     "criterion": "entropy",  # type: Literal["gini", "entropy", "log_loss"]
-                    "max_depth": None,  # type: int
+                    "max_depth": None,  # type: int | None
                     "min_samples_split": 2,
                     "min_samples_leaf": 1,
                     "min_weight_fraction_leaf": 0,  # type: int | float
-                    "max_features": None,  # type: int
-                    "random_state": 42,
-                    "max_leaf_nodes": None,  # type: int
+                    "max_features": None,  # type: int | None
+                    "random_state": 42,  # type: int | None
+                    "max_leaf_nodes": None,  # type: int | None
                     "min_impurity_decrease": 0.0,
                     "ccp_alpha": 0.0,
                 },
@@ -46,8 +46,22 @@ class ConfigTemplate(object):
                     "bootstrap": True,
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
                     "n_jobs": -1,
-                    "random_state": 53,
-                    "max_samples": None,  # type: int | float
+                    "random_state": 53,  # type: int | None
+                    "max_samples": None,  # type: int | float | None
+                },
+            },
+            "CrossValidationSelection": {
+                "cross_validator": CrossValidator.STRATIFIED_KFOLD.name,  # type: CrossValidator | None
+                "StratifiedKFold": {
+                    "n_splits": 5,
+                    "shuffle": True,
+                    "random_state": 177,  # type: int | None # NOTE: If shuffle is false, random_state must be None
+                },
+                "TimeSeriesSplit": {
+                    "n_splits": 5,
+                    "max_train_size": None,  # type: int | None
+                    "test_size": None,  # type: int | None
+                    "gap": 0,
                 },
             },
             "ModelTraining": {"test3": ""},
