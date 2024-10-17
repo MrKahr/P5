@@ -3,6 +3,8 @@ import os
 import sys
 from pathlib import Path
 
+from modules.modelSelection.model_selection import ModelSelector
+
 ##########################
 ### Initial Path Setup ###
 ##########################
@@ -34,7 +36,5 @@ from modules.dataPreprocessing.transformer import DataTransformer
 #     x_labels=x_labels,
 # )
 
-
-config = Config()
-print(config.getValue("loglevel"))
-config.setValue("loglevel", "INFO")
+model = ModelSelector.getModel()
+print(model)
