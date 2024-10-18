@@ -40,9 +40,7 @@ class ModelSelector:
         return GaussianNB(**kwargs)
 
     @classmethod
-    def getModel(
-        cls,
-    ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
+    def getModel(cls) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
         """Get an unfit instance of the model as specified in the config file.
 
         Returns

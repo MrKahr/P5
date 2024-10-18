@@ -7,3 +7,7 @@ class Strategy:
     @abstractmethod
     def performAlgorithm(self, config_file: dict, PipelineComponent: Any) -> None:
         pass
+
+    @abstractmethod
+    def fitModel(self, estimator, features, target) -> Any:
+        pass
