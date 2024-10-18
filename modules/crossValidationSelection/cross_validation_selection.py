@@ -20,7 +20,10 @@ class CrossValidationSelector:
         return TimeSeriesSplit(**kwargs)
 
     @classmethod
-    def getCrossValidator(cls) -> Union[StratifiedKFold, TimeSeriesSplit, None]:
+    # NOTE: Union class is a union of all types in "[]"
+    def getCrossValidator(
+        cls,
+    ) -> Union[StratifiedKFold, TimeSeriesSplit, None]:
         """Get an instance of the cross-validator as specified in the config file.
 
         Returns
