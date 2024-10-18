@@ -6,6 +6,10 @@ from modules.config.config_enums import CrossValidator
 
 
 class CrossValidationSelector:
+    """
+    Cross-validation selection for the pipeline.
+    Creates an returns an instance of the cross-validator specified in the config file.
+    """
 
     @classmethod
     def _getStratifiedKFold(cls, kwargs) -> StratifiedKFold:
@@ -21,7 +25,7 @@ class CrossValidationSelector:
 
         Returns
         -------
-        Union[StratifiedKFold, TimeSeriesSplit]
+        Union[StratifiedKFold, TimeSeriesSplit, None]
             An instance of the cross-validator as specified in the config file.
         """
         cls._config = Config()

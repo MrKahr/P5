@@ -9,6 +9,10 @@ from modules.config.config_enums import Model
 
 
 class ModelSelector:
+    """
+    Model selection for the pipeline.
+    Creates an returns an instance of the model specified in the config file.
+    """
 
     @classmethod
     def _getDecisionTree(
