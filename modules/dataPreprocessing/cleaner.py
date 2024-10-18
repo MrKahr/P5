@@ -1,16 +1,25 @@
 import re
+from typing import Self
 import pandas as pd
 
 from modules.config.config import Config
-from modules.dataPreprocessing.processor import Processor
-from modules.dataPreprocessing.strategy import Strategy
 from modules.logging import logger
 
 
-class DataCleaner(Processor):
+class DataCleaner(object):
+    _instance = None
+
+    def __new__(cls, df: pd.DataFrame) -> Self:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._created = False
+        return cls._instance
+
     def __init__(self, df: pd.DataFrame) -> None:
-        self.df = df
-        self.initial_row_count = self.df.shape[0]
+        if not self._created:
+            self.df = df
+            self.initial_row_count = self.df.shape[0]
+            self._created = True
 
     def _deleteNanCols(self) -> None:
         """Remove columns where all entries are missing"""
@@ -112,9 +121,9 @@ class DataCleaner(Processor):
         """Subsets and shows the current dataframe to include only"""
         nan_df = self.df[self.df.isna().any(axis=1)]
         if len(nan_df) == 0:
-            print("Empty dataframe (no NaN values to display)")
+            logger.info("No NaN values to display.")
         else:
-            print(nan_df)
+            logger.info(f"NaN values are \n{nan_df}")
 
     def cleanRegsDataset(self, fillna: int = 100) -> None:
         """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
@@ -159,3 +168,23 @@ class DataCleaner(Processor):
         """
         self.showRowRemovalRatio()
         return self.df.copy(deep=True)
+
+    def run(self) -> None:
+        config = Config()
+        if config.getValue("DeleteNanColumns"):
+            self._deleteNanCols()
+        if config.getValue("DeleteNonfeatures"):
+            self.deleteNonfeatures()
+        if config.getValue("DeleteMissingValues"):
+            self.deleteMissingValues()
+        if config.getValue("DeleteUndeterminedValue"):
+            self.deleteUndeterminedValue()
+        if config.getValue("RemoveFeaturelessRows"):
+            self.removeFeaturelessRows(config.getValue("RFlRParams"))
+        if config.getValue("FillNan"):
+            self.fillNan()
+        if config.getValue("ShowNan"):
+            self.showNan()
+        # TODO - Find out why row removal ration is n/n - some rows ought to be removed
+        self.showRowRemovalRatio()
+        logger.info(f"DataCleaner is done")

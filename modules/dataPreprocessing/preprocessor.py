@@ -35,3 +35,6 @@ class DataPreprocessor:
         ndarr = self.df["Dag"].unique()
         i = ndarr.argmax()
         return ndarr[i]
+
+    def run(self) -> None:
+        print(f"{__name__}is run")

@@ -26,16 +26,55 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": "DEBUG",
+                "UseCleaner": True,
+                "UseFeatureSelector": True,
+                "UseTransformer": True,
+                "UseModelSelector": True,
+                "UseModelTrainer": True,
+                "UseModelTester": True,
+                "UseModelEvaluator": True,
             },
             "DataPreprocessing": {
                 "Cleaning": {
-                    "_deleteNanCols": "",
-                    "deleteNonfeatures": "",
-                    "removeFeaturelessRows": 3,
+                    "DeleteNanColumns": True,
+                    "DeleteNonfeatures": False,
+                    "DeleteMissingValues": False,
+                    "DeleteUndeterminedValue": False,
+                    "RemoveFeaturelessRows": True,
+                    "RFlRParams": 3,
+                    "FillNan": True,
+                    "ShowNan": True,
+                    "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
+                    "CleanMålDataset": True,  #        These three options should be handled by the run-method in the cleaner.py file
+                    "CleanOldDastaset": True,
                 },
-                "OutlierAnalysis": {"Method": "Odin", "RemoveOutliers": ""},
-                "Transformer": {"OneHotEncode": "", "modeImputeByDay": ""},
-                "FeatureSelection": {"ChiIndependence": ""},
+                "OutlierAnalysis": {
+                    "OutlierRemovalMethod": "odin",  # None, odin, avf
+                    "odinParams": {
+                        "k": 30,
+                        "T": 0,
+                    },  # {number of neighbors, indegree threshold}
+                    "avfParams": {"k": 10},  # {number of outliers to detect}
+                },
+                "Transformer": {
+                    "OneHotEncode": "T",
+                    "ImputationMethod": "KNN",  # None, Mode, KNN
+                    "NearestNeighbors": 5,
+                    "Normalisation": "minMax",  # None, minMax
+                },
+                "FeatureSelection": {
+                    "_computeFeatureCorrelation": "",
+                    "_chi2Independence": "",
+                    "_fClassifIndependence": "",
+                    "_mutualInfoClassif": "",
+                    "genericUnivariateSelect": "",
+                    "varianceThreshold": "",
+                    "permutationFeatureImportance": "",
+                    "permutation_importance": "",
+                    "checkOverfitting": "",
+                    "recursiveFeatureValidation": "",
+                    "recursiveFeatureValidationWithCrossValidation": "",
+                },  # TODO - WORK IN PROGRESS
             },
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,

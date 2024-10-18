@@ -1,14 +1,24 @@
+from typing import Self
 import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
-from modules.dataPreprocessing.processor import Processor
 from modules.logging import logger
 
 
 class DataTransformer:
-    def __init__(self, df: pd.DataFrame) -> None:
-        self.df = df
+    _instance = None
+
+    def __new__(cls) -> Self:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._created = False
+        return cls._instance
+
+    def __init__(self, df) -> None:
+        if not self._created:
+            self.df = df
+            self._created = True
 
     def getDataframe(self) -> pd.DataFrame:
         """Get a deep copy of the transformed dataframe.
@@ -223,3 +233,6 @@ class DataTransformer:
             elif value == value2:
                 self.df.loc[self.df.index[i], attribute] = value1
             i += 1
+
+    def run(self) -> None:
+        print(f"{__name__}is run")
