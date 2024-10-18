@@ -1,9 +1,9 @@
+import json
 import os
+
 from modules.config.setup_config import SetupConfig
 from modules.exceptions import MissingFieldError
 from modules.logging import logger
-import tomlkit
-import tomlkit.exceptions
 import traceback
 
 from pathlib import Path
@@ -38,8 +38,8 @@ def writeConfig(
     try:
         dst_dir.mkdir(parents=True, exist_ok=True)
 
-        if extension.lower() == "toml":
-            _generateTOMLconfig(config, dst_path)
+        if extension.lower() == "json":
+            _generateJSONConfig(config, dst_path)
         else:
             logger.warning(f"Cannot write unsupported file '{file}'")
     # We don't know which exceptions would be thrown, we just want some logging
@@ -52,32 +52,22 @@ def writeConfig(
         raise
 
 
-def _generateTOMLconfig(config: dict, dstPath: StrPath) -> None:
-    """Convert a Python config object to the '.toml'-format and write it to a '.toml' file.
+def _generateJSONConfig(config: dict, dstPath: StrPath) -> None:
+    """Convert a Python config object to the '.json'-format and write it to a '.json' file.
 
     Parameters
     ----------
     config : dict
-        A Python config object.
+        A Python config object
 
     dstPath : StrPath
-        Path-like object pointing to a toml file.
+        Path-like object pointing to a JSON file.
         Note: the file does not have to exist.
     """
     fileName = os.path.split(dstPath)[1]
-    doc = tomlkit.document()
-    for section, section_table in config.items():
-        # NOTE: Toml table corresponds to key/value pairs in a dict
-        table = tomlkit.table()
-        for key in section_table:
-            value = section_table[key]
-            table.append(key, value)
-        doc.append(section, table)
-
-    # NOTE: exception caught by caller (writeConfig)
     with open(dstPath, "w", encoding="utf-8") as file:
         logger.debug(f"Writing '{fileName}' to '{dstPath}'")
-        tomlkit.dump(doc, file)
+        file.write(json.dumps(config, indent=4))
 
 
 def checkMissingFields(disk_config: dict, template_config: dict) -> None:
@@ -137,7 +127,6 @@ def retrieveDictValue(
     parent_key: Optional[str] = None,
 ) -> Any:
     """Return first value found.
-    If `key` does not exists, return `default`.
 
     Has support for defining search scope with `parent_key`;
     A value will only be returned if it is within the scope of `parent_key`.
@@ -306,8 +295,8 @@ def loadConfig(
     extension = os.path.splitext(filename)[1].strip(".")
     try:
         with open(config_path, "rb") as file:
-            if extension.lower() == "toml":
-                raw_config = tomlkit.load(file)
+            if extension.lower() == "json":
+                raw_config = json.load(file)
             else:
                 err_msg = f"{config_name}: Cannot load unsupported file '{config_path}'"
                 raise NotImplementedError(err_msg)
@@ -322,11 +311,9 @@ def loadConfig(
         logger.info(f"{config_name}: Repairing config")
         repairedConfig = repairConfig(raw_config, template_config)
         writeConfig(repairedConfig, config_path)
-    except tomlkit.exceptions.ParseError as err:
+    except json.JSONDecodeError as err:
         isError, isRecoverable = True, True
-        logger.warning(
-            f"{config_name}: Failed to parse '{filename}':\n  {err.args[0]}\n"
-        )
+        logger.warning(f"{config_name}: Failed to parse '{filename}':\n  {err.msg}\n")
         writeConfig(template_config, config_path)
     except FileNotFoundError:
         isError, isRecoverable = True, True

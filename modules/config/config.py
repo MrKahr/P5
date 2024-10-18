@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Any, Optional, Self
 
 from modules.config.config_read_write import (
     insertDictValue,
@@ -43,7 +43,7 @@ class Config:
         )
         return config
 
-    def getValue(self, key: str) -> Any:
+    def getValue(self, key: str, parent_key: Optional[str] = None) -> Any:
         """Get a value from the config dict object.
         Return first value found. If there is no item with `key`.
 
@@ -60,7 +60,7 @@ class Config:
         Any
             The value of the key if found, else `default`.
         """
-        return retrieveDictValue(input=self._config, key=key)
+        return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
 
     def setValue(self, key: str, value: Any) -> bool:
         """Update the config dict with `value` using `key`.
