@@ -3,7 +3,7 @@ from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.strategy import Strategy
 
 
-class parseConfig(Strategy):
+class StrategyparseConfig(Strategy):
     def performAlgorithm(self, config_file: dict, PiplineComponent: Any) -> None:
         for key, value in config_file.items():
             currentCallable = getattr(PiplineComponent, key)

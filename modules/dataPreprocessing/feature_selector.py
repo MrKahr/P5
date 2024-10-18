@@ -41,7 +41,7 @@ from modules.logging import logger
 
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
-class FeatureSelector(Processor):
+class FeatureSelector:
     def __init__(self, X, y) -> None:
         self.X = X
         self.y = y

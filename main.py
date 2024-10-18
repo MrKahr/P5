@@ -5,7 +5,7 @@ from pathlib import Path
 
 from modules.dataPreprocessing.processor import Processor
 from modules.dataPreprocessing.strategy_skip import StrategySkip
-from modules.dataPreprocessing.strategy_parse_config import parseConfig
+from modules.dataPreprocessing.strategy_parse_config import StrategyparseConfig
 
 ##########################
 ### Initial Path Setup ###
@@ -43,6 +43,6 @@ dataProcessor = DataPreprocessor(Dataset.REGS)
 processor = Processor(
     config.getValue("Cleaning"),
     PipelineComponent=DataCleaner(dataProcessor.df),
-    Strategy=StrategySkip(),
+    Strategy=StrategyparseConfig(),
 )
 processor.performAlgorithm()

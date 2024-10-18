@@ -6,7 +6,7 @@ from modules.dataPreprocessing.processor import Processor
 from modules.logging import logger
 
 
-class DataTransformer(Processor):
+class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 

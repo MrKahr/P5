@@ -28,7 +28,8 @@ class ConfigTemplate(object):
             "DataPreprocessing": {
                 "Cleaning": {
                     "_deleteNanCols": "",
-                    "deleteNonfeatures": "B",
+                    "deleteNonfeatures": "",
+                    "removeFeaturelessRows": 3,
                 },
                 "OutlierAnalysis": {"Method": "Odin", "RemoveOutliers": ""},
                 "Transformer": {"OneHotEncode": "", "modeImputeByDay": ""},
