@@ -3,12 +3,14 @@
 ##########################
 # Set initial CWD
 import os
+import sklearn as sk
 
 from modules.dataPreprocessing.processor import Processor
 from modules.dataPreprocessing.strategy_parse_config import StrategyparseConfig
 from modules.modelSelection.model_selection import ModelSelector
 from modules.modelTraining.model_trainer import ModelTrainer
 from modules.modelTraining.strategy_fit_decision_tree import StrategyFitDecisionTree
+from sklearn.model_selection import train_test_split
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -50,12 +52,19 @@ def custom_score(estimator, X, y):
 
 selector = ModelSelector
 estimator = selector.getModel()
+estimatorStrategy = (
+    StrategyFitDecisionTree  # move strategy chooser to modelTrainer class internally
+)
 DataCleaner(dataProcessor.df).cleanRegsDataset()
 features = dataProcessor.getTrainingData()
+train_features, test_features = train_test_split(features)
 target = dataProcessor.getTargetData()
-trainer = ModelTrainer(estimator, features, target, StrategyFitDecisionTree)
+train_target, test_target = train_test_split(target)
+trainer = ModelTrainer(estimator, train_features, train_target, estimatorStrategy)
 fittedModel = trainer.fitModel()
 n_features = fittedModel.n_features_in_
 
 print(f"Optimal features: {n_features}")
-print(f"Training data accuracy: {custom_score(fittedModel, features, target):.3f}")
+print(
+    f"Training data accuracy: {custom_score(fittedModel, test_features, test_target):.3f}"
+)

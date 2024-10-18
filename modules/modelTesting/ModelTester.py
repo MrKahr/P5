@@ -18,3 +18,6 @@ class ModelTester:
         self.Estimator = Estimator
         self.Features = Features
         self.Target = Target
+
+
+# estimator, useen feature data, unseen target data, scoring function.
