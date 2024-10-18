@@ -1,7 +1,6 @@
 import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
-
 from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.logging import logger
 
@@ -36,3 +35,6 @@ class DataPreprocessor:
         ndarr = self.df["Dag"].unique()
         i = ndarr.argmax()
         return ndarr[i]
+
+    def run(self) -> None:
+        print(f"{__name__}is run")

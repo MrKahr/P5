@@ -22,11 +22,60 @@ class ConfigTemplate(object):
 
     @classmethod
     def _createTemplate(self) -> dict:
+        # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
                 "loglevel": "DEBUG",
+                "UseCleaner": True,
+                "UseFeatureSelector": True,
+                "UseTransformer": True,
+                "UseModelSelector": True,
+                "UseModelTrainer": True,
+                "UseModelTester": True,
+                "UseModelEvaluator": True,
             },
-            "DataPreprocessing": {"test1": ""},
+            "DataPreprocessing": {
+                "Cleaning": {
+                    "DeleteNanColumns": True,
+                    "DeleteNonfeatures": False,
+                    "DeleteMissingValues": False,
+                    "DeleteUndeterminedValue": False,
+                    "RemoveFeaturelessRows": True,
+                    "RFlRParams": 3,
+                    "FillNan": True,
+                    "ShowNan": True,
+                    "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
+                    "CleanMålDataset": True,  #        These three options should be handled by the run-method in the cleaner.py file
+                    "CleanOldDastaset": True,
+                },
+                "OutlierAnalysis": {
+                    "OutlierRemovalMethod": "odin",  # None, odin, avf
+                    "odinParams": {
+                        "k": 30,
+                        "T": 0,
+                    },  # {number of neighbors, indegree threshold}
+                    "avfParams": {"k": 10},  # {number of outliers to detect}
+                },
+                "Transformer": {
+                    "OneHotEncode": "T",
+                    "ImputationMethod": "KNN",  # None, Mode, KNN
+                    "NearestNeighbors": 5,
+                    "Normalisation": "minMax",  # None, minMax
+                },
+                "FeatureSelection": {
+                    "_computeFeatureCorrelation": "",
+                    "_chi2Independence": "",
+                    "_fClassifIndependence": "",
+                    "_mutualInfoClassif": "",
+                    "genericUnivariateSelect": "",
+                    "varianceThreshold": "",
+                    "permutationFeatureImportance": "",
+                    "permutation_importance": "",
+                    "checkOverfitting": "",
+                    "recursiveFeatureValidation": "",
+                    "recursiveFeatureValidationWithCrossValidation": "",
+                },  # TODO - WORK IN PROGRESS
+            },
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {

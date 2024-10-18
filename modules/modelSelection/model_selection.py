@@ -70,3 +70,7 @@ class ModelSelector:
             return cls._getNeuralNetwork()
         else:
             raise NotImplementedError(f"No support for model '{selected_model}'")
+
+    @classmethod
+    def run(self) -> None:
+        print(f"{__name__}is run")

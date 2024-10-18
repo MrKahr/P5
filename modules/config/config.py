@@ -27,6 +27,7 @@ class Config:
             self._config_path = SetupConfig.app_config_path
             self._template_config = ConfigTemplate().getTemplate()
             self._config = self._initConfig()
+            self._created = True
 
     def _initConfig(self) -> dict[str, Any]:
         """Loads the config from a file.
