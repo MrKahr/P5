@@ -7,7 +7,7 @@ from modules.logging import logger
 import traceback
 
 from pathlib import Path
-from typing import Any, Optional, TypeAlias
+from typing import Any, Literal, Optional, TypeAlias
 
 
 # REVIEW: why is this not wrapped in a class? - TODO:make class
@@ -70,54 +70,82 @@ def _generateJSONConfig(config: dict, dstPath: StrPath) -> None:
         file.write(json.dumps(config, indent=4))
 
 
-def checkMissingFields(disk_config: dict, template_config: dict) -> None:
-    """Compare the raw_config against the template_config for missing
+def checkMissingFields(config: dict, template: dict) -> None:
+    """Compare the config against the template for missing
     sections/settings and vice versa.
 
     Parameters
     ----------
-    raw_config : dict
-        A config read from a file.
+    config : dict
+        The config loaded from a file.
 
-    template_config : dict
-        The template version of the raw config file.
+    template : dict
+        The template used to create `config`.
 
     Raises
     ------
     MissingFieldError
         If any missing or unknown sections/settings are found.
     """
-    # TODO: Find more optimal way to compare files and check validity
-    allErrors, sectionErrors, fieldErrors = [], [], []
-    for section in template_config:  # Check sections
-        sectionExistsInConfig = section in disk_config
-        if not sectionExistsInConfig:
-            sectionErrors.append(f"Missing section '{section}'")
-        else:
-            for setting in template_config[section]:  # Check settings in a section
-                if sectionExistsInConfig and setting not in disk_config[section]:
-                    fieldErrors.append(
-                        f"Missing setting '{setting}' in section '{section}'"
-                    )
+    all_errors, section_errors, field_errors = [], [], []
+    parents = []
 
-    for section in disk_config:  # Check sections
-        sectionShouldExist = section in template_config
-        if not sectionShouldExist:
-            if isinstance(disk_config[section], dict):
-                sectionErrors.append(f"Unknown section '{section}'")
-            else:
-                fieldErrors.append(f"Setting '{section}' does not belong to a section")
-        else:
-            for setting in disk_config[section]:  # Check settings in a section
-                if sectionShouldExist and setting not in template_config[section]:
-                    fieldErrors.append(
-                        f"Unknown setting '{setting}' in section '{section}'"
+    def searchFields(
+        config: dict, template: dict, search_mode: Literal["missing", "unknown"]
+    ) -> None:
+        """Helper function to keep track of parents while traversing.
+        Use `search_mode` to select which type of field to search for.
+
+        Parameters
+        ----------
+        config : dict
+            The config loaded from a file.
+
+        template : dict
+            The template used to create `config`.
+
+        search_mode : Literal["missing", "unknown"]
+            Specify which type of field to search for.
+        """
+        # The dict to search depth-first in. Should be opposite of validation dict
+        search_dict = template if search_mode == "missing" else config
+        # The dict to compare the search dict against. Should be opposite of search dict
+        validation_dict = config if search_mode == "missing" else template
+        for key, value in search_dict.items():
+            # The template is still nested (dict key/value pairs, i.e., sections)
+            if isinstance(value, dict):
+                if key in validation_dict:  # section exists
+                    parents.append(key)
+                    next_search = (
+                        (config[key], value)
+                        if search_mode == "missing"
+                        else (value, template[key])
                     )
+                    searchFields(*next_search, search_mode=search_mode)
+                else:
+                    section_errors.append(
+                        f"{search_mode.capitalize()} {f"subsection '{".".join(parents)}.{key}'" if parents else f"section '{key}'"}"
+                    )
+            # We've reached the bottom of the nesting (non-dict key/value pairs)
+            elif key not in validation_dict:
+                if parents:
+                    field_errors.append(
+                        f"{search_mode.capitalize()} setting '{key}' in {f"section '{parents[0]}'" if len(parents) == 1 else f"subsection '{".".join(parents)}'"}"
+                    )
+                else:
+                    field_errors.append(f"{search_mode.capitalize()} setting '{key}'")
+        else:
+            if parents:
+                parents.pop()
+
+    searchFields(config, template, search_mode="missing")
+    searchFields(config, template, search_mode="unknown")
+
     # Ensure all section errors are displayed first
-    allErrors.extend(sectionErrors)
-    allErrors.extend(fieldErrors)
-    if len(allErrors) > 0:
-        raise MissingFieldError(allErrors)
+    all_errors.extend(section_errors)
+    all_errors.extend(field_errors)
+    if len(all_errors) > 0:
+        raise MissingFieldError(all_errors)
 
 
 # TODO: create dynamic programming version
@@ -257,7 +285,7 @@ def insertDictValue(
 def loadConfig(
     config_name: str,
     config_path: StrPath,
-    template_config: Optional[dict[str, Any]] = None,
+    template: dict[str, Any],
     retries: int = 1,
 ) -> dict[str, Any] | None:
     """Read and validate the config file residing at the supplied config path.
@@ -270,9 +298,8 @@ def loadConfig(
     config_path : StrPath
         Path-like object pointing to a config file.
 
-    template_config : dict[str, Any] | None, optional
-        The template connected to the loaded config
-        By default None.
+    template : dict[str, Any]
+        The template used to create the loaded config.
 
     retries : int, optional
         Reload the config X times if soft errors occur.
@@ -296,12 +323,11 @@ def loadConfig(
     try:
         with open(config_path, "rb") as file:
             if extension.lower() == "json":
-                raw_config = json.load(file)
+                config = json.load(file)
             else:
                 err_msg = f"{config_name}: Cannot load unsupported file '{config_path}'"
                 raise NotImplementedError(err_msg)
-        checkMissingFields(raw_config, template_config)
-        config = raw_config
+        checkMissingFields(config, template)
     except MissingFieldError as err:
         isError, isRecoverable = True, True
         err_msg = f"{config_name}: Detected incorrect fields in '{filename}':\n"
@@ -309,16 +335,16 @@ def loadConfig(
             err_msg += f"  {item}\n"
         logger.warning(err_msg)
         logger.info(f"{config_name}: Repairing config")
-        repairedConfig = repairConfig(raw_config, template_config)
+        repairedConfig = repairConfig(config, template)
         writeConfig(repairedConfig, config_path)
     except json.JSONDecodeError as err:
         isError, isRecoverable = True, True
         logger.warning(f"{config_name}: Failed to parse '{filename}':\n  {err.msg}\n")
-        writeConfig(template_config, config_path)
+        writeConfig(template, config_path)
     except FileNotFoundError:
         isError, isRecoverable = True, True
         logger.info(f"{config_name}: Creating '{filename}'")
-        writeConfig(template_config, config_path)
+        writeConfig(template, config_path)
     except Exception:
         isError, isRecoverable = True, False
         logger.error(
@@ -332,14 +358,14 @@ def loadConfig(
                 config = loadConfig(
                     config_name=config_name,
                     config_path=config_path,
-                    template_config=template_config,
+                    template=template,
                     retries=retries - 1,
                 )
             else:
                 load_failure_msg = f"{config_name}: Failed to load '{filename}'"
-                if template_config:
+                if template:
                     load_failure_msg += ". Switching to template config"
-                    config = template_config  # Use template config if all else fails
+                    config = template  # Use template config if all else fails
                     logger.warning(load_failure_msg)
                 else:
                     logger.error(load_failure_msg)
@@ -348,31 +374,33 @@ def loadConfig(
         return config
 
 
-# TODO: write more thorough docstring esp. summary, what is the purpose of the function
-def repairConfig(raw_dict: dict, template_config: dict) -> dict:
-    """Preserve all valid values in the config when some fields are determined invalid.
-    Note: does not support sectionless configs.
+def repairConfig(config: dict, template: dict) -> dict:
+    """Preserve all valid values in `config` when some of its fields are determined invalid.
+    Fields are taken from `template` if they could not be preserved from `config`.
 
     Parameters
     ----------
-    validated_config : dict
-        The config, loaded from disk and validated, which contains invalid fields.
+    config : dict
+        The config loaded from a file.
 
-    template_config : dict
-        The template of the `validated_config`.
+    template : dict
+        The template used to create `config`.
 
     Returns
     -------
     dict
-        The config where all values are valid with as many as possible
-        preserved from the `validated_config`.
+        A new config where all values are valid with as many as possible
+        preserved from `config`.
     """
-    newConfig = {}
-    for section_name, section in template_config.items():
-        newConfig |= {section_name: {}}
-        for setting, options in section.items():
-            if section_name in raw_dict and setting in raw_dict[section_name]:
-                newConfig[section_name] |= {setting: raw_dict[section_name][setting]}
-            else:
-                newConfig[section_name] |= {setting: options}
-    return newConfig
+    repaired_config = {}
+    for template_key, value in template.items():
+        if isinstance(value, dict) and template_key in config:
+            # Search config/template recursively, depth-first
+            repaired_config |= {template_key: repairConfig(config[template_key], value)}
+        elif template_key in config:
+            # Preserve value from config
+            repaired_config |= {template_key: config[template_key]}
+        else:
+            # Use value from template
+            repaired_config |= {template_key: value}
+    return repaired_config
