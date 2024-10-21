@@ -25,7 +25,7 @@ class Config:
         if not self._created:
             self._config_name = SetupConfig.config_name
             self._config_path = SetupConfig.app_config_path
-            self._template_config = ConfigTemplate().getTemplate()
+            self._template = ConfigTemplate().getTemplate()
             self._config = self._initConfig()
             self._created = True
 
@@ -40,7 +40,7 @@ class Config:
         config = loadConfig(
             config_name=self._config_name,
             config_path=self._config_path,
-            template_config=self._template_config,
+            template=self._template,
         )
         return config
 
