@@ -1,3 +1,4 @@
+from typing import Self
 import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
@@ -6,6 +7,7 @@ from modules.logging import logger
 
 
 class DataTransformer:
+
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 
@@ -222,3 +224,6 @@ class DataTransformer:
             elif value == value2:
                 self.df.loc[self.df.index[i], attribute] = value1
             i += 1
+
+    def run(self) -> None:
+        print(f"{__name__}is run")

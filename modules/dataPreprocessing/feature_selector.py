@@ -1,4 +1,4 @@
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Self, Union
 from sklearn.feature_selection import (
     GenericUnivariateSelect,
     chi2,
@@ -7,7 +7,6 @@ from sklearn.feature_selection import (
 )
 from numpy.typing import NDArray
 from sklearn.inspection import permutation_importance
-
 from modules.logging import logger
 
 # SECTION
@@ -41,8 +40,8 @@ from modules.logging import logger
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
-    def __init__(self, X, y) -> None:
-        self.X = X
+    def __init__(self, x, y) -> None:
+        self.X = x
         self.y = y
 
     def _computeFeatureCorrelation(self) -> Any:
@@ -369,3 +368,6 @@ class FeatureSelector:
     def recursiveFeatureValidationWithCrossValidation(self) -> Any:
         # See: https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
         pass
+
+    def run(self) -> None:
+        print(f"{__name__}is run")
