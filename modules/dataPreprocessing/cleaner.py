@@ -7,19 +7,10 @@ from modules.logging import logger
 
 
 class DataCleaner(object):
-    _instance = None
-
-    def __new__(cls, df: pd.DataFrame) -> Self:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._created = False
-        return cls._instance
 
     def __init__(self, df: pd.DataFrame) -> None:
-        if not self._created:
-            self.df = df
-            self.initial_row_count = self.df.shape[0]
-            self._created = True
+        self.df = df
+        self.initial_row_count = self.df.shape[0]
 
     def _deleteNanCols(self) -> None:
         """Remove columns where all entries are missing"""

@@ -40,17 +40,9 @@ from modules.logging import logger
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
-    def __new__(cls) -> Self:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._created = False
-        return cls._instance
-
     def __init__(self, x, y) -> None:
-        if not self._created:
-            self.X = x
-            self.y = y
-            self._created = True
+        self.X = x
+        self.y = y
 
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
