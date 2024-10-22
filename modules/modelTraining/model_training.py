@@ -1,4 +1,7 @@
+from modules.logging import logger
+
+
 class ModelTrainer:
 
     def run(self) -> None:
-        print(f"{__name__}is run")
+        logger.info(f"ModelTrainer is done")

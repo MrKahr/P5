@@ -7,6 +7,9 @@ from sklearn.feature_selection import (
 )
 from numpy.typing import NDArray
 from sklearn.inspection import permutation_importance
+from modules.config.config import Config
+from modules.config.config_enums import Mode, ScoreFunction
+from modules.dataPreprocessing.preprocessor import DataPreprocessor
 from modules.logging import logger
 
 # SECTION
@@ -280,82 +283,6 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance
         pass
 
-    def permutationFeatureImportance(
-        self,
-        fitted_estimator: Any,
-        X: NDArray,
-        y: NDArray,
-        scoring: Union[list[str], Callable],
-        n_repeats: int,
-        n_jobs: int = -1,
-        random_state: int = 23,
-    ) -> Any:
-        """
-        Permutation feature importance is a model inspection technique
-        that measures the contribution of each feature to a fitted model's
-        statistical performance on a given tabular dataset. This technique is
-        particularly useful for non-linear or opaque estimators, and involves
-        randomly shuffling the values of a single feature and observing the resulting
-        degradation of the model's score. By breaking the relationship between the
-        feature and the target, we determine how much the model relies on such particular feature.
-
-        Notes
-        -----
-        Permutation importance does not reflect the intrinsic predictive value of a
-        feature by itself but how important this feature is for a particular model.
-
-        Parameters
-        ----------
-        fitted_estimator : Any
-            A fitted estimator.
-
-        X : NDArray
-            Training data.
-
-        y : NDArray
-            Target data.
-
-        scoring : Union[list[str], Callable]
-            The score method used to measure feature importance.
-            To use a preset score method (i.e. `list[str]`), please see:\n
-            https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values\n
-            for a table of all score methods.
-
-        n_repeats : int
-            Number of times to permute a feature.
-
-        n_jobs : int, optional
-            CPU cores used (`-1` means ALL).
-            By default -1.
-
-        random_state : int, optional
-            Pseudo-random number generator to control the permutations of each feature.
-            Pass an int to get reproducible results across function calls.
-            By default 23.
-
-        Returns
-        -------
-        Any
-            _description_
-
-        Links
-        -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html
-        - https://scikit-learn.org/stable/modules/permutation_importance.html#permutation-importance
-
-        """
-        # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-        # TODO: Verify that the model is better than a RNG: https://scikit-learn.org/stable/auto_examples/model_selection/plot_permutation_tests_for_classification.html#sphx-glr-auto-examples-model-selection-plot-permutation-tests-for-classification-py
-        result = permutation_importance(
-            fitted_estimator,
-            X,
-            y,
-            scoring=scoring,
-            n_repeats=n_repeats,
-            n_jobs=n_jobs,
-            random_state=random_state,
-        )
-
     def checkOverfitting(self) -> Any:
         # NOTE: This appears to only work for tree-based models
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-py
@@ -369,5 +296,59 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
         pass
 
-    def run(self) -> None:
-        print(f"{__name__}is run")
+    def ScoreFunctionSelector(self, scoreFunction: ScoreFunction) -> Callable:
+        # TODO - find way to get scoring function
+        match scoreFunction:
+            case ScoreFunction.CUSTOM_SCORE_FUNC:
+                pass
+            case ScoreFunction.ACCURACY:
+                pass
+            case ScoreFunction.BALANCED_ACCURACY:
+                pass
+            case ScoreFunction.EXPLAINED_VARIANCE:
+                pass
+
+    def modeSelector(
+        self,
+        mode: Mode,
+    ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
+
+        match mode:
+            case Mode.PERCENTILE:
+                pass
+            case Mode.K_BEST:
+                pass
+            case Mode.FPR:
+                pass
+            case Mode.FDR:
+                pass
+            case Mode.FWE:
+                pass
+
+    def run(self, cls) -> None:
+        config = Config()
+        if config.getValue("ComputeFeatureCorrelation"):
+            self._computeFeatureCorrelation()
+        if config.getValue("TestChi2Independence"):
+            self._chi2Independence(self.X, self.y)
+        if config.getValue("TestfClassifIndependence"):
+            self._fClassifIndependence(self.X, self.y)
+        if config.getValue("MutualInfoClassif"):
+            self._mutualInfoClassif(
+                self.X,
+                self.y,
+                **config.getValue("MutualInfoClassifArgs"),
+            )
+        # TODO - Implement both mode, and scorefunc selector
+        if config.getValue("GenericUnivariateSelect"):
+            self.genericUnivariateSelect(
+                self.X, self.y, scoreFunc, mode, param, x_labels=None
+            )
+        if config.getValue("VarianceThreshold"):
+            self.varianceThreshold()
+        if config.getValue("checkOverfitting"):
+            self.checkOverfitting()
+        if config.getValue("recursiveFeatureValidation"):
+            self.recursiveFeatureValidation(self)
+        if config.getValue("recursiveFeatureValidationWithCrossValidation"):
+            self.recursiveFeatureValidationWithCrossValidation(self)

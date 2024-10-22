@@ -160,7 +160,7 @@ class DataCleaner(object):
         self.showRowRemovalRatio()
         return self.df.copy(deep=True)
 
-    def run(self) -> None:
+    def run(self) -> pd.DataFrame:
         config = Config()
         if config.getValue("DeleteNanColumns"):
             self._deleteNanCols()
@@ -179,3 +179,4 @@ class DataCleaner(object):
         # TODO - Find out why row removal ration is n/n - some rows ought to be removed
         self.showRowRemovalRatio()
         logger.info(f"DataCleaner is done")
+        return self.df.copy(deep=True)

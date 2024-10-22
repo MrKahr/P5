@@ -1,6 +1,15 @@
 from typing import Self
 
-from modules.config.config_enums import CrossValidator, Model
+from modules.config.config_enums import (
+    CrossValidator,
+    Mode,
+    Model,
+    LogLevel,
+    ImputationMethod,
+    NormalisationMethod,
+    OutlierRemovalMethod,
+    ScoreFunction,
+)
 
 
 class ConfigTemplate(object):
@@ -25,10 +34,11 @@ class ConfigTemplate(object):
         # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
-                "loglevel": "DEBUG",
+                "loglevel": LogLevel.DEBUG.name,
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
+                "UseOutlierRemoval": True,
                 "UseModelSelector": True,
                 "UseModelTrainer": True,
                 "UseModelTester": True,
@@ -49,7 +59,7 @@ class ConfigTemplate(object):
                     "CleanOldDastaset": True,
                 },
                 "OutlierAnalysis": {
-                    "OutlierRemovalMethod": "odin",  # None, odin, avf
+                    "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,  # None, odin, avf
                     "odinParams": {
                         "k": 30,
                         "T": 0,
@@ -57,23 +67,33 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
-                    "OneHotEncode": "T",
-                    "ImputationMethod": "KNN",  # None, Mode, KNN
+                    "OneHotEncodeLabels": [],  # type: list[str]
+                    "ImputationMethod": ImputationMethod.KNN.name,  # None, Mode, KNN
                     "NearestNeighbors": 5,
-                    "Normalisation": "minMax",  # None, minMax
+                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,  # None, minMax
+                    "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "_computeFeatureCorrelation": "",
-                    "_chi2Independence": "",
-                    "_fClassifIndependence": "",
-                    "_mutualInfoClassif": "",
-                    "genericUnivariateSelect": "",
-                    "varianceThreshold": "",
-                    "permutationFeatureImportance": "",
-                    "permutation_importance": "",
-                    "checkOverfitting": "",
-                    "recursiveFeatureValidation": "",
-                    "recursiveFeatureValidationWithCrossValidation": "",
+                    "ComputeFeatureCorrelation": True,
+                    "TestChi2Independence": True,
+                    "TestfClassifIndependence": True,
+                    "MutualInfoClassif": True,
+                    "MutualInfoClassifArgs": {
+                        "discrete_features": True,
+                        "n_neighbors": 3,
+                        "copy": True,
+                        "random_state": 12,
+                    },
+                    "GenericUnivariateSelect": True,
+                    "GenericUnivariateSelectArgs": {
+                        "scoreFunc": ScoreFunction.CUSTOM_FUNCTION,
+                        "mode": Mode.PERCENTILE,
+                        "param": 5,
+                    },
+                    "VarianceThreshold": True,
+                    "checkOverfitting": True,
+                    "recursiveFeatureValidation": True,
+                    "recursiveFeatureValidationWithCrossValidation": True,
                 },  # TODO - WORK IN PROGRESS
             },
             "ModelSelection": {
