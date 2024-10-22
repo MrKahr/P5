@@ -12,18 +12,20 @@ class CrossValidationSelector:
     """
 
     @classmethod
-    def _getStratifiedKFold(cls, kwargs) -> StratifiedKFold:
+    def _getStratifiedKFold(cls, **kwargs) -> StratifiedKFold:
         return StratifiedKFold(**kwargs)
 
     @classmethod
-    def _getTimeSeriesSplit(cls, kwargs) -> TimeSeriesSplit:
+    def _getTimeSeriesSplit(cls, **kwargs) -> TimeSeriesSplit:
         return TimeSeriesSplit(**kwargs)
+
+    # TODO: Implement: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html#sklearn.model_selection.GroupKFold
 
     @classmethod
     # NOTE: Union class is a union of all types in "[]"
     def getCrossValidator(
         cls,
-    ) -> Union[StratifiedKFold, TimeSeriesSplit, None]:
+    ) -> CrossValidator | None:
         """Get an instance of the cross-validator as specified in the config file.
 
         Returns
@@ -46,4 +48,6 @@ class CrossValidationSelector:
                 cls._config.getValue("TimeSeriesSplit", parent_key)
             )
         else:
-            raise NotImplementedError(f"No support for cross-validator '{selected_cv}'")
+            raise TypeError(
+                f"Invalid cross-validator '{selected_cv}'. Expected one of {CrossValidator._member_names_}"
+            )

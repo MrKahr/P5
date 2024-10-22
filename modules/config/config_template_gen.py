@@ -1,6 +1,6 @@
 from typing import Self
 
-from modules.config.config_enums import CrossValidator, Model
+from modules.config.config_enums import CrossValidator, Model, TrainingMethod
 
 
 class ConfigTemplate(object):
@@ -94,7 +94,6 @@ class ConfigTemplate(object):
                     "n_estimators": 100,
                     "bootstrap": True,
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
-                    "n_jobs": -1,
                     "random_state": 53,  # type: int | None
                     "max_samples": None,  # type: int | float | None
                 },
@@ -113,7 +112,18 @@ class ConfigTemplate(object):
                     "gap": 0,
                 },
             },
-            "ModelTraining": {"test3": ""},
+            "ModelTraining": {
+                "training_method": TrainingMethod.FIT,
+                "PermutationFeatureImportance": {
+                    "scoring": "",  # TODO: Add enum
+                    "n_repeats": 10,
+                    "random_state": 298,  # type: int | None
+                },
+                "RFE": {
+                    "n_features_to_select": None,  # type: float | int | None
+                    "step": 1,  # type: float | int
+                },
+            },
             "ModelTesting": {"test4": ""},
             "ModelEvaluation": {"test5": ""},
         }

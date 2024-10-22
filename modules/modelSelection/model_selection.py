@@ -6,6 +6,7 @@ from sklearn.svm import SVC
 
 from modules.config.config import Config
 from modules.config.config_enums import Model
+from modules.types import UnfittedEstimator
 
 
 class ModelSelector:
@@ -17,32 +18,33 @@ class ModelSelector:
     @classmethod
     def _getDecisionTree(
         cls,
-        kwargs,
+        **kwargs,
     ) -> DecisionTreeClassifier:
-        return DecisionTreeClassifier(**kwargs)
+        a = DecisionTreeClassifier(**kwargs).fit(**kwargs)
+        a.fe
 
     @classmethod
-    def _getRandomForest(cls, kwargs) -> RandomForestClassifier:
-        return RandomForestClassifier(**kwargs)
+    def _getRandomForest(cls, **kwargs) -> RandomForestClassifier:
+        return RandomForestClassifier(n_jobs=-1, **kwargs).fit(**kwargs)
 
     @classmethod
-    def _getNeuralNetwork(cls, kwargs) -> None:
+    def _getNeuralNetwork(cls, **kwargs) -> None:
         raise NotImplementedError()
 
     @classmethod
-    def _getSupportVectorMachine(cls, kwargs) -> None:
+    def _getSupportVectorMachine(cls, **kwargs) -> None:
         raise NotImplementedError()
-        return SVC(**kwargs)
+        return SVC(**kwargs).fit(**kwargs)
 
     @classmethod
-    def _getNaiveBayes(cls, kwargs) -> None:
+    def _getNaiveBayes(cls, **kwargs) -> None:
         raise NotImplementedError()
-        return GaussianNB(**kwargs)
+        return GaussianNB(**kwargs).fit(**kwargs)
 
     @classmethod
     def getModel(
         cls,
-    ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
+    ) -> UnfittedEstimator:
         """Get an unfit instance of the model as specified in the config file.
 
         Returns
@@ -69,7 +71,9 @@ class ModelSelector:
         elif selected_model == Model.NEURAL_NETWORK.name:
             return cls._getNeuralNetwork()
         else:
-            raise NotImplementedError(f"No support for model '{selected_model}'")
+            raise TypeError(
+                f"Invalid model '{selected_model}'. Expected one of {Model._member_names_}"
+            )
 
     @classmethod
     def run(self) -> None:
