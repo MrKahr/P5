@@ -13,7 +13,7 @@ from modules.config.config_enums import (
 
 
 class ConfigTemplate(object):
-    """Singleton that defines as configuration template for the project.
+    """Singleton that defines  configuration template for the project.
     Note: We added additional params/longer attribute accesses for clarity."""
 
     _instance = None

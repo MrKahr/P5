@@ -161,6 +161,12 @@ class DataCleaner(object):
         return self.df.copy(deep=True)
 
     def run(self) -> pd.DataFrame:
+        """Run all applicable data cleaning methods
+        Returns
+        -------
+        pd.DataFrame
+            The cleaned dataset that is returned to the pipeline
+        """
         config = Config()
         if config.getValue("DeleteNanColumns"):
             self._deleteNanCols()

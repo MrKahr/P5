@@ -232,6 +232,13 @@ class DataTransformer:
             i += 1
 
     def run(self) -> pd.DataFrame:
+        """Run all applicable transformation methods
+
+        Returns
+        -------
+        pd.DataFrame
+            The transformed dataset returned to the pipeline
+        """
         config = Config()
         if len(config.getValue("OneHotEncodeLabels")) > 0:
             self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
