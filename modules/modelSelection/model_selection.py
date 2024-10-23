@@ -1,8 +1,6 @@
-from typing import Union
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
 
 from modules.config.config import Config
 from modules.config.config_enums import Model
@@ -20,26 +18,19 @@ class ModelSelector:
         cls,
         **kwargs,
     ) -> DecisionTreeClassifier:
-        a = DecisionTreeClassifier(**kwargs).fit(**kwargs)
-        a.fe
+        return DecisionTreeClassifier(**kwargs)
 
     @classmethod
     def _getRandomForest(cls, **kwargs) -> RandomForestClassifier:
-        return RandomForestClassifier(n_jobs=-1, **kwargs).fit(**kwargs)
+        return RandomForestClassifier(**kwargs)
 
     @classmethod
     def _getNeuralNetwork(cls, **kwargs) -> None:
         raise NotImplementedError()
 
     @classmethod
-    def _getSupportVectorMachine(cls, **kwargs) -> None:
-        raise NotImplementedError()
-        return SVC(**kwargs).fit(**kwargs)
-
-    @classmethod
-    def _getNaiveBayes(cls, **kwargs) -> None:
-        raise NotImplementedError()
-        return GaussianNB(**kwargs).fit(**kwargs)
+    def _getNaiveBayes(cls, **kwargs) -> GaussianNB:
+        return GaussianNB(**kwargs)
 
     @classmethod
     def getModel(
@@ -49,25 +40,26 @@ class ModelSelector:
 
         Returns
         -------
-        Union[DecisionTreeClassifier, RandomForestClassifier]
+        UnfittedEstimator
             An unfit instance of the model as specified in the config file.
         """
         cls._config = Config()
         parent_key = "ModelSelection"
         selected_model = cls._config.getValue("model", parent_key)
+        n_jobs = {"n_jobs": cls._config.getValue("n_jobs", "General")}
 
         if selected_model == Model.DECISION_TREE.name:
             return cls._getDecisionTree(
-                cls._config.getValue("DecisionTree", parent_key)
+                **cls._config.getValue("DecisionTree", parent_key)
             )
         elif selected_model == Model.RANDOM_FOREST.name:
-            dt = cls._config.getValue("DecisionTree", parent_key)
-            rf = cls._config.getValue("RandomForest", parent_key)
-            return cls._getRandomForest(dt | rf)
+            dt = cls._config.getValue("DecisionTree", parent_key)  # type: dict
+            rf = cls._config.getValue("RandomForest", parent_key)  # type: dict
+            return cls._getRandomForest(**{dt | rf | n_jobs})
         elif selected_model == Model.NAIVE_BAYES.name:
-            return cls._getNaiveBayes()
-        elif selected_model == Model.SUPPORT_VECTOR.name:
-            return cls._getSupportVectorMachine()
+            return cls._getNaiveBayes(
+                **cls._config.getValue("GaussianNaiveBayes", parent_key)
+            )
         elif selected_model == Model.NEURAL_NETWORK.name:
             return cls._getNeuralNetwork()
         else:

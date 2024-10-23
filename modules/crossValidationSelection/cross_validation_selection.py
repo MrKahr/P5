@@ -1,4 +1,3 @@
-from typing import Union
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
 from modules.config.config import Config
@@ -22,7 +21,6 @@ class CrossValidationSelector:
     # TODO: Implement: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html#sklearn.model_selection.GroupKFold
 
     @classmethod
-    # NOTE: Union class is a union of all types in "[]"
     def getCrossValidator(
         cls,
     ) -> CrossValidator | None:
@@ -30,7 +28,7 @@ class CrossValidationSelector:
 
         Returns
         -------
-        Union[StratifiedKFold, TimeSeriesSplit, None]
+        CrossValidator | None
             An instance of the cross-validator as specified in the config file.
         """
         cls._config = Config()
@@ -41,11 +39,11 @@ class CrossValidationSelector:
             return
         elif selected_cv == CrossValidator.STRATIFIED_KFOLD.name:
             return cls._getStratifiedKFold(
-                cls._config.getValue("StratifiedKFold", parent_key)
+                **cls._config.getValue("StratifiedKFold", parent_key)
             )
         elif selected_cv == CrossValidator.TIMESERIES_SPLIT.name:
             return cls._getTimeSeriesSplit(
-                cls._config.getValue("TimeSeriesSplit", parent_key)
+                **cls._config.getValue("TimeSeriesSplit", parent_key)
             )
         else:
             raise TypeError(
