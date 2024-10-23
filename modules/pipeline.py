@@ -30,19 +30,19 @@ class Pipeline:
             DataCleaner(self.df).run()
         if self.config.getValue("UseFeatureSelector"):
             logger.info("Trying to run FeatureSelector...")
-            FeatureSelector.run()
+            FeatureSelector().run()
         if self.config.getValue("UseTransformer"):
             logger.info("Trying to run DataTransformer...")
-            DataTransformer.run()
+            DataTransformer().run()
         if self.config.getValue("UseModelSelector"):
             logger.info("Trying to run ModelSelector...")
             ModelSelector.run()
         if self.config.getValue("UseModelTrainer"):
             logger.info("Trying to run ModelTrainer...")
-            ModelTrainer.run()
+            ModelTrainer().run()
         if self.config.getValue("UseModelTester"):
             logger.info("Trying to run ModelTester...")
-            ModelTester.run()
+            ModelTester().run()
         if self.config.getValue("UseModelSummary"):
             logger.info("Trying to run ModelSummary...")
-            ModelSummary.run()
+            ModelSummary().run()
