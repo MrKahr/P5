@@ -26,6 +26,7 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": "DEBUG",
+                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
@@ -97,13 +98,14 @@ class ConfigTemplate(object):
                     "random_state": 53,  # type: int | None
                     "max_samples": None,  # type: int | float | None
                 },
+                "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
             },
             "CrossValidationSelection": {
                 "cross_validator": CrossValidator.STRATIFIED_KFOLD.name,  # type: CrossValidator | None
                 "StratifiedKFold": {
                     "n_splits": 5,
                     "shuffle": True,
-                    "random_state": 177,  # type: int | None # NOTE: If shuffle is false, random_state must be None
+                    "random_state": 177,  # type: int | None  # NOTE: If shuffle is false, random_state must be None
                 },
                 "TimeSeriesSplit": {
                     "n_splits": 5,
@@ -120,7 +122,11 @@ class ConfigTemplate(object):
                     "random_state": 298,  # type: int | None
                 },
                 "RFE": {
-                    "n_features_to_select": None,  # type: float | int | None
+                    "n_features_to_select": None,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
+                    "step": 1,  # type: float | int  # NOTE: If greater than or equal to 1, then step corresponds to the (integer) number of features to remove at each iteration. If within (0.0, 1.0), then step corresponds to the percentage (rounded down) of features to remove at each iteration.
+                },
+                "RFECV": {
+                    "min_features_to_select": 1,  # type: int
                     "step": 1,  # type: float | int
                 },
             },
