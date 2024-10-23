@@ -1,11 +1,16 @@
+from typing import Callable
+
+from sklearn import metrics
+from modules.config.config_enums import ScoreFunction
 from modules.logging import logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from modules.config.config import Config
 
 
 class ModelTester:
-    def __init__(self):
-        pass
+    def __init__(self, config: Config):
+        self.scoreFunction = self.ScoreFunctionSelector(config.getValue("ScoreFunc"))
 
     def custom_score(estimator, X, y):
         def threshold(result, y, th: int = 5):
@@ -34,4 +39,22 @@ class ModelTester:
         print(
             f"Testing data accuracy: {self.custom_score(estimator, test_features, test_target):.3f}"
         )
+        result = estimator.predict(X)
+
         logger.info(f"ModelTester is done")
+
+    def ScoreFunctionSelector(self, scoreFunction: ScoreFunction) -> Callable | None:
+        currentScoreFunction = None
+        match scoreFunction:
+            case ScoreFunction.CUSTOM_SCORE_FUNC:
+                currentScoreFunction = self.custom_score
+            case ScoreFunction.ACCURACY:
+                currentScoreFunction = metrics.accuracy_score
+            case ScoreFunction.BALANCED_ACCURACY:
+                currentScoreFunction = metrics.balanced_accuracy_score
+            case ScoreFunction.EXPLAINED_VARIANCE:
+                currentScoreFunction = metrics.explained_variance_score
+        return currentScoreFunction
+
+    def getScoreFunc(self) -> None:
+        return self.scoreFunction

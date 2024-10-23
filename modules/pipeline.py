@@ -18,7 +18,7 @@ from modules.logging import logger
 
 
 class Pipeline:
-    """This is the singleton responsible for running the entire pipeline
+    """Responsible for running the entire pipeline, collecting datasets for each iteration and providing args to pipeline parts
     # NOTE - Be very careful when making changes here"""
 
     def __init__(self, data: Dataset) -> None:
@@ -46,6 +46,7 @@ class Pipeline:
         return ndarr[i]
 
     def run(self) -> None:
+        """Using a dataframe, calls relevant pipeline components to perform transformations of dataset as specified in the config file"""
         df = self.df
         if self.config.getValue("UseCleaner"):
             logger.info("Trying to run DataCleaner...")

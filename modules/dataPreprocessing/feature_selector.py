@@ -11,6 +11,7 @@ from modules.config.config import Config
 from modules.config.config_enums import Mode, ScoreFunction
 from modules.dataPreprocessing.preprocessor import DataPreprocessor
 from modules.logging import logger
+from modules.modelTesting.model_testing import ModelTester
 
 # SECTION
 # https://scikit-learn.org/stable/modules/feature_selection.html
@@ -296,36 +297,66 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
         pass
 
-    def ScoreFunctionSelector(self, scoreFunction: ScoreFunction) -> Callable:
-        # TODO - find way to get scoring function
-        match scoreFunction:
-            case ScoreFunction.CUSTOM_SCORE_FUNC:
-                pass
-            case ScoreFunction.ACCURACY:
-                pass
-            case ScoreFunction.BALANCED_ACCURACY:
-                pass
-            case ScoreFunction.EXPLAINED_VARIANCE:
-                pass
-
-    def modeSelector(
-        self,
-        mode: Mode,
+    def modeArgCompare(
+        self, mode: Mode, config: Config
     ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
+        """Auxiliary function for GenericUnivariate select.
+          It compares and selecting the right mode and ensuring that supplied args are type correctly
 
+        Returns
+        -------
+        Pair containing mode name and mode arg
+
+        Raises
+        ------
+        TypeError
+            Error raised if supplied arg does not match mode.
+        """
+
+        # Get args associated with selection of mode
+        arg = config.getValue("param", "GenericUnivariateSelectArgs")
+
+        # Use boolean to check whether a mode/param arg is a valid permutation
+        isnumeric = isinstance(arg, int) | isinstance(arg, float)
+        isinteger = isinstance(arg, int)
+
+        # We need to check that mode and arg match
         match mode:
             case Mode.PERCENTILE:
-                pass
+                if not isnumeric:
+                    raise TypeError("percentiles must be specified as numeric")
+                return ("percentile", arg)
             case Mode.K_BEST:
-                pass
+                if not isinteger:
+                    raise TypeError("k_best must be specified as numeric")
+                return ("k_best", arg)
             case Mode.FPR:
-                pass
+                if not isnumeric:
+                    raise TypeError("fpr must be specified as numeric")
+                return ("fpr", arg)
             case Mode.FDR:
-                pass
+                if not isnumeric:
+                    raise TypeError("fdr must be specified as numeric")
+                return ("fdr", arg)
             case Mode.FWE:
-                pass
+                if not isnumeric:
+                    raise TypeError("fwe must be specified as numeric")
+                return ("fwe", arg)
+            case _:
+                logger.warning(
+                    "Assuming parameter: 'all' specified for generic univariate select"
+                )
+                return ("all", arg)
 
-    def run(self, cls) -> None:
+    def run(self, modelTester: ModelTester) -> None:
+        """Runs all applicable features selection methods
+        #NOTE - Currently needs a scoring function from model tester
+
+        Parameters
+        ----------
+        modelTester : ModelTester
+            Provides the score function from among its attributes
+        """
         config = Config()
         if config.getValue("ComputeFeatureCorrelation"):
             self._computeFeatureCorrelation()
@@ -339,16 +370,21 @@ class FeatureSelector:
                 self.y,
                 **config.getValue("MutualInfoClassifArgs"),
             )
-        # TODO - Implement both mode, and scorefunc selector
         if config.getValue("GenericUnivariateSelect"):
             self.genericUnivariateSelect(
-                self.X, self.y, scoreFunc, mode, param, x_labels=None
+                self.X,
+                self.y,
+                modelTester.getScoreFunc(),  # TODO - Placement is not idea as it requires initialization of model trainer
+                **self.modeArgCompare(
+                    config.getValue("mode", "GenericUnivariateSelectArgs"), config
+                ),
+                x_labels=None,
             )
         if config.getValue("VarianceThreshold"):
             self.varianceThreshold()
         if config.getValue("checkOverfitting"):
             self.checkOverfitting()
         if config.getValue("recursiveFeatureValidation"):
-            self.recursiveFeatureValidation(self)
+            self.recursiveFeatureValidation()
         if config.getValue("recursiveFeatureValidationWithCrossValidation"):
-            self.recursiveFeatureValidationWithCrossValidation(self)
+            self.recursiveFeatureValidationWithCrossValidation()
