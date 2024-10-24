@@ -1,4 +1,5 @@
 from typing import Any, Callable, Literal, Optional, Self, Union
+import pandas as pd
 from sklearn.feature_selection import (
     GenericUnivariateSelect,
     chi2,
@@ -46,6 +47,57 @@ class FeatureSelector:
     def __init__(self, x_train: NDArray, y_train: NDArray) -> None:
         self.x_train = x_train
         self.y_train = y_train
+
+    def __modeArgCompare(
+        self, featureSelectionCriterion: FeatureSelectionCriterion, config: Config
+    ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
+        """Auxiliary function for GenericUnivariate select.
+          It compares and selecting the right mode and ensuring that supplied args are type correctly
+
+        Returns
+        -------
+        Pair containing mode name and mode arg
+
+        Raises
+        ------
+        TypeError
+            Error raised if supplied arg does not match mode.
+        """
+
+        # Get args associated with selection of mode
+        arg = config.getValue("param", "GenericUnivariateSelectArgs")
+
+        # Use boolean to check whether a mode/param arg is a valid permutation
+        isnumeric = isinstance(arg, int) | isinstance(arg, float)
+        isinteger = isinstance(arg, int)
+
+        # We need to check that mode and arg match
+        match featureSelectionCriterion:
+            case FeatureSelectionCriterion.PERCENTILE:
+                if not isnumeric:
+                    raise TypeError("percentiles must be specified as numeric")
+                return ("percentile", arg)
+            case FeatureSelectionCriterion.K_BEST:
+                if not isinteger:
+                    raise TypeError("k_best must be specified as numeric")
+                return ("k_best", arg)
+            case FeatureSelectionCriterion.FPR:
+                if not isnumeric:
+                    raise TypeError("fpr must be specified as numeric")
+                return ("fpr", arg)
+            case FeatureSelectionCriterion.FDR:
+                if not isnumeric:
+                    raise TypeError("fdr must be specified as numeric")
+                return ("fdr", arg)
+            case FeatureSelectionCriterion.FWE:
+                if not isnumeric:
+                    raise TypeError("fwe must be specified as numeric")
+                return ("fwe", arg)
+            case _:
+                logger.warning(
+                    "Assuming parameter: 'all' specified for generic univariate select"
+                )
+                return ("all", arg)
 
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
@@ -284,57 +336,6 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-py
         pass
 
-    def __modeArgCompare(
-        self, featureSelectionCriterion: FeatureSelectionCriterion, config: Config
-    ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
-        """Auxiliary function for GenericUnivariate select.
-          It compares and selecting the right mode and ensuring that supplied args are type correctly
-
-        Returns
-        -------
-        Pair containing mode name and mode arg
-
-        Raises
-        ------
-        TypeError
-            Error raised if supplied arg does not match mode.
-        """
-
-        # Get args associated with selection of mode
-        arg = config.getValue("param", "GenericUnivariateSelectArgs")
-
-        # Use boolean to check whether a mode/param arg is a valid permutation
-        isnumeric = isinstance(arg, int) | isinstance(arg, float)
-        isinteger = isinstance(arg, int)
-
-        # We need to check that mode and arg match
-        match featureSelectionCriterion:
-            case FeatureSelectionCriterion.PERCENTILE:
-                if not isnumeric:
-                    raise TypeError("percentiles must be specified as numeric")
-                return ("percentile", arg)
-            case FeatureSelectionCriterion.K_BEST:
-                if not isinteger:
-                    raise TypeError("k_best must be specified as numeric")
-                return ("k_best", arg)
-            case FeatureSelectionCriterion.FPR:
-                if not isnumeric:
-                    raise TypeError("fpr must be specified as numeric")
-                return ("fpr", arg)
-            case FeatureSelectionCriterion.FDR:
-                if not isnumeric:
-                    raise TypeError("fdr must be specified as numeric")
-                return ("fdr", arg)
-            case FeatureSelectionCriterion.FWE:
-                if not isnumeric:
-                    raise TypeError("fwe must be specified as numeric")
-                return ("fwe", arg)
-            case _:
-                logger.warning(
-                    "Assuming parameter: 'all' specified for generic univariate select"
-                )
-                return ("all", arg)
-
     def run(self, modelTester: ModelTester) -> None:
         """Runs all applicable features selection methods
         #NOTE - Currently needs a scoring function from model tester
@@ -353,7 +354,7 @@ class FeatureSelector:
             self._fClassifIndependence()
         if config.getValue("MutualInfoClassif"):
             self._mutualInfoClassif(
-                self ** config.getValue("MutualInfoClassifArgs"),
+                **self.config.getValue("MutualInfoClassifArgs"),
             )
         if config.getValue("GenericUnivariateSelect"):
             self.genericUnivariateSelect(

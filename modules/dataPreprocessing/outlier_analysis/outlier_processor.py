@@ -67,15 +67,22 @@ class OutlierProcessor:
         amount = current_len - len(self.df)
         logger.info(f"Removed {amount} {"outliers" if amount != 1 else "outlier"}")
 
-    @classmethod
+    def getDataframe(self) -> pd.DataFrame:
+        """Get the dataframe with outliers processed as a deep copy.
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe with outliers processed
+        """
+        return self.df.copy(deep=True)
+
     def run(self) -> None:
         config = Config()
-        outliers = None
         match config.getValue("OutlierRemovalMethod"):
             case OutlierRemovalMethod.ODIN.name:
-                outliers = self.odin(**config.getValue("odinParams"))
+                self.odin(**config.getValue("odinParams"))
             case OutlierRemovalMethod.AVF.name:
-                outliers = self.avf(**config.getValue("avfParams"))
+                self.avf(**config.getValue("avfParams"))
             case OutlierRemovalMethod.NONE.name:
                 logger.info("Removing no outliers.")
             case _:
@@ -83,4 +90,4 @@ class OutlierProcessor:
                     "Undefined outlier removal method selected for OutlierProcessor! Removing no outliers."
                 )
         logger.info("OutlierProcessor is done")
-        return self.df
+        return self.getDataframe()

@@ -147,7 +147,7 @@ class DataTransformer:
         Nothing
         """
         df = self.df
-        self.LogValues(df)
+        self.logValues(df)
         logger.info("Starting KNN-Imputation.")
         imputer = KNNImputer(
             missing_values=100,
@@ -166,10 +166,10 @@ class DataTransformer:
         for column in working_df.columns:
             df[column] = working_df[column]
         logger.info("Imputation done.")
-        self.LogValues(df)
+        self.logValues(df)
         self.df = df
 
-    def LogValues(self, df: pd.DataFrame, value=100) -> None:
+    def logValues(self, df: pd.DataFrame, value=100) -> None:
         """Finds and logs a specified value in a dataframe for every ocurrence
 
         Parameters
@@ -228,6 +228,15 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], attribute] = value1
             i += 1
 
+    def getDataframe(self) -> pd.DataFrame:
+        """Get the transformed dataframe as a deep copy.
+        Returns
+        -------
+        pd.DataFrame
+            The transformed dataframe
+        """
+        return self.df.copy(deep=True)
+
     def run(self) -> pd.DataFrame:
         """Run all applicable transformation methods
 
@@ -263,4 +272,4 @@ class DataTransformer:
                     "Undefined normalisation method selected for DataTransformer! No normalisation done."
                 )
         logger.info(f"DataTransformer is done")
-        return self.df.copy(deep=True)
+        return self.getDataframe()

@@ -183,6 +183,5 @@ class DataCleaner(object):
         if config.getValue("ShowNan"):
             self.showNan()
         # TODO - Find out why row removal ration is n/n - some rows ought to be removed
-        self.showRowRemovalRatio()
         logger.info(f"DataCleaner is done")
-        return self.df.copy(deep=True)
+        return self.getDataframe()
