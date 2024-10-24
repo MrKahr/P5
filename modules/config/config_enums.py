@@ -51,7 +51,7 @@ class ScoreFunction(Enum):
     EXPLAINED_VARIANCE = 300
 
 
-class Mode(Enum):
+class FeatureSelectionCriterion(Enum):
     PERCENTILE = 1
     K_BEST = 2
     FPR = 3

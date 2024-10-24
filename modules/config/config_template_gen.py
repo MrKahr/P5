@@ -2,7 +2,7 @@ from typing import Self
 
 from modules.config.config_enums import (
     CrossValidator,
-    Mode,
+    FeatureSelectionCriterion,
     Model,
     LogLevel,
     ImputationMethod,
@@ -31,7 +31,6 @@ class ConfigTemplate(object):
 
     @classmethod
     def _createTemplate(self) -> dict:
-        # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
@@ -51,7 +50,7 @@ class ConfigTemplate(object):
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
                     "RemoveFeaturelessRows": True,
-                    "RFlRParams": 3,
+                    "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
                     "ShowNan": True,
                     "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
@@ -59,7 +58,7 @@ class ConfigTemplate(object):
                     "CleanOldDastaset": True,
                 },
                 "OutlierAnalysis": {
-                    "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,  # None, odin, avf
+                    "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,
                     "odinParams": {
                         "k": 30,
                         "T": 0,
@@ -68,9 +67,9 @@ class ConfigTemplate(object):
                 },
                 "Transformer": {
                     "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.KNN.name,  # None, Mode, KNN
+                    "ImputationMethod": ImputationMethod.KNN.name,
                     "NearestNeighbors": 5,
-                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,  # None, minMax
+                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
@@ -87,14 +86,14 @@ class ConfigTemplate(object):
                     "GenericUnivariateSelect": True,
                     "GenericUnivariateSelectArgs": {
                         "scoreFunc": ScoreFunction.CUSTOM_FUNCTION,
-                        "mode": Mode.PERCENTILE,
+                        "mode": FeatureSelectionCriterion.PERCENTILE,
                         "param": 5,
                     },
                     "VarianceThreshold": True,
                     "checkOverfitting": True,
                     "recursiveFeatureValidation": True,
                     "recursiveFeatureValidationWithCrossValidation": True,
-                },  # TODO - WORK IN PROGRESS
+                },
             },
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,

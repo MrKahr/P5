@@ -41,10 +41,6 @@ class DataTransformer:
     def modeImputationByDay(self) -> None:
         """Imputes missing values by replacing them with the most common value for the day where the value is missing.
         Takes no arguments and modifies the Dataframe on the class itself.
-
-        Returns
-        -------
-        Nothing
         """
         # for this method
         # get dataset
@@ -107,6 +103,7 @@ class DataTransformer:
                 distance += 1
         return distance
 
+    # TODO - Dicussing with Emil, if you see me, delete me!
     def matrixDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
     ) -> int:
@@ -211,7 +208,7 @@ class DataTransformer:
             self.df[feature].max() - self.df[feature].min()
         )
 
-    def swapValues(self, attribute, value1, value2) -> None:
+    def swapValues(self, attribute: str, value1: float, value2: float) -> None:
         """Swap all instances of value1 and value2 in attribute
 
         Parameters

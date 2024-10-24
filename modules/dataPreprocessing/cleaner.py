@@ -177,7 +177,7 @@ class DataCleaner(object):
         if config.getValue("DeleteUndeterminedValue"):
             self.deleteUndeterminedValue()
         if config.getValue("RemoveFeaturelessRows"):
-            self.removeFeaturelessRows(config.getValue("RFlRParams"))
+            self.removeFeaturelessRows(config.getValue("RemoveFeaturelessRowsArgs"))
         if config.getValue("FillNan"):
             self.fillNan()
         if config.getValue("ShowNan"):
