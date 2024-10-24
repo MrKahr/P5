@@ -1,3 +1,6 @@
+from modules.logging import logger
+
+
 class ModelSummary:
 
     def __init__(self):
@@ -5,4 +8,4 @@ class ModelSummary:
 
     @classmethod
     def run(self) -> None:
-        print(f"{__name__}is run")
+        logger.info(f"ModelSummary is done")

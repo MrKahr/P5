@@ -6,6 +6,7 @@ from sklearn.svm import SVC
 
 from modules.config.config import Config
 from modules.config.config_enums import Model
+from modules.logging import logger
 
 
 class ModelSelector:
@@ -40,9 +41,7 @@ class ModelSelector:
         return GaussianNB(**kwargs)
 
     @classmethod
-    def getModel(
-        cls,
-    ) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
+    def run(cls) -> Union[DecisionTreeClassifier, RandomForestClassifier]:
         """Get an unfit instance of the model as specified in the config file.
 
         Returns
@@ -55,22 +54,20 @@ class ModelSelector:
         selected_model = cls._config.getValue("model", parent_key)
 
         if selected_model == Model.DECISION_TREE.name:
-            return cls._getDecisionTree(
+            model = cls._getDecisionTree(
                 cls._config.getValue("DecisionTree", parent_key)
             )
         elif selected_model == Model.RANDOM_FOREST.name:
-            dt = cls._config.getValue("DecisionTree", parent_key)
-            rf = cls._config.getValue("RandomForest", parent_key)
-            return cls._getRandomForest(dt | rf)
+            decision_tree_options = cls._config.getValue("DecisionTree", parent_key)
+            random_forest_options = cls._config.getValue("RandomForest", parent_key)
+            model = cls._getRandomForest(decision_tree_options | random_forest_options)
         elif selected_model == Model.NAIVE_BAYES.name:
-            return cls._getNaiveBayes()
+            model = cls._getNaiveBayes()
         elif selected_model == Model.SUPPORT_VECTOR.name:
-            return cls._getSupportVectorMachine()
+            model = cls._getSupportVectorMachine()
         elif selected_model == Model.NEURAL_NETWORK.name:
-            return cls._getNeuralNetwork()
+            model = cls._getNeuralNetwork()
         else:
             raise NotImplementedError(f"No support for model '{selected_model}'")
-
-    @classmethod
-    def run(self) -> None:
-        print(f"{__name__}is run")
+        logger.info(f"ModelSelector is done")
+        return model

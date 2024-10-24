@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
+from modules.config.config import Config
+from modules.config.config_enums import ImputationMethod, NormalisationMethod
 from modules.logging import logger
 
 
@@ -39,10 +41,6 @@ class DataTransformer:
     def modeImputationByDay(self) -> None:
         """Imputes missing values by replacing them with the most common value for the day where the value is missing.
         Takes no arguments and modifies the Dataframe on the class itself.
-
-        Returns
-        -------
-        Nothing
         """
         # for this method
         # get dataset
@@ -105,6 +103,7 @@ class DataTransformer:
                 distance += 1
         return distance
 
+    # TODO - Dicussing with Emil, if you see me, delete me!
     def matrixDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
     ) -> int:
@@ -136,19 +135,23 @@ class DataTransformer:
         eksudattype_matrix = [[]]
         infektionsniveau_matrix = [[]]
 
-    def KNNImputation(self) -> None:
+    def KNNImputation(self, neighbors=5) -> None:
         """Imputes missing values using Scikit's KNNImputer. Takes no arguments and modifies the Dataframe on the class itself.
+
+        Parameters
+        ----------
+        neighbors : How many nearest neighbors should be considered
 
         Returns
         -------
         Nothing
         """
         df = self.df
-        self.LogValues(df)
+        self.logValues(df)
         logger.info("Starting KNN-Imputation.")
         imputer = KNNImputer(
             missing_values=100,
-            n_neighbors=5,
+            n_neighbors=neighbors,
             weights="uniform",
             metric=self.zeroOneDistance,
             copy=False,
@@ -163,10 +166,10 @@ class DataTransformer:
         for column in working_df.columns:
             df[column] = working_df[column]
         logger.info("Imputation done.")
-        self.LogValues(df)
+        self.logValues(df)
         self.df = df
 
-    def LogValues(self, df: pd.DataFrame, value=100) -> None:
+    def logValues(self, df: pd.DataFrame, value=100) -> None:
         """Finds and logs a specified value in a dataframe for every ocurrence
 
         Parameters
@@ -205,7 +208,7 @@ class DataTransformer:
             self.df[feature].max() - self.df[feature].min()
         )
 
-    def swapValues(self, attribute, value1, value2) -> None:
+    def swapValues(self, attribute: str, value1: float, value2: float) -> None:
         """Swap all instances of value1 and value2 in attribute
 
         Parameters
@@ -225,5 +228,48 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], attribute] = value1
             i += 1
 
-    def run(self) -> None:
-        print(f"{__name__}is run")
+    def getDataframe(self) -> pd.DataFrame:
+        """Get the transformed dataframe as a deep copy.
+        Returns
+        -------
+        pd.DataFrame
+            The transformed dataframe
+        """
+        return self.df.copy(deep=True)
+
+    def run(self) -> pd.DataFrame:
+        """Run all applicable transformation methods
+
+        Returns
+        -------
+        pd.DataFrame
+            The transformed dataset returned to the pipeline
+        """
+        config = Config()
+        if len(config.getValue("OneHotEncodeLabels")) > 0:
+            self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
+        match config.getValue("ImputationMethod"):
+            case ImputationMethod.MODE.name:
+                self.modeImputationByDay()
+            case ImputationMethod.KNN.name:
+                self.KNNImputation(config.getValue("NearestNeighbors"))
+            case ImputationMethod.NONE.name:
+                logger.info("No imputation done.")
+            # default
+            case _:
+                logger.warning(
+                    "Undefined imputation method selected for DataTransformer! No imputation done."
+                )
+        match config.getValue("NormalisationMethod"):
+            case NormalisationMethod.MIN_MAX.name:
+                for feature in config.getValue("NormaliseFeatures"):
+                    self.minMaxNormalization(feature)
+            case NormalisationMethod.NONE.name:
+                logger.info("No normalisation done.")
+            # default
+            case _:
+                logger.warning(
+                    "Undefined normalisation method selected for DataTransformer! No normalisation done."
+                )
+        logger.info(f"DataTransformer is done")
+        return self.getDataframe()
