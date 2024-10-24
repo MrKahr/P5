@@ -1,4 +1,5 @@
 from typing import Any, Callable, Literal, Optional, Self, Union
+import pandas as pd
 from sklearn.feature_selection import (
     GenericUnivariateSelect,
     chi2,
@@ -7,7 +8,10 @@ from sklearn.feature_selection import (
 )
 from numpy.typing import NDArray
 from sklearn.inspection import permutation_importance
+from modules.config.config import Config
+from modules.config.config_enums import FeatureSelectionCriterion
 from modules.logging import logger
+from modules.modelTesting.model_testing import ModelTester
 
 # SECTION
 # https://scikit-learn.org/stable/modules/feature_selection.html
@@ -40,16 +44,67 @@ from modules.logging import logger
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
-    def __init__(self, x, y) -> None:
-        self.X = x
-        self.y = y
+    def __init__(self, x_train: NDArray, y_train: NDArray) -> None:
+        self.x_train = x_train
+        self.y_train = y_train
+
+    def __modeArgCompare(
+        self, featureSelectionCriterion: FeatureSelectionCriterion, config: Config
+    ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
+        """Auxiliary function for GenericUnivariate select.
+          It compares and selecting the right mode and ensuring that supplied args are type correctly
+
+        Returns
+        -------
+        Pair containing mode name and mode arg
+
+        Raises
+        ------
+        TypeError
+            Error raised if supplied arg does not match mode.
+        """
+
+        # Get args associated with selection of mode
+        arg = config.getValue("param", "GenericUnivariateSelectArgs")
+
+        # Use boolean to check whether a mode/param arg is a valid permutation
+        isnumeric = isinstance(arg, int) | isinstance(arg, float)
+        isinteger = isinstance(arg, int)
+
+        # We need to check that mode and arg match
+        match featureSelectionCriterion:
+            case FeatureSelectionCriterion.PERCENTILE:
+                if not isnumeric:
+                    raise TypeError("percentiles must be specified as numeric")
+                return ("percentile", arg)
+            case FeatureSelectionCriterion.K_BEST:
+                if not isinteger:
+                    raise TypeError("k_best must be specified as numeric")
+                return ("k_best", arg)
+            case FeatureSelectionCriterion.FPR:
+                if not isnumeric:
+                    raise TypeError("fpr must be specified as numeric")
+                return ("fpr", arg)
+            case FeatureSelectionCriterion.FDR:
+                if not isnumeric:
+                    raise TypeError("fdr must be specified as numeric")
+                return ("fdr", arg)
+            case FeatureSelectionCriterion.FWE:
+                if not isnumeric:
+                    raise TypeError("fwe must be specified as numeric")
+                return ("fwe", arg)
+            case _:
+                logger.warning(
+                    "Assuming parameter: 'all' specified for generic univariate select"
+                )
+                return ("all", arg)
 
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#handling-multicollinear-features
         pass
 
-    def _chi2Independence(self, X: NDArray, y: NDArray) -> tuple[NDArray, NDArray]:
+    def _chi2Independence(self) -> tuple[NDArray, NDArray]:
         """
         Compute chi-squared stats between each non-negative feature and class.
         This score can be used to select the features with the highest values for the
@@ -82,10 +137,10 @@ class FeatureSelector:
         - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html#sklearn.feature_selection.chi2
         """
         logger.info("Computing chi-squared statistics")
-        chi2_stats, p_values = chi2(X, y)
+        chi2_stats, p_values = chi2(self.x_train, self.y_train)
         return chi2_stats, p_values
 
-    def _fClassifIndependence(self, X: NDArray, y: NDArray) -> tuple[NDArray, NDArray]:
+    def _fClassifIndependence(self) -> tuple[NDArray, NDArray]:
         """
         Compute the Analysis of Variance (ANOVA) F-value for the provided sample.
 
@@ -114,13 +169,11 @@ class FeatureSelector:
 
         """
         logger.info("Computing ANOVA F-statistics")
-        f_stats, p_values = f_classif(X, y)
+        f_stats, p_values = f_classif(self.x_train, self.y_train)
         return f_stats, p_values
 
     def _mutualInfoClassif(
         self,
-        X: NDArray,
-        y: NDArray,
         discrete_features: Union[str, bool, NDArray] = True,
         n_neighbors: int = 3,
         copy: bool = True,
@@ -182,8 +235,8 @@ class FeatureSelector:
         """
         logger.info("Computing estimates of mutual information")
         mi = mutual_info_classif(
-            X,
-            y,
+            self.x_train,
+            self.y_train,
             discrete_features=discrete_features,
             n_neighbors=n_neighbors,
             copy=copy,
@@ -193,8 +246,6 @@ class FeatureSelector:
 
     def genericUnivariateSelect(
         self,
-        X: NDArray,
-        y: NDArray,
         scoreFunc: Callable[[NDArray, NDArray], tuple[NDArray, NDArray] | NDArray],
         mode: Literal["percentile", "k_best", "fpr", "fdr", "fwe"],
         param: Union[int, float, str],
@@ -266,10 +317,10 @@ class FeatureSelector:
         old_columns = (
             x_labels
             if len(x_labels) > 0
-            else [f"Feature {i}" for i in range(X.shape[1])]
+            else [f"Feature {i}" for i in range(self.x_train.shape[1])]
         )
         selector = GenericUnivariateSelect(scoreFunc, mode=mode, param=param)
-        new_training_data = selector.fit_transform(X, y)
+        new_training_data = selector.fit_transform(self.x_train, self.y_train)
         remaining_columns = selector.get_feature_names_out(old_columns)
         logger.info(
             f"Selected {len(remaining_columns)} features as important: {remaining_columns}"
@@ -285,13 +336,39 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-py
         pass
 
-    def recursiveFeatureValidation(self) -> Any:
-        # See: https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_digits.html#sphx-glr-auto-examples-feature-selection-plot-rfe-digits-py
-        pass
+    def run(self, modelTester: ModelTester) -> None:
+        """Runs all applicable features selection methods
+        #NOTE - Currently needs a scoring function from model tester
 
-    def recursiveFeatureValidationWithCrossValidation(self) -> Any:
-        # See: https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
-        pass
-
-    def run(self) -> None:
-        print(f"{__name__}is run")
+        Parameters
+        ----------
+        modelTester : ModelTester
+            Provides the score function from among its attributes
+        """
+        config = Config()
+        if config.getValue("ComputeFeatureCorrelation"):
+            self._computeFeatureCorrelation()
+        if config.getValue("TestChi2Independence"):
+            self._chi2Independence()
+        if config.getValue("TestfClassifIndependence"):
+            self._fClassifIndependence()
+        if config.getValue("MutualInfoClassif"):
+            self._mutualInfoClassif(
+                **self.config.getValue("MutualInfoClassifArgs"),
+            )
+        if config.getValue("GenericUnivariateSelect"):
+            self.genericUnivariateSelect(
+                modelTester.getScoreFunc(),  # TODO - Placement is not idea as it requires initialization of model trainer
+                **self.__modeArgCompare(
+                    config.getValue("mode", "GenericUnivariateSelectArgs"), config
+                ),
+                x_labels=None,
+            )
+        if config.getValue("VarianceThreshold"):
+            self.varianceThreshold()
+        if config.getValue("checkOverfitting"):
+            self.checkOverfitting()
+        if config.getValue("recursiveFeatureValidation"):
+            self.recursiveFeatureValidation()
+        if config.getValue("recursiveFeatureValidationWithCrossValidation"):
+            self.recursiveFeatureValidationWithCrossValidation()

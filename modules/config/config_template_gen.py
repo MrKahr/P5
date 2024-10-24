@@ -1,10 +1,20 @@
 from typing import Self
 
-from modules.config.config_enums import CrossValidator, Model, TrainingMethod
+from modules.config.config_enums import (
+    CrossValidator,
+    FeatureSelectionCriterion,
+    Model,
+    LogLevel,
+    ImputationMethod,
+    NormalisationMethod,
+    OutlierRemovalMethod,
+    ScoreFunction,
+    TrainingMethod,
+)
 
 
 class ConfigTemplate(object):
-    """Singleton that defines as configuration template for the project.
+    """Singleton that defines  configuration template for the project.
     Note: We added additional params/longer attribute accesses for clarity."""
 
     _instance = None
@@ -22,14 +32,14 @@ class ConfigTemplate(object):
 
     @classmethod
     def _createTemplate(self) -> dict:
-        # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
-                "loglevel": "DEBUG",
+                "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
+                "UseOutlierRemoval": True,
                 "UseModelSelector": True,
                 "UseModelTrainer": True,
                 "UseModelTester": True,
@@ -42,7 +52,7 @@ class ConfigTemplate(object):
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
                     "RemoveFeaturelessRows": True,
-                    "RFlRParams": 3,
+                    "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
                     "ShowNan": True,
                     "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
@@ -50,7 +60,7 @@ class ConfigTemplate(object):
                     "CleanOldDastaset": True,
                 },
                 "OutlierAnalysis": {
-                    "OutlierRemovalMethod": "odin",  # None, odin, avf
+                    "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,
                     "odinParams": {
                         "k": 30,
                         "T": 0,
@@ -58,24 +68,34 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
-                    "OneHotEncode": "T",
-                    "ImputationMethod": "KNN",  # None, Mode, KNN
+                    "OneHotEncodeLabels": [],  # type: list[str]
+                    "ImputationMethod": ImputationMethod.KNN.name,
                     "NearestNeighbors": 5,
-                    "Normalisation": "minMax",  # None, minMax
+                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
+                    "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "_computeFeatureCorrelation": "",
-                    "_chi2Independence": "",
-                    "_fClassifIndependence": "",
-                    "_mutualInfoClassif": "",
-                    "genericUnivariateSelect": "",
-                    "varianceThreshold": "",
-                    "permutationFeatureImportance": "",
-                    "permutation_importance": "",
-                    "checkOverfitting": "",
-                    "recursiveFeatureValidation": "",
-                    "recursiveFeatureValidationWithCrossValidation": "",
-                },  # TODO - WORK IN PROGRESS
+                    "ComputeFeatureCorrelation": True,
+                    "TestChi2Independence": True,
+                    "TestfClassifIndependence": True,
+                    "MutualInfoClassif": True,
+                    "MutualInfoClassifArgs": {
+                        "discrete_features": True,
+                        "n_neighbors": 3,
+                        "copy": True,
+                        "random_state": 12,
+                    },
+                    "GenericUnivariateSelect": True,
+                    "GenericUnivariateSelectArgs": {
+                        "scoreFunc": ScoreFunction.CUSTOM_FUNCTION,
+                        "mode": FeatureSelectionCriterion.PERCENTILE,
+                        "param": 5,
+                    },
+                    "VarianceThreshold": True,
+                    "checkOverfitting": True,
+                    "recursiveFeatureValidation": True,
+                    "recursiveFeatureValidationWithCrossValidation": True,
+                },
             },
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,

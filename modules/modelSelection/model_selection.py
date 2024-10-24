@@ -5,6 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from modules.config.config import Config
 from modules.config.config_enums import Model
 from modules.types import UnfittedEstimator
+from modules.logging import logger
 
 
 class ModelSelector:
@@ -33,9 +34,7 @@ class ModelSelector:
         return GaussianNB(**kwargs)
 
     @classmethod
-    def getModel(
-        cls,
-    ) -> UnfittedEstimator:
+    def run(cls) -> UnfittedEstimator:
         """Get an unfit instance of the model as specified in the config file.
 
         Returns
@@ -49,24 +48,28 @@ class ModelSelector:
         n_jobs = {"n_jobs": cls._config.getValue("n_jobs", "General")}
 
         if selected_model == Model.DECISION_TREE.name:
-            return cls._getDecisionTree(
+            model = cls._getDecisionTree(
                 **cls._config.getValue("DecisionTree", parent_key)
             )
         elif selected_model == Model.RANDOM_FOREST.name:
-            dt = cls._config.getValue("DecisionTree", parent_key)  # type: dict
-            rf = cls._config.getValue("RandomForest", parent_key)  # type: dict
-            return cls._getRandomForest(**{dt | rf | n_jobs})
+            decision_tree_options = cls._config.getValue(
+                "DecisionTree", parent_key
+            )  # type: dict
+            random_forest_options = cls._config.getValue(
+                "RandomForest", parent_key
+            )  # type: dict
+            model = cls._getRandomForest(
+                **{decision_tree_options | random_forest_options | n_jobs}
+            )
         elif selected_model == Model.NAIVE_BAYES.name:
-            return cls._getNaiveBayes(
+            model = cls._getNaiveBayes(
                 **cls._config.getValue("GaussianNaiveBayes", parent_key)
             )
         elif selected_model == Model.NEURAL_NETWORK.name:
-            return cls._getNeuralNetwork()
+            model = cls._getNeuralNetwork()
         else:
             raise TypeError(
                 f"Invalid model '{selected_model}'. Expected one of {Model._member_names_}"
             )
-
-    @classmethod
-    def run(self) -> None:
-        print(f"{__name__}is run")
+        logger.info(f"ModelSelector is done")
+        return model

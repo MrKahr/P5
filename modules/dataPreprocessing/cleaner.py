@@ -160,7 +160,13 @@ class DataCleaner(object):
         self.showRowRemovalRatio()
         return self.df.copy(deep=True)
 
-    def run(self) -> None:
+    def run(self) -> pd.DataFrame:
+        """Run all applicable data cleaning methods
+        Returns
+        -------
+        pd.DataFrame
+            The cleaned dataset that is returned to the pipeline
+        """
         config = Config()
         if config.getValue("DeleteNanColumns"):
             self._deleteNanCols()
@@ -171,11 +177,11 @@ class DataCleaner(object):
         if config.getValue("DeleteUndeterminedValue"):
             self.deleteUndeterminedValue()
         if config.getValue("RemoveFeaturelessRows"):
-            self.removeFeaturelessRows(config.getValue("RFlRParams"))
+            self.removeFeaturelessRows(config.getValue("RemoveFeaturelessRowsArgs"))
         if config.getValue("FillNan"):
             self.fillNan()
         if config.getValue("ShowNan"):
             self.showNan()
         # TODO - Find out why row removal ration is n/n - some rows ought to be removed
-        self.showRowRemovalRatio()
         logger.info(f"DataCleaner is done")
+        return self.getDataframe()
