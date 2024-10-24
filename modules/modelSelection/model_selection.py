@@ -34,7 +34,7 @@ class ModelSelector:
         return GaussianNB(**kwargs)
 
     @classmethod
-    def run(cls) -> UnfittedEstimator:
+    def getModel(cls) -> UnfittedEstimator:
         """Get an unfit instance of the model as specified in the config file.
 
         Returns
@@ -71,5 +71,5 @@ class ModelSelector:
             raise TypeError(
                 f"Invalid model '{selected_model}'. Expected one of {Model._member_names_}"
             )
-        logger.info(f"ModelSelector is done")
+        logger.info(f"Using model: {type(model).__name__}")
         return model

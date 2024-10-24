@@ -1,7 +1,6 @@
 import os
 from typing import Callable, TypeAlias, Union
-
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
@@ -21,6 +20,4 @@ FittedEstimator: TypeAlias = Union[
 
 CrossValidator: TypeAlias = Union[StratifiedKFold, TimeSeriesSplit]
 
-ScoreCallable: TypeAlias = Callable[
-    [NDArray, NDArray], tuple[NDArray, NDArray] | NDArray
-]
+ModelScoreCallable: TypeAlias = Callable[[ArrayLike, ArrayLike], float]

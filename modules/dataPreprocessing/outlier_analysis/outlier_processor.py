@@ -76,18 +76,22 @@ class OutlierProcessor:
         """
         return self.df.copy(deep=True)
 
-    def run(self) -> None:
+    def run(self) -> pd.DataFrame:
         config = Config()
-        match config.getValue("OutlierRemovalMethod"):
-            case OutlierRemovalMethod.ODIN.name:
-                self.odin(**config.getValue("odinParams"))
-            case OutlierRemovalMethod.AVF.name:
-                self.avf(**config.getValue("avfParams"))
-            case OutlierRemovalMethod.NONE.name:
-                logger.info("Removing no outliers.")
-            case _:
-                logger.warning(
-                    "Undefined outlier removal method selected for OutlierProcessor! Removing no outliers."
-                )
-        logger.info("OutlierProcessor is done")
-        return self.getDataframe()
+        if config.getValue("UseOutlierRemoval"):
+            match config.getValue("OutlierRemovalMethod"):
+                case OutlierRemovalMethod.ODIN.name:
+                    self.odin(**config.getValue("odinParams"))
+                case OutlierRemovalMethod.AVF.name:
+                    self.avf(**config.getValue("avfParams"))
+                case OutlierRemovalMethod.NONE.name:
+                    logger.info("Removing no outliers.")
+                case _:
+                    logger.warning(
+                        "Undefined outlier removal method selected for OutlierProcessor! Removing no outliers."
+                    )
+            logger.info("Dataset processed for outliers")
+            return self.getDataframe()
+        else:
+            logger.info("Skipping outlier analysis")
+            return self.df

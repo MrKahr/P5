@@ -1,7 +1,7 @@
 from typing import Callable
 
 from sklearn import metrics
-from modules.config.config_enums import ScoreFunction
+from modules.config.config_enums import ModelScoreFunc
 from modules.logging import logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,45 +12,24 @@ from sklearn.metrics import (
     recall_score,
 )
 from modules.config.config import Config
+from modules.types import FittedEstimator
 
 
 class ModelTester:
-    def __init__(self, config: Config):
-        self.scoreFunction = self.scoreFunctionSelector(config.getValue("ScoreFunc"))
+    def __init__(
+        self,
+        estimator: FittedEstimator,
+        train_x: pd.DataFrame,
+        target_y: pd.Series,
+        model_report: dict,
+    ):
+        self._config = Config()
+        self._estimator = estimator
+        self._train_x = train_x
+        self._target_y = target_y
+        self._model_report = model_report
 
-    def customScore(estimator, X, y):
-        def threshold(result, y, th: int = 5):
-            score = 0
-            for i, prediction in enumerate(result):
-                if y[i] >= th:
-                    score += 1
-                elif prediction < th:
-                    score += 1
-            return score
-
-        result = estimator.predict(X)
-        score = threshold(result, y)
-        # score = threshold(result, y, th=20)
-        return float(score / len(result))
-
-    def scoreFunctionSelector(self, scoreFunction: ScoreFunction) -> Callable | None:
-        currentScoreFunction = None
-        match scoreFunction:
-            case ScoreFunction.CUSTOM_SCORE_FUNC:
-                currentScoreFunction = self.customScore
-            case ScoreFunction.ACCURACY:
-                currentScoreFunction = metrics.accuracy_score
-            case ScoreFunction.BALANCED_ACCURACY:
-                currentScoreFunction = metrics.balanced_accuracy_score
-            case ScoreFunction.EXPLAINED_VARIANCE:
-                currentScoreFunction = metrics.explained_variance_score
-        return currentScoreFunction
-
-    def getScoreFunc(self) -> None:
-        return self.scoreFunction
-
-    def run(self, features: pd.DataFrame, target: pd.DataFrame, estimator) -> None:
-
+    def run(self) -> None:
         train_features, test_features = train_test_split(features)
         train_target, test_target = train_test_split(target)
         prediction = estimator.predict(test_features)

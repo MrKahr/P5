@@ -246,30 +246,36 @@ class DataTransformer:
             The transformed dataset returned to the pipeline
         """
         config = Config()
-        if len(config.getValue("OneHotEncodeLabels")) > 0:
-            self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
-        match config.getValue("ImputationMethod"):
-            case ImputationMethod.MODE.name:
-                self.modeImputationByDay()
-            case ImputationMethod.KNN.name:
-                self.KNNImputation(config.getValue("NearestNeighbors"))
-            case ImputationMethod.NONE.name:
-                logger.info("No imputation done.")
-            # default
-            case _:
-                logger.warning(
-                    "Undefined imputation method selected for DataTransformer! No imputation done."
-                )
-        match config.getValue("NormalisationMethod"):
-            case NormalisationMethod.MIN_MAX.name:
-                for feature in config.getValue("NormaliseFeatures"):
-                    self.minMaxNormalization(feature)
-            case NormalisationMethod.NONE.name:
-                logger.info("No normalisation done.")
-            # default
-            case _:
-                logger.warning(
-                    "Undefined normalisation method selected for DataTransformer! No normalisation done."
-                )
-        logger.info(f"DataTransformer is done")
-        return self.getDataframe()
+        if config.getValue("UseTransformer"):
+            logger.info("Initializing feature transformer")
+
+            if len(config.getValue("OneHotEncodeLabels")) > 0:
+                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
+            match config.getValue("ImputationMethod"):
+                case ImputationMethod.MODE.name:
+                    self.modeImputationByDay()
+                case ImputationMethod.KNN.name:
+                    self.KNNImputation(config.getValue("NearestNeighbors"))
+                case ImputationMethod.NONE.name:
+                    logger.info("No imputation done.")
+                # default
+                case _:
+                    logger.warning(
+                        "Undefined imputation method selected for DataTransformer! No imputation done."
+                    )
+            match config.getValue("NormalisationMethod"):
+                case NormalisationMethod.MIN_MAX.name:
+                    for feature in config.getValue("NormaliseFeatures"):
+                        self.minMaxNormalization(feature)
+                case NormalisationMethod.NONE.name:
+                    logger.info("No normalisation done.")
+                # default
+                case _:
+                    logger.warning(
+                        "Undefined normalisation method selected for DataTransformer! No normalisation done."
+                    )
+            logger.info(f"Dataset successfully transformed")
+            return self.getDataframe()
+        else:
+            logger.info("Skipping data transformation")
+            return self.df

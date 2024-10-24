@@ -1,5 +1,4 @@
 import re
-from typing import Self
 import pandas as pd
 
 from modules.config.config import Config
@@ -23,7 +22,11 @@ class DataCleaner(object):
         """
         Removes pig ID and sår ID from dataset because we consider neither a feature.
         """
-        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+        non_features = ["Gris ID", "Sår ID"]
+        self.df.drop(non_features, axis=1, inplace=True)
+        logger.info(
+            f"Removed {len(non_features)} non-informative features: {non_features}"
+        )
 
     def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi."""
@@ -77,7 +80,9 @@ class DataCleaner(object):
         """
         current_row_count = self.df.shape[0]
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
-        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
+        logger.info(
+            f"Removed {current_row_count - self.df.shape[0]} rows containing {threshold} or more NaN values"
+        )
 
     def convertHourToDay(self) -> None:
         """Cleans cells in a dataset containing hours < one day"""
@@ -112,7 +117,7 @@ class DataCleaner(object):
         """Subsets and shows the current dataframe to include only"""
         nan_df = self.df[self.df.isna().any(axis=1)]
         if len(nan_df) == 0:
-            logger.info("No NaN values to display.")
+            logger.info("No NaN values to display")
         else:
             logger.info(f"NaN values are \n{nan_df}")
 
@@ -162,26 +167,31 @@ class DataCleaner(object):
 
     def run(self) -> pd.DataFrame:
         """Run all applicable data cleaning methods
+
         Returns
         -------
         pd.DataFrame
             The cleaned dataset that is returned to the pipeline
         """
         config = Config()
-        if config.getValue("DeleteNanColumns"):
-            self._deleteNanCols()
-        if config.getValue("DeleteNonfeatures"):
-            self.deleteNonfeatures()
-        if config.getValue("DeleteMissingValues"):
-            self.deleteMissingValues()
-        if config.getValue("DeleteUndeterminedValue"):
-            self.deleteUndeterminedValue()
-        if config.getValue("RemoveFeaturelessRows"):
-            self.removeFeaturelessRows(config.getValue("RemoveFeaturelessRowsArgs"))
-        if config.getValue("FillNan"):
-            self.fillNan()
-        if config.getValue("ShowNan"):
-            self.showNan()
-        # TODO - Find out why row removal ration is n/n - some rows ought to be removed
-        logger.info(f"DataCleaner is done")
-        return self.getDataframe()
+        if config.getValue("UseCleaner"):
+            logger.info("Initializing data cleaner")
+            if config.getValue("DeleteNanColumns"):
+                self._deleteNanCols()
+            if config.getValue("DeleteNonfeatures"):
+                self.deleteNonfeatures()
+            if config.getValue("DeleteUndeterminedValue"):
+                self.deleteUndeterminedValue()
+            if config.getValue("RemoveFeaturelessRows"):
+                self.removeFeaturelessRows(config.getValue("RemoveFeaturelessRowsArgs"))
+            if config.getValue("FillNan"):
+                self.fillNan()
+            if config.getValue("DeleteMissingValues"):
+                self.deleteMissingValues()
+            if config.getValue("ShowNan"):
+                self.showNan()
+            logger.info(f"Dataset successfully cleaned!")
+            return self.getDataframe()
+        else:
+            logger.info("Skipping data cleaning")
+            return self.df

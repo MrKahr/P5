@@ -8,4 +8,5 @@ class ModelSummary:
 
     @classmethod
     def run(self) -> None:
-        logger.info(f"ModelSummary is done")
+        logger.info("Compiling model summary")
+        logger.info(f"Report complete. Handing it over")

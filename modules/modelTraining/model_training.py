@@ -1,6 +1,7 @@
 from time import time
-from typing import Any, Callable
+from typing import Callable
 from numpy.typing import NDArray
+
 from sklearn.feature_selection import RFE, RFECV
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_validate
@@ -8,15 +9,12 @@ from sklearn.utils import Bunch
 
 from modules.config.config import Config
 from modules.config.config_enums import TrainingMethod
-from modules.crossValidationSelection.cross_validation_selection import (
-    CrossValidationSelector,
-)
 from modules.logging import logger
 from modules.types import (
     FittedEstimator,
     UnfittedEstimator,
     CrossValidator,
-    ScoreCallable,
+    ModelScoreCallable,
 )
 
 
@@ -26,6 +24,8 @@ class ModelTrainer:
     def __init__(
         self,
         estimator: UnfittedEstimator,
+        cv: CrossValidator,
+        score_funcs: ModelScoreCallable,  # FIXME: Temporary solution until multi-score is implemented
         train_x: NDArray,
         target_y: NDArray,
     ) -> None:
@@ -34,7 +34,13 @@ class ModelTrainer:
         Parameters
         ----------
         estimator : UnfittedEstimator
-            The unfitted estimator to fit/train.
+            The model to train.
+
+        cv : CrossValidator
+            The cross-validator to use with the model.
+
+        score_funcs : ModelScoreCallable
+            A callable object / function with signature `scorer(estimator, X, y)`.
 
         train_x : NDArray
             Training data.
@@ -43,6 +49,8 @@ class ModelTrainer:
             Target data.
         """
         self._unfit_estimator = estimator
+        self._cv = cv
+        self._score_funcs = score_funcs
         self._train_x = train_x
         self._target_y = target_y
         self._config = Config()
@@ -126,7 +134,9 @@ class ModelTrainer:
 
         """
         # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-        # TODO: Verify that the model is better than a RNG: https://scikit-learn.org/stable/auto_examples/model_selection/plot_permutation_tests_for_classification.html#sphx-glr-auto-examples-model-selection-plot-permutation-tests-for-classification-py
+        # TODO: Verify that the model is better than a RNG:
+        #       https://scikit-learn.org/stable/auto_examples/model_selection/plot_permutation_tests_for_classification.html#sphx-glr-auto-examples-model-selection-plot-permutation-tests-for-classification-py
+        #       https://scikit-learn.org/stable/modules/cross_validation.html#permutation-test-score
         self._logger.info("Computing permutation feature importances...")
         start_time = time()
         result = permutation_importance(
@@ -142,28 +152,50 @@ class ModelTrainer:
         return result
 
     def _fitGridSearchCV(self, **kwargs) -> FittedEstimator:
+        # TODO: Get model report out of the search
         self._checkAllFeaturesPresent()
-        gscv = GridSearchCV()
+        gscv = GridSearchCV(
+            estimator=self._unfit_estimator,
+            param_grid={},  # TODO: Implement
+            scoring=self._score_funcs,
+            n_jobs=self._n_jobs,
+            cv=self._cv,
+            **kwargs,
+        )
+        return gscv.best_estimator_
 
     def _fitRandomSearchCV(self, **kwargs) -> FittedEstimator:
+        # TODO: Get model report out of the search
         self._checkAllFeaturesPresent()
-        rscv = RandomizedSearchCV()
+        rscv = RandomizedSearchCV(
+            estimator=self._unfit_estimator,
+            param_distributions={},  # TODO: Implement
+            scoring=self._score_funcs,
+            n_jobs=self._n_jobs,
+            cv=self._cv,
+            **kwargs,
+        )
+        return rscv.best_estimator_
 
     def _fitRFECV(
-        self, cv: CrossValidator, scoring: ScoreCallable, **kwargs
+        self,
+        **kwargs,
     ) -> FittedEstimator:
+        # NOTE: Some models do not support this (e.g. GaussianNB)!
         self._checkAllFeaturesPresent()
         rfecv = RFECV(
-            self._unfit_estimator, cv=cv, scoring=scoring, n_jobs=self._n_jobs, **kwargs
+            self._unfit_estimator,
+            cv=self._cv,
+            scoring=self._score_funcs,
+            n_jobs=self._n_jobs,
+            **kwargs,
         )
+        return rfecv.estimator_
 
     def _fitRFE(self, **kwargs) -> FittedEstimator:
+        # NOTE: Some models do not support this (e.g. GaussianNB)!
         self._checkAllFeaturesPresent()
-        self._logger.info(f"Fitting model...")
-        start_time = time()
         rfe = RFE(self._unfit_estimator, **kwargs).fit(self._train_x, self._target_y)
-        self._logger.info(f"Model fitted in {time()-start_time:.3f} s")
-        self._compileModelReport(rfe, self._train_x, self._target_y)
         return rfe.estimator_
 
     def _fitCV(
@@ -183,57 +215,51 @@ class ModelTrainer:
         ft = cv_results["estimator"]
         print(ft)  # TODO: Test if we can get fitted estimator like this
 
-    def _fit(
-        self,
-    ) -> FittedEstimator:
-        self._logger.info(f"Fitting model...")
-        start_time = time()
-        fitted_estimator = self._unfit_estimator.fit(self._train_x, self._target_y)
-        self._logger.info(f"Model fitted in {time()-start_time:.3f} s")
-        self._compileModelReport(fitted_estimator)
-        return fitted_estimator
+    def _fit(self) -> FittedEstimator:
+        return self._unfit_estimator.fit(self._train_x, self._target_y)
 
-    def getModelReport(self) -> dict[str, Any]:
-        return self._model_report
-
-    # TODO: train_x and target_y MUST include labels (for ALL methods using them)
     def run(
         self,
-    ) -> FittedEstimator:
-        start_time = time()
+    ) -> tuple[FittedEstimator, dict]:
         training_method = self._config.getValue(
             "training_method", parent_key=self._parent_key
         )
-        cv = CrossValidationSelector().getCrossValidator()
-        scoring = "accuracy"  # TODO: getScoring()
+        self._logger.info(f"Training model...")
+        start_time = time()
 
-        if training_method == TrainingMethod.FIT:
+        if training_method == TrainingMethod.FIT.name:
             fitted_estimator = self._fit()
         elif training_method == TrainingMethod.CROSS_VALIDATION:
             fitted_estimator = self._fitCV(
-                cv=cv,
-                scoring=scoring,
+                cv=self._cv,
+                scoring=self._score_funcs,
             )
-        elif training_method == TrainingMethod.RFE:
+        elif training_method == TrainingMethod.RFE.name:
             fitted_estimator = self._fitRFE(
                 **self._config.getValue("RFE", self._parent_key)
             )
-        elif training_method == TrainingMethod.RFECV:
+        elif training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFECV(
-                cv=cv,
-                scoring=scoring,
+                cv=self._cv,
+                scoring=self._score_funcs,
                 **self._config.getValue("RFECV", self._parent_key),
             )
-        elif training_method == TrainingMethod.RANDOM_SEARCH_CV:
-            fitted_estimator = self._fitRandomSearchCV()
-        elif training_method == TrainingMethod.GRID_SEARCH_CV:
-            fitted_estimator = self._fitGridSearchCV()
+        elif training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
+            random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
+            grid_args = self._config.getValue("GridSearchCV", self._parent_key)
+            fitted_estimator = self._fitRandomSearchCV(random_args | grid_args)
+        elif training_method == TrainingMethod.GRID_SEARCH_CV.name:
+            fitted_estimator = self._fitGridSearchCV(
+                self._config.getValue("GridSearchCV", self._parent_key)
+            )
         else:
             raise TypeError(
                 f"Invalid training method '{training_method}'. Expected one of {TrainingMethod._member_names_}"
             )
 
+        self._logger.info(f"Model training in {time()-start_time:.3f} s")
+        self._compileModelReport(fitted_estimator)
         self._logger.info(
             f"Model training complete! Total training time: {time()-start_time:.3f} s"
         )
-        return fitted_estimator
+        return fitted_estimator, self._model_report

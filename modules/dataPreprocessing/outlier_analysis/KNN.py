@@ -6,23 +6,21 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
     def __init__(self, df: pd.DataFrame) -> None:
-        self.df=df
+        self.df = df
         if "Gris ID" in self.df:
             self.df.drop("Gris ID", axis=1, inplace=True)
         if "Sår ID" in self.df:
             self.df.drop("Sår ID", axis=1, inplace=True)
-        
+
         transformer = DataTransformer(self.df)
         transformer.minMaxNormalization("Dag")
         self.df = transformer.getDataframe()
-        
 
     def KNN(self, degree: int) -> None:
         """Generate a k nearest neighbors graph and store it in the KNN class as ndarrays self.distances and self.neighbors
@@ -151,19 +149,3 @@ class KNNAnalysis:
                     )
                     k += 1
         plt.show()
-
-
-if __name__ == "__main__":
-    dp = DataPreprocessor(Dataset.REGS)
-
-    cleaner = DataCleaner(dp.df)
-    cleaner.cleanRegsDataset()
-    cleaner.deleteMissingValues()
-
-    transformer = DataTransformer(cleaner.getDataframe())
-    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
-
-    op = KNNAnalysis(transformer.getDataframe())
-    threshold = 0
-    k = [10, 20, 30]
-    op.PlotNeighborMultiHist(k, 0, 3, 1)

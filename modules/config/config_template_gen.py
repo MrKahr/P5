@@ -2,13 +2,14 @@ from typing import Self
 
 from modules.config.config_enums import (
     CrossValidator,
+    FeatureScoreFunc,
     FeatureSelectionCriterion,
     Model,
     LogLevel,
     ImputationMethod,
     NormalisationMethod,
     OutlierRemovalMethod,
-    ScoreFunction,
+    ModelScoreFunc,
     TrainingMethod,
 )
 
@@ -40,10 +41,6 @@ class ConfigTemplate(object):
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
                 "UseOutlierRemoval": True,
-                "UseModelSelector": True,
-                "UseModelTrainer": True,
-                "UseModelTester": True,
-                "UseModelEvaluator": True,
             },
             "DataPreprocessing": {
                 "Cleaning": {
@@ -55,9 +52,6 @@ class ConfigTemplate(object):
                     "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
                     "ShowNan": True,
-                    "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
-                    "CleanMålDataset": True,  #        These three options should be handled by the run-method in the cleaner.py file
-                    "CleanOldDastaset": True,
                 },
                 "OutlierAnalysis": {
                     "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,
@@ -75,26 +69,20 @@ class ConfigTemplate(object):
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "ComputeFeatureCorrelation": True,
-                    "TestChi2Independence": True,
-                    "TestfClassifIndependence": True,
-                    "MutualInfoClassif": True,
+                    "score_functions": [FeatureScoreFunc.CHI2.name],
                     "MutualInfoClassifArgs": {
                         "discrete_features": True,
                         "n_neighbors": 3,
-                        "copy": True,
                         "random_state": 12,
                     },
                     "GenericUnivariateSelect": True,
                     "GenericUnivariateSelectArgs": {
-                        "scoreFunc": ScoreFunction.CUSTOM_FUNCTION,
-                        "mode": FeatureSelectionCriterion.PERCENTILE,
-                        "param": 5,
+                        "mode": FeatureSelectionCriterion.PERCENTILE.name,
+                        "param": 5,  # type: int | float | str  # The parameter for the mode
                     },
+                    "ComputeFeatureCorrelation": True,
                     "VarianceThreshold": True,
                     "checkOverfitting": True,
-                    "recursiveFeatureValidation": True,
-                    "recursiveFeatureValidationWithCrossValidation": True,
                 },
             },
             "ModelSelection": {
@@ -111,7 +99,7 @@ class ConfigTemplate(object):
                     "min_impurity_decrease": 0.0,
                     "ccp_alpha": 0.0,
                 },
-                "RandomForest": {
+                "RandomForest": {  # NOTE: DecisionTree arguments are also used for RandomForest
                     "n_estimators": 100,
                     "bootstrap": True,
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
@@ -135,7 +123,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.FIT,
+                "training_method": TrainingMethod.FIT.name,
                 "PermutationFeatureImportance": {
                     "scoring": "",  # TODO: Add enum
                     "n_repeats": 10,
@@ -149,7 +137,18 @@ class ConfigTemplate(object):
                     "min_features_to_select": 1,  # type: int
                     "step": 1,  # type: float | int
                 },
+                "RandomizedSearchCV": {
+                    "n_iter": 10,  # NOTE: Number of parameter settings that are sampled. n_iter trades off runtime vs quality of the solution.
+                    "random_state": 378,
+                },
+                "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
+                    "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
+                },
             },
-            "ModelTesting": {"test4": ""},
+            "ModelScoreFunctions": {
+                "score_functions": [ModelScoreFunc.THRESHOLD.name],
+                "score_function_params": {"threshold": 20},
+            },
             "ModelEvaluation": {"test5": ""},
         }
