@@ -51,21 +51,6 @@ class ModelTester:
 
     def run(self, features: pd.DataFrame, target: pd.DataFrame, estimator) -> None:
 
-        train_features, test_features = train_test_split(features, 0.8)
-        train_target, test_target = train_test_split(target)
-
-        print(
-            f"Training data accuracy: {self.customScore(estimator, train_features, train_target):.3f}"
-        )
-        print(
-            f"Testing data accuracy: {self.customScore(estimator, test_features, test_target):.3f}"
-        )
-        result = estimator.predict(X)
-
-        logger.info(f"ModelTester is done")
-
-    def run(self, features: pd.DataFrame, target: pd.DataFrame, estimator) -> None:
-
         train_features, test_features = train_test_split(features)
         train_target, test_target = train_test_split(target)
         prediction = estimator.predict(test_features)
