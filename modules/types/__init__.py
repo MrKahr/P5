@@ -20,4 +20,6 @@ FittedEstimator: TypeAlias = Union[
 
 CrossValidator: TypeAlias = Union[StratifiedKFold, TimeSeriesSplit]
 
-ModelScoreCallable: TypeAlias = Callable[[ArrayLike, ArrayLike], float]
+ModelScoreCallable: TypeAlias = Callable[[FittedEstimator, ArrayLike, ArrayLike], float]
+
+NoModelScoreCallable: TypeAlias = Callable[[ArrayLike, ArrayLike], float]

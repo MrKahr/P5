@@ -10,11 +10,12 @@ from sklearn.utils import Bunch
 from modules.config.config import Config
 from modules.config.config_enums import TrainingMethod
 from modules.logging import logger
+from modules.modelTesting.score_functions import ScoreFunctions
 from modules.types import (
     FittedEstimator,
     UnfittedEstimator,
     CrossValidator,
-    ModelScoreCallable,
+    NoModelScoreCallable,
 )
 
 
@@ -25,9 +26,8 @@ class ModelTrainer:
         self,
         estimator: UnfittedEstimator,
         cv: CrossValidator,
-        score_funcs: ModelScoreCallable,  # FIXME: Temporary solution until multi-score is implemented
         train_x: NDArray,
-        target_y: NDArray,
+        true_y: NDArray,
     ) -> None:
         """Fit an unfitted model and generate a model report of the training session.
 
@@ -50,9 +50,9 @@ class ModelTrainer:
         """
         self._unfit_estimator = estimator
         self._cv = cv
-        self._score_funcs = score_funcs
+        self._model_score_funcs = ScoreFunctions.getScoreFuncsModel()
         self._train_x = train_x
-        self._target_y = target_y
+        self._true_y = true_y
         self._config = Config()
         self._parent_key = "ModelTraining"
         self._n_jobs = self._config.getValue("n_jobs", "General")
@@ -60,14 +60,6 @@ class ModelTrainer:
             "feature_importances": None,  # type: Bunch
             "feature_names_in": None,  # type: NDArray
             "feature_count": None,  # type: int
-            "true_positive": None,  # type: float
-            "true_negative": None,  # type: float
-            "false_positive": None,  # type: float
-            "false_negative": None,  # type: float
-            "accuracy": None,  # type: float
-            "precision": None,  # type: float
-            "recall": None,  # type: float
-            "specificity": None,  # type: float
         }
 
     def _checkAllFeaturesPresent(self) -> None:
@@ -90,7 +82,9 @@ class ModelTrainer:
         self._model_report["feature_count"] = estimator.n_features_in_
 
     def _permutationFeatureImportance(
-        self, estimator: FittedEstimator, **kwargs
+        self,
+        estimator: FittedEstimator,
+        **kwargs,
     ) -> Bunch:
         """
         Permutation feature importance is a model inspection technique
@@ -142,12 +136,13 @@ class ModelTrainer:
         result = permutation_importance(
             estimator,
             self._train_x,
-            self._target_y,
+            self._true_y,
+            scoring=self._no_model_score_funcs,
             n_jobs=self._n_jobs,
             **kwargs,
         )
         self._logger.info(
-            f"Feature importance computation completed in {time()-start_time:.3f} s"
+            f"Permutation feature importances completed in {time()-start_time:.3f} s"
         )
         return result
 
@@ -157,7 +152,7 @@ class ModelTrainer:
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
             param_grid={},  # TODO: Implement
-            scoring=self._score_funcs,
+            scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cv,
             **kwargs,
@@ -170,7 +165,7 @@ class ModelTrainer:
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
             param_distributions={},  # TODO: Implement
-            scoring=self._score_funcs,
+            scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cv,
             **kwargs,
@@ -186,7 +181,7 @@ class ModelTrainer:
         rfecv = RFECV(
             self._unfit_estimator,
             cv=self._cv,
-            scoring=self._score_funcs,
+            scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             **kwargs,
         )
@@ -194,21 +189,21 @@ class ModelTrainer:
 
     def _fitRFE(self, **kwargs) -> FittedEstimator:
         # NOTE: Some models do not support this (e.g. GaussianNB)!
+        # TODO: Adjust for multiple scoring functions
         self._checkAllFeaturesPresent()
-        rfe = RFE(self._unfit_estimator, **kwargs).fit(self._train_x, self._target_y)
+        rfe = RFE(self._unfit_estimator, **kwargs).fit(self._train_x, self._true_y)
         return rfe.estimator_
 
     def _fitCV(
         self,
-        cv: CrossValidator,
-        scoring: Callable,
     ) -> FittedEstimator:
+        # TODO: Adjust for multiple scoring functions
         cv_results = cross_validate(
             estimator=self._unfit_estimator,
             X=self._train_x,
-            y=self._target_y,
-            scoring=scoring,
-            cv=cv,
+            y=self._true_y,
+            scoring=self._model_score_funcs,
+            cv=self._cv,
             n_jobs=self._n_jobs,
             return_estimator=True,
         )
@@ -216,7 +211,7 @@ class ModelTrainer:
         print(ft)  # TODO: Test if we can get fitted estimator like this
 
     def _fit(self) -> FittedEstimator:
-        return self._unfit_estimator.fit(self._train_x, self._target_y)
+        return self._unfit_estimator.fit(self._train_x, self._true_y)
 
     def run(
         self,
@@ -232,7 +227,7 @@ class ModelTrainer:
         elif training_method == TrainingMethod.CROSS_VALIDATION:
             fitted_estimator = self._fitCV(
                 cv=self._cv,
-                scoring=self._score_funcs,
+                scoring=self._model_score_funcs,
             )
         elif training_method == TrainingMethod.RFE.name:
             fitted_estimator = self._fitRFE(
@@ -241,7 +236,7 @@ class ModelTrainer:
         elif training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFECV(
                 cv=self._cv,
-                scoring=self._score_funcs,
+                scoring=self._model_score_funcs,
                 **self._config.getValue("RFECV", self._parent_key),
             )
         elif training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
@@ -257,7 +252,10 @@ class ModelTrainer:
                 f"Invalid training method '{training_method}'. Expected one of {TrainingMethod._member_names_}"
             )
 
-        self._logger.info(f"Model training in {time()-start_time:.3f} s")
+        self._logger.info(f"Model training took {time()-start_time:.3f} s")
+        self._no_model_score_funcs = ScoreFunctions.getScoreFuncNoModel(
+            fitted_estimator
+        )
         self._compileModelReport(fitted_estimator)
         self._logger.info(
             f"Model training complete! Total training time: {time()-start_time:.3f} s"

@@ -1,14 +1,18 @@
+from pathlib import Path
 import re
 import pandas as pd
 
 from modules.config.config import Config
+from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.logging import logger
 
 
 class DataCleaner(object):
 
-    def __init__(self, df: pd.DataFrame) -> None:
-        self.df = df
+    def __init__(self, dataset: Dataset) -> None:
+        logger.info(f"Loading '{dataset.name}' dataset")
+        path = Path("data", dataset.value).absolute()
+        self.df = pd.read_csv(path, sep=";", comment="#")
         self.initial_row_count = self.df.shape[0]
 
     def _deleteNanCols(self) -> None:
@@ -25,7 +29,7 @@ class DataCleaner(object):
         non_features = ["Gris ID", "Sår ID"]
         self.df.drop(non_features, axis=1, inplace=True)
         logger.info(
-            f"Removed {len(non_features)} non-informative features: {non_features}"
+            f"Removed {len(non_features)} non-informative features: {", ".join(non_features)}"
         )
 
     def deleteMissingValues(self) -> None:

@@ -124,8 +124,9 @@ class ConfigTemplate(object):
             },
             "ModelTraining": {
                 "training_method": TrainingMethod.FIT.name,
+                "score_functions": [ModelScoreFunc.THRESHOLD.name],
+                "score_function_params": {"threshold": 20},
                 "PermutationFeatureImportance": {
-                    "scoring": "",  # TODO: Add enum
                     "n_repeats": 10,
                     "random_state": 298,  # type: int | None
                 },
@@ -145,10 +146,6 @@ class ConfigTemplate(object):
                     "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                 },
-            },
-            "ModelScoreFunctions": {
-                "score_functions": [ModelScoreFunc.THRESHOLD.name],
-                "score_function_params": {"threshold": 20},
             },
             "ModelEvaluation": {"test5": ""},
         }

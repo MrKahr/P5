@@ -3,10 +3,8 @@ from modules.logging import logger
 
 class ModelSummary:
 
-    def __init__(self):
-        pass
+    def __init__(self, model_report: dict):
+        self._model_report = model_report
 
-    @classmethod
     def run(self) -> None:
-        logger.info("Compiling model summary")
-        logger.info(f"Report complete. Handing it over")
+        logger.info(f"Showing model report:\n\t{self._model_report}")

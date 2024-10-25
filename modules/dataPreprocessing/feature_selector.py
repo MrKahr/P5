@@ -33,12 +33,12 @@ from modules.logging import logger
 
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
-    def __init__(self, x_train: pd.DataFrame, y_target: pd.Series) -> None:
+    def __init__(self, train_x: pd.DataFrame, true_y: pd.Series) -> None:
         self._config = Config()
         self._parent_key = "FeatureSelection"
         self.df = None
-        self._x_train = x_train
-        self._y_target = y_target
+        self._train_x = train_x
+        self._true_y = true_y
         self._selected_features = None
 
     def __modeArgCompare(
@@ -68,23 +68,23 @@ class FeatureSelector:
 
         # We need to check that mode and arg match
         match mode:
-            case FeatureSelectionCriterion.PERCENTILE:
+            case FeatureSelectionCriterion.PERCENTILE.name:
                 if not isnumeric:
                     raise TypeError("percentiles must be specified as numeric")
                 return ("percentile", arg)
-            case FeatureSelectionCriterion.K_BEST:
+            case FeatureSelectionCriterion.K_BEST.name:
                 if not isinteger:
                     raise TypeError("k_best must be specified as numeric")
                 return ("k_best", arg)
-            case FeatureSelectionCriterion.FPR:
+            case FeatureSelectionCriterion.FPR.name:
                 if not isnumeric:
                     raise TypeError("fpr must be specified as numeric")
                 return ("fpr", arg)
-            case FeatureSelectionCriterion.FDR:
+            case FeatureSelectionCriterion.FDR.name:
                 if not isnumeric:
                     raise TypeError("fdr must be specified as numeric")
                 return ("fdr", arg)
-            case FeatureSelectionCriterion.FWE:
+            case FeatureSelectionCriterion.FWE.name:
                 if not isnumeric:
                     raise TypeError("fwe must be specified as numeric")
                 return ("fwe", arg)
@@ -95,14 +95,16 @@ class FeatureSelector:
                 return ("all", arg)
 
     def __combineXY(self) -> pd.DataFrame:
-        return self._y_target | self._x_train
+        return self._train_x.join(self._true_y)
 
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#handling-multicollinear-features
         pass
 
-    def _chi2Independence(self) -> tuple[NDArray, NDArray]:
+    def _chi2Independence(
+        self, train_x: NDArray, true_y: NDArray
+    ) -> tuple[NDArray, NDArray]:
         """
         Compute chi-squared stats between each non-negative feature and class.
         This score can be used to select the features with the highest values for the
@@ -127,10 +129,12 @@ class FeatureSelector:
         - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html#sklearn.feature_selection.chi2
         """
         logger.info("Computing chi-squared statistics")
-        chi2_stats, p_values = chi2(self._x_train, self._y_target)
+        chi2_stats, p_values = chi2(train_x, true_y)
         return chi2_stats, p_values
 
-    def _fClassifIndependence(self) -> tuple[NDArray, NDArray]:
+    def _fClassifIndependence(
+        self, train_x: NDArray, true_y: NDArray
+    ) -> tuple[NDArray, NDArray]:
         """
         Compute the Analysis of Variance (ANOVA) F-value for the provided sample.
 
@@ -151,10 +155,12 @@ class FeatureSelector:
 
         """
         logger.info("Computing ANOVA F-statistics")
-        f_stats, p_values = f_classif(self._x_train, self._y_target)
+        f_stats, p_values = f_classif(train_x, true_y)
         return f_stats, p_values
 
-    def _mutualInfoClassif(self, **kwargs) -> NDArray:
+    def _mutualInfoClassif(
+        self, train_x: NDArray, true_y: NDArray, **kwargs
+    ) -> NDArray:
         """
         Estimate mutual information for a discrete target variable.
         Mutual information (MI) between two random variables is a non-negative value,
@@ -183,8 +189,8 @@ class FeatureSelector:
         """
         logger.info("Computing estimates of mutual information")
         return mutual_info_classif(
-            self._x_train,
-            self._y_target,
+            train_x,
+            true_y,
             **kwargs,
         )
 
@@ -245,12 +251,11 @@ class FeatureSelector:
         """
         # TODO: Plot info gained, see links
         # TODO: Try a new version of our custom score function as well
-        logger.info(f"Running feature selection using ({mode}, {param})")
+        logger.info(f"Running feature selection using mode={mode}, param={param}")
         selector = GenericUnivariateSelect(scoreFunc, mode=mode, param=param)
-        self._x_train = pd.DataFrame(
-            selector.fit_transform(self._x_train, self._y_target)
-        )
+        transformed_x = selector.fit_transform(self._train_x, self._true_y)
         self._selected_features = selector.get_feature_names_out()
+        self._train_x = pd.DataFrame(transformed_x, columns=self._selected_features)
 
     def varianceThreshold(self) -> Any:
         # See: https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance
@@ -273,15 +278,15 @@ class FeatureSelector:
         for score_func in score_funcs:
             if score_func == FeatureScoreFunc.CHI2.name:
                 selected_score_funcs |= {
-                    FeatureScoreFunc.CHI2.name: self._chi2Independence
+                    FeatureScoreFunc.CHI2.name.lower(): self._chi2Independence
                 }
             elif score_func == FeatureScoreFunc.ANOVA_F.name:
                 selected_score_funcs |= {
-                    FeatureScoreFunc.ANOVA_F.name: self._fClassifIndependence
+                    FeatureScoreFunc.ANOVA_F.name.lower(): self._fClassifIndependence
                 }
             elif score_func == FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name:
                 selected_score_funcs |= {
-                    FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name: lambda: self._mutualInfoClassif(
+                    FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name.lower(): lambda: self._mutualInfoClassif(
                         **self._config.getValue(
                             "MutualInfoClassifArgs", self._parent_key
                         )
@@ -292,13 +297,13 @@ class FeatureSelector:
                     f"Invalid score function '{score_func}'. Expected one of {FeatureScoreFunc._member_names_}"
                 )
         logger.info(
-            f"Using feature select score functions: '{selected_score_funcs.keys()}'"
+            f"Using feature select score functions: '{", ".join(selected_score_funcs.keys())}'"
         )
         return next(
-            iter(selected_score_funcs)
+            iter(selected_score_funcs.values())
         )  # FIXME: Temporary solution until multi-score is implemented
 
-    def run(self) -> pd.DataFrame:
+    def run(self) -> tuple[pd.DataFrame, pd.Series, NDArray]:
         """Runs all applicable feature selection methods.
 
         Returns
@@ -320,10 +325,11 @@ class FeatureSelector:
                 self.checkOverfitting()
 
         if self._selected_features:
+            size = len(self._selected_features)
             logger.info(
-                f"Selected {len(self._selected_features)} features as statistically important: {self._selected_features}"
+                f"Selected {size} feature{"s" if size != 1 else ""} as statistically important: {", ".join(self._selected_features)}"
             )
         else:
             logger.info("Using all features")
 
-        return self.__combineXY()
+        return self._train_x, self._true_y, self._selected_features
