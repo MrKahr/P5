@@ -37,6 +37,10 @@ class DataTransformer:
             one_hot = pd.get_dummies(self.df[variable], prefix=variable)
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
+        size = len(labels)
+        logger.info(
+            f"One-hot encoded {size} feature{"s" if size != 1 else ""}: {", ".join(labels)}"
+        )
 
     def modeImputationByDay(self) -> None:
         """Imputes missing values by replacing them with the most common value for the day where the value is missing.
@@ -50,14 +54,15 @@ class DataTransformer:
         # replace the missing value
         # repeat
         df = self.df
+        impute_count = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == 100:
                     day = row["Dag"]
 
-                    logger.info(
-                        f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
-                    )  # NOTE 'Internal Index' is the index of the row in the dataframe.
+                    # logger.info(
+                    #     f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
+                    # )  # NOTE 'Internal Index' is the index of the row in the dataframe.
                     # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
                     same_day_rows = df[df["Dag"] == day]
                     column = same_day_rows[label]
@@ -65,15 +70,18 @@ class DataTransformer:
                         0
                     ]  # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
 
-                    logger.info(f"Mode of {label} is {mode}.")
+                    # logger.info(f"Mode of {label} is {mode}.")
                     if mode == 100:
                         logger.warning(
                             "Mode is a missing value! Cannot properly impute!"
                         )
+                    else:
+                        impute_count += 1
 
                     df.at[index, label] = mode
 
-                    logger.info(f"Replaced missing value with {mode}.")
+                    # logger.info(f"Replaced missing value with {mode}.")
+        logger.info(f"Mode imputation replaced {impute_count} missing values")
         self.df = df
 
     def zeroOneDistance(
@@ -157,9 +165,9 @@ class DataTransformer:
             copy=False,
         )
         imputer.set_output(transform="pandas")
-        working_df = df.drop(
-            ["Gris ID", "Sår ID"], axis=1
-        )  # remove ID columns so we don't use those for distance calculations
+        # working_df = df.drop(
+        #     ["Gris ID", "Sår ID"], axis=1
+        # )  # remove ID columns so we don't use those for distance calculations
         working_df = imputer.fit_transform(
             working_df
         )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
@@ -178,16 +186,16 @@ class DataTransformer:
             The DataFrame to search
         value : The value to find and log using the logger. Default is 100 to help find missing values
         """
-        logger.info(f"Checking for {value}...")
+        # logger.info(f"Checking for {value}...")
         count = 0
         last_index = -1
         rows = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
                 if row[label] == value:
-                    logger.info(
-                        f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
-                    )
+                    # logger.info(
+                    #     f"Found {value} in {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {row['Dag']} (Internal Index {index})."
+                    # )
                     count += 1
                     if index != last_index:
                         rows += 1
@@ -228,15 +236,6 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], attribute] = value1
             i += 1
 
-    def getDataframe(self) -> pd.DataFrame:
-        """Get the transformed dataframe as a deep copy.
-        Returns
-        -------
-        pd.DataFrame
-            The transformed dataframe
-        """
-        return self.df.copy(deep=True)
-
     def run(self) -> pd.DataFrame:
         """Run all applicable transformation methods
 
@@ -247,8 +246,6 @@ class DataTransformer:
         """
         config = Config()
         if config.getValue("UseTransformer"):
-            logger.info("Initializing feature transformer")
-
             if len(config.getValue("OneHotEncodeLabels")) > 0:
                 self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
             match config.getValue("ImputationMethod"):
@@ -257,25 +254,26 @@ class DataTransformer:
                 case ImputationMethod.KNN.name:
                     self.KNNImputation(config.getValue("NearestNeighbors"))
                 case ImputationMethod.NONE.name:
-                    logger.info("No imputation done.")
+                    logger.info("Skipping imputation")
                 # default
                 case _:
                     logger.warning(
-                        "Undefined imputation method selected for DataTransformer! No imputation done."
+                        "Undefined imputation method selected for DataTransformer. Skipping"
                     )
             match config.getValue("NormalisationMethod"):
                 case NormalisationMethod.MIN_MAX.name:
-                    for feature in config.getValue("NormaliseFeatures"):
+                    normalize_features = config.getValue("NormaliseFeatures")
+                    for feature in normalize_features:
                         self.minMaxNormalization(feature)
+                    logger.info(
+                        f"Normalized {len(normalize_features)}: {", ".join(normalize_features)}"
+                    )
                 case NormalisationMethod.NONE.name:
-                    logger.info("No normalisation done.")
+                    logger.info("Skipping normalisation")
                 # default
                 case _:
-                    logger.warning(
-                        "Undefined normalisation method selected for DataTransformer! No normalisation done."
-                    )
-            logger.info(f"Dataset successfully transformed")
-            return self.getDataframe()
+                    logger.warning("Undefined normalisation method selected. Skipping")
         else:
             logger.info("Skipping data transformation")
-            return self.df
+
+        return self.df

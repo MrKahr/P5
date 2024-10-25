@@ -45,7 +45,7 @@ class ConfigTemplate(object):
             "DataPreprocessing": {
                 "Cleaning": {
                     "DeleteNanColumns": True,
-                    "DeleteNonfeatures": False,
+                    "DeleteNonfeatures": True,
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
                     "RemoveFeaturelessRows": True,

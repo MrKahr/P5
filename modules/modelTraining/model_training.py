@@ -1,6 +1,5 @@
+import pandas as pd
 from time import time
-from typing import Callable
-from numpy.typing import NDArray
 
 from sklearn.feature_selection import RFE, RFECV
 from sklearn.inspection import permutation_importance
@@ -15,19 +14,19 @@ from modules.types import (
     FittedEstimator,
     UnfittedEstimator,
     CrossValidator,
-    NoModelScoreCallable,
 )
 
 
 class ModelTrainer:
     _logger = logger
+    _config = Config()
 
     def __init__(
         self,
         estimator: UnfittedEstimator,
         cv: CrossValidator,
-        train_x: NDArray,
-        true_y: NDArray,
+        train_x: pd.DataFrame,
+        true_y: pd.Series,
     ) -> None:
         """Fit an unfitted model and generate a model report of the training session.
 
@@ -53,7 +52,6 @@ class ModelTrainer:
         self._model_score_funcs = ScoreFunctions.getScoreFuncsModel()
         self._train_x = train_x
         self._true_y = true_y
-        self._config = Config()
         self._parent_key = "ModelTraining"
         self._n_jobs = self._config.getValue("n_jobs", "General")
         self._model_report = {
@@ -137,7 +135,7 @@ class ModelTrainer:
             estimator,
             self._train_x,
             self._true_y,
-            scoring=self._no_model_score_funcs,
+            scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             **kwargs,
         )
@@ -178,13 +176,18 @@ class ModelTrainer:
     ) -> FittedEstimator:
         # NOTE: Some models do not support this (e.g. GaussianNB)!
         self._checkAllFeaturesPresent()
+        if len(self._model_score_funcs.keys()) > 1:
+            raise ValueError(
+                f"Selected model RFECV does not support multiple score functions. Got {self._model_score_funcs.keys()}"
+            )
+
         rfecv = RFECV(
             self._unfit_estimator,
             cv=self._cv,
-            scoring=self._model_score_funcs,
+            scoring=next(iter(self._model_score_funcs.values())),
             n_jobs=self._n_jobs,
             **kwargs,
-        )
+        ).fit(self._train_x, self._true_y)
         return rfecv.estimator_
 
     def _fitRFE(self, **kwargs) -> FittedEstimator:
@@ -235,8 +238,6 @@ class ModelTrainer:
             )
         elif training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFECV(
-                cv=self._cv,
-                scoring=self._model_score_funcs,
                 **self._config.getValue("RFECV", self._parent_key),
             )
         elif training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
@@ -253,9 +254,6 @@ class ModelTrainer:
             )
 
         self._logger.info(f"Model training took {time()-start_time:.3f} s")
-        self._no_model_score_funcs = ScoreFunctions.getScoreFuncNoModel(
-            fitted_estimator
-        )
         self._compileModelReport(fitted_estimator)
         self._logger.info(
             f"Model training complete! Total training time: {time()-start_time:.3f} s"

@@ -1,5 +1,7 @@
 from typing import Optional
 from numpy.typing import NDArray
+from numpy import ndarray
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -20,55 +22,29 @@ class ScoreFunctions:
     @classmethod
     def _threshold(
         cls,
-        estimator: FittedEstimator,
-        train_x: NDArray,
-        true_y: NDArray,
+        true_y: pd.Series | NDArray,
+        pred_y: NDArray,
         threshold: int,
     ) -> float:
-        pred_y = estimator.predict(train_x)
-
         score = 0
+        if not isinstance(true_y, ndarray):
+            true_y = true_y.to_numpy(copy=True)
         for i, prediction in enumerate(pred_y):
             if true_y[i] >= threshold:
                 score += 1
             elif prediction < threshold:
                 score += 1
-
         return float(score / len(pred_y))
 
     @classmethod
-    def _distance(
-        cls, estimator: FittedEstimator, train_x: NDArray, true_y: NDArray
-    ) -> float:
-        pred_y = estimator.predict(train_x)
-        max_y = true_y[true_y.argmax()]
-
+    def _distance(cls, true_y: pd.Series | NDArray, pred_y: NDArray) -> float:
         score = 0
+        if not isinstance(true_y, ndarray):
+            true_y = true_y.to_numpy(copy=True)
+        max_y = true_y[true_y.argmax()]
         for i, prediction in enumerate(pred_y):
             score += 1 - abs(prediction - true_y[i]) / max_y
-
         return float(score / len(pred_y))
-
-    @classmethod
-    def _accuracy(
-        cls, estimator: FittedEstimator, train_x: NDArray, true_y: NDArray
-    ) -> float:
-        pred_y = estimator.predict(train_x)
-        return accuracy_score(true_y, pred_y)
-
-    @classmethod
-    def _balanced_accuracy(
-        cls, estimator: FittedEstimator, train_x: NDArray, true_y: NDArray
-    ) -> float:
-        pred_y = estimator.predict(train_x)
-        return balanced_accuracy_score(true_y, pred_y)
-
-    @classmethod
-    def _explained_variance(
-        cls, estimator: FittedEstimator, train_x: NDArray, true_y: NDArray
-    ) -> float:
-        pred_y = estimator.predict(train_x)
-        return explained_variance_score(true_y, pred_y)
 
     @classmethod
     def getScoreFuncsModel(
@@ -82,43 +58,64 @@ class ScoreFunctions:
 
             selected_score_funcs = {}
             for score_func in score_funcs:
-                match score_func:
-                    case ModelScoreFunc.THRESHOLD.name:
-                        selected_score_funcs |= {
-                            ModelScoreFunc.THRESHOLD.name.lower(): make_scorer(
-                                cls._threshold,
-                                threshold=cls._config.getValue(
-                                    "threshold", parent_key="score_function_params"
-                                ),
-                            )
-                        }
-                    case ModelScoreFunc.DISTANCE.name:
-                        selected_score_funcs |= {
-                            ModelScoreFunc.DISTANCE.name.lower(): cls._distance
-                        }
-                    case ModelScoreFunc.ACCURACY.name:
-                        selected_score_funcs |= {
-                            ModelScoreFunc.ACCURACY.name.lower(): cls._accuracy
-                        }
-                    case ModelScoreFunc.BALANCED_ACCURACY.name:
-                        selected_score_funcs |= {
-                            ModelScoreFunc.BALANCED_ACCURACY.name.lower(): cls._balanced_accuracy
-                        }
-                    case ModelScoreFunc.EXPLAINED_VARIANCE.name:
-                        selected_score_funcs |= {
-                            ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): cls._explained_variance
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid score function '{score_funcs}'. Expected one of {ModelScoreFunc._member_names_}"
+                if score_func in [
+                    ModelScoreFunc.THRESHOLD.name,
+                    ModelScoreFunc.ALL.name,
+                ]:
+                    selected_score_funcs |= {
+                        ModelScoreFunc.THRESHOLD.name.lower(): make_scorer(
+                            cls._threshold,
+                            threshold=cls._config.getValue(
+                                "threshold", parent_key="score_function_params"
+                            ),
                         )
+                    }
+                if score_func in [
+                    ModelScoreFunc.DISTANCE.name,
+                    ModelScoreFunc.ALL.name,
+                ]:
+                    selected_score_funcs |= {
+                        ModelScoreFunc.DISTANCE.name.lower(): make_scorer(cls._distance)
+                    }
+                if score_func in [
+                    ModelScoreFunc.ACCURACY.name,
+                    ModelScoreFunc.ALL.name,
+                ]:
+                    selected_score_funcs |= {
+                        ModelScoreFunc.ACCURACY.name.lower(): make_scorer(
+                            accuracy_score
+                        )
+                    }
+                if score_func in [
+                    ModelScoreFunc.BALANCED_ACCURACY.name,
+                    ModelScoreFunc.ALL.name,
+                ]:
+                    selected_score_funcs |= {
+                        ModelScoreFunc.BALANCED_ACCURACY.name.lower(): make_scorer(
+                            balanced_accuracy_score
+                        )
+                    }
+                if score_func in [
+                    ModelScoreFunc.EXPLAINED_VARIANCE.name,
+                    ModelScoreFunc.ALL.name,
+                ]:
+                    selected_score_funcs |= {
+                        ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
+                            explained_variance_score
+                        )
+                    }
+
+                if not selected_score_funcs:
+                    raise TypeError(
+                        f"Invalid score function '{score_funcs}'. Expected one of {ModelScoreFunc._member_names_}"
+                    )
 
             logger.info(
                 f"Using model score functions: '{", ".join(selected_score_funcs.keys())}'"
             )
             cls._cache["model"] = selected_score_funcs
 
-        return cls._cache
+        return cls._cache["model"]
 
     @classmethod
     def getScoreFuncNoModel(
@@ -143,31 +140,34 @@ class ScoreFunctions:
                             ModelScoreFunc.THRESHOLD.name.lower(): lambda train_x, true_y, estimator=estimator, threshold=cls._config.getValue(
                                 "threshold", parent_key="score_function_params"
                             ): cls._threshold(
-                                estimator, train_x, true_y, threshold
+                                estimator=estimator,
+                                train_x=train_x,
+                                true_y=true_y,
+                                threshold=threshold,
                             ),
                         }
                     case ModelScoreFunc.DISTANCE.name:
                         selected_score_funcs |= {
                             ModelScoreFunc.DISTANCE.name.lower(): lambda train_x, true_y, estimator=estimator: cls._distance(
-                                estimator, train_x, true_y
+                                estimator=estimator, train_x=train_x, true_y=true_y
                             )
                         }
                     case ModelScoreFunc.ACCURACY.name:
                         selected_score_funcs |= {
                             ModelScoreFunc.ACCURACY.name.lower(): lambda train_x, true_y, estimator=estimator: cls._accuracy(
-                                estimator, train_x, true_y
+                                estimator=estimator, train_x=train_x, true_y=true_y
                             )
                         }
                     case ModelScoreFunc.BALANCED_ACCURACY.name:
                         selected_score_funcs |= {
                             ModelScoreFunc.BALANCED_ACCURACY.name.lower(): lambda train_x, true_y, estimator=estimator: cls._balanced_accuracy(
-                                estimator, train_x, true_y
+                                estimator=estimator, train_x=train_x, true_y=true_y
                             )
                         }
                     case ModelScoreFunc.EXPLAINED_VARIANCE.name:
                         selected_score_funcs |= {
                             ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): lambda train_x, true_y, estimator=estimator: cls._explained_variance(
-                                estimator, train_x, true_y
+                                estimator=estimator, train_x=train_x, true_y=true_y
                             )
                         }
                     case _:

@@ -1,7 +1,7 @@
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
 from modules.config.config import Config
-from modules.config.config_enums import CrossValidator
+from modules.config.config_enums import CrossValidator, TrainingMethod
 from modules.logging import logger
 
 
@@ -36,7 +36,11 @@ class CrossValidationSelector:
         parent_key = "CrossValidationSelection"
         selected_cv = cls._config.getValue("cross_validator", parent_key)
 
-        if selected_cv == None:
+        cv_not_applicable = cls._config.getValue(
+            "training_method", "ModelTraining"
+        ) in [TrainingMethod.FIT.name, TrainingMethod.RFE.name]
+
+        if selected_cv == None or cv_not_applicable:
             cv = None
         elif selected_cv == CrossValidator.STRATIFIED_KFOLD.name:
             cv = cls._getStratifiedKFold(
@@ -50,5 +54,9 @@ class CrossValidationSelector:
             raise TypeError(
                 f"Invalid cross-validator '{selected_cv}'. Expected one of {CrossValidator._member_names_}"
             )
-        logger.info(f"Using cross-validator: {type(cv).__name__}")
+
+        if cv:
+            logger.info(f"Using cross-validator: {type(cv).__name__}")
+        else:
+            logger.info(f"Skipping cross-validation")
         return cv

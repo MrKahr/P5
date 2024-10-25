@@ -59,7 +59,7 @@ class ModelSelector:
                 "RandomForest", parent_key
             )  # type: dict
             model = cls._getRandomForest(
-                **{decision_tree_options | random_forest_options | n_jobs}
+                **decision_tree_options | random_forest_options | n_jobs
             )
         elif selected_model == Model.NAIVE_BAYES.name:
             model = cls._getNaiveBayes(

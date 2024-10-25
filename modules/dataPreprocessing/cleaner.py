@@ -12,6 +12,7 @@ class DataCleaner(object):
     def __init__(self, dataset: Dataset) -> None:
         logger.info(f"Loading '{dataset.name}' dataset")
         path = Path("data", dataset.value).absolute()
+        self.dataset = dataset
         self.df = pd.read_csv(path, sep=";", comment="#")
         self.initial_row_count = self.df.shape[0]
 
@@ -125,49 +126,35 @@ class DataCleaner(object):
         else:
             logger.info(f"NaN values are \n{nan_df}")
 
-    def cleanRegsDataset(self, fillna: int = 100) -> None:
-        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
-
-        Parameters
-        ----------
-        fillna : int, optional
-            The value to fill in NA-cells, by default 100
-        """
-        self._deleteNanCols()
-        self.removeFeaturelessRows()
-        self.fillNan(fillna)
-
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        self._deleteNanCols()
         current_row_count = self.df.shape[0]
         # Remove data not used in training
+        cols = ["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"]
         self.df.drop(
-            columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
+            columns=cols,
             inplace=True,
         )
-        # Remove any NaN value in granulation tissue data
-        self.df.dropna(
-            axis=0, how="any", subset=["Sårrand (cm)", "Midte (cm)"], inplace=True
+        logger.info(
+            f"Removed {len(cols)} features not used for training: {", ".join(cols)}"
         )
+
+        # Remove any NaN value in granulation tissue data
+        subset = ["Sårrand (cm)", "Midte (cm)"]
+        df = self.df.dropna(axis=0, how="any", subset=subset, inplace=False)
+        dropped_rows = len(self.df.isna()) - len(df.isna())
+        self.df = df
+        logger.info(
+            f"Removed {dropped_rows} NaN rows from features {", ".join(subset)}"
+        )
+
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
         logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def cleanOldDataset(self):
         """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
-        self._deleteNanCols()
         self.convertHourToDay()
-
-    def getDataframe(self) -> pd.DataFrame:
-        """Get the cleaned dataframe as a deep copy.
-        Returns
-        -------
-        pd.DataFrame
-            The cleaned dataframe
-        """
-        self.showRowRemovalRatio()
-        return self.df.copy(deep=True)
 
     def run(self) -> pd.DataFrame:
         """Run all applicable data cleaning methods
@@ -179,7 +166,6 @@ class DataCleaner(object):
         """
         config = Config()
         if config.getValue("UseCleaner"):
-            logger.info("Initializing data cleaner")
             if config.getValue("DeleteNanColumns"):
                 self._deleteNanCols()
             if config.getValue("DeleteNonfeatures"):
@@ -194,8 +180,14 @@ class DataCleaner(object):
                 self.deleteMissingValues()
             if config.getValue("ShowNan"):
                 self.showNan()
-            logger.info(f"Dataset successfully cleaned!")
-            return self.getDataframe()
+
+            if self.dataset == Dataset.MÅL:
+                self.cleanMålDataset()
+            elif self.dataset == Dataset.OLD:
+                self.cleanOldDataset()
+
+            self.showRowRemovalRatio()
         else:
             logger.info("Skipping data cleaning")
-            return self.df
+
+        return self.df

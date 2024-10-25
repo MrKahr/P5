@@ -12,9 +12,8 @@ class LogLevel(Enum):
 
 # SECTION Data Preprocessing
 class OutlierRemovalMethod(Enum):
-    NONE = 0
     ODIN = 0
-    AVF = 0
+    AVF = 1
 
 
 class ImputationMethod(Enum):

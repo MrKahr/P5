@@ -94,9 +94,6 @@ class FeatureSelector:
                 )
                 return ("all", arg)
 
-    def __combineXY(self) -> pd.DataFrame:
-        return self._train_x.join(self._true_y)
-
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#handling-multicollinear-features
@@ -286,10 +283,12 @@ class FeatureSelector:
                 }
             elif score_func == FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name:
                 selected_score_funcs |= {
-                    FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name.lower(): lambda: self._mutualInfoClassif(
+                    FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name.lower(): lambda train_x, true_y: self._mutualInfoClassif(
+                        train_x=train_x,
+                        true_y=true_y,
                         **self._config.getValue(
                             "MutualInfoClassifArgs", self._parent_key
-                        )
+                        ),
                     )
                 }
             else:
@@ -324,12 +323,13 @@ class FeatureSelector:
             if self._config.getValue("checkOverfitting", self._parent_key):
                 self.checkOverfitting()
 
-        if self._selected_features:
+        if self._selected_features is not None:
             size = len(self._selected_features)
             logger.info(
                 f"Selected {size} feature{"s" if size != 1 else ""} as statistically important: {", ".join(self._selected_features)}"
             )
         else:
             logger.info("Using all features")
+            self._selected_features = self._train_x.columns
 
         return self._train_x, self._true_y, self._selected_features
