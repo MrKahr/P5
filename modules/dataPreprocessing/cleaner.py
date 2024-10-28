@@ -1,15 +1,19 @@
+from pathlib import Path
 import re
-from typing import Self
 import pandas as pd
 
 from modules.config.config import Config
+from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.logging import logger
 
 
 class DataCleaner(object):
 
-    def __init__(self, df: pd.DataFrame) -> None:
-        self.df = df
+    def __init__(self, dataset: Dataset) -> None:
+        logger.info(f"Loading '{dataset.name}' dataset")
+        path = Path("data", dataset.value).absolute()
+        self.dataset = dataset
+        self.df = pd.read_csv(path, sep=";", comment="#")
         self.initial_row_count = self.df.shape[0]
 
     def _deleteNanCols(self) -> None:
@@ -23,7 +27,11 @@ class DataCleaner(object):
         """
         Removes pig ID and sår ID from dataset because we consider neither a feature.
         """
-        self.df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+        non_features = ["Gris ID", "Sår ID"]
+        self.df.drop(non_features, axis=1, inplace=True)
+        logger.info(
+            f"Removed {len(non_features)} non-informative features: {", ".join(non_features)}"
+        )
 
     def deleteMissingValues(self) -> None:
         """Drop all rows that contains value `100`: Manglende Værdi."""
@@ -77,7 +85,9 @@ class DataCleaner(object):
         """
         current_row_count = self.df.shape[0]
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
-        logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
+        logger.info(
+            f"Removed {current_row_count - self.df.shape[0]} rows containing {threshold} or more NaN values"
+        )
 
     def convertHourToDay(self) -> None:
         """Cleans cells in a dataset containing hours < one day"""
@@ -112,70 +122,72 @@ class DataCleaner(object):
         """Subsets and shows the current dataframe to include only"""
         nan_df = self.df[self.df.isna().any(axis=1)]
         if len(nan_df) == 0:
-            logger.info("No NaN values to display.")
+            logger.info("No NaN values to display")
         else:
             logger.info(f"NaN values are \n{nan_df}")
 
-    def cleanRegsDataset(self, fillna: int = 100) -> None:
-        """Cleans the eksperiementelle_sår_2024 dataset according to hardcoded presets.
-
-        Parameters
-        ----------
-        fillna : int, optional
-            The value to fill in NA-cells, by default 100
-        """
-        self._deleteNanCols()
-        self.removeFeaturelessRows()
-        self.fillNan(fillna)
-
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        self._deleteNanCols()
         current_row_count = self.df.shape[0]
         # Remove data not used in training
+        cols = ["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"]
         self.df.drop(
-            columns=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
+            columns=cols,
             inplace=True,
         )
-        # Remove any NaN value in granulation tissue data
-        self.df.dropna(
-            axis=0, how="any", subset=["Sårrand (cm)", "Midte (cm)"], inplace=True
+        logger.info(
+            f"Removed {len(cols)} features not used for training: {", ".join(cols)}"
         )
+
+        # Remove any NaN value in granulation tissue data
+        subset = ["Sårrand (cm)", "Midte (cm)"]
+        df = self.df.dropna(axis=0, how="any", subset=subset, inplace=False)
+        dropped_rows = len(self.df.isna()) - len(df.isna())
+        self.df = df
+        logger.info(
+            f"Removed {dropped_rows} NaN rows from features {", ".join(subset)}"
+        )
+
         # Insert missing IDs for pigs using the single existing ID
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
         logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def cleanOldDataset(self):
         """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
-        self._deleteNanCols()
         self.convertHourToDay()
 
-    def getDataframe(self) -> pd.DataFrame:
-        """Get the cleaned dataframe as a deep copy.
+    def run(self) -> pd.DataFrame:
+        """Run all applicable data cleaning methods
+
         Returns
         -------
         pd.DataFrame
-            The cleaned dataframe
+            The cleaned dataset that is returned to the pipeline
         """
-        self.showRowRemovalRatio()
-        return self.df.copy(deep=True)
-
-    def run(self) -> None:
         config = Config()
-        if config.getValue("DeleteNanColumns"):
-            self._deleteNanCols()
-        if config.getValue("DeleteNonfeatures"):
-            self.deleteNonfeatures()
-        if config.getValue("DeleteMissingValues"):
-            self.deleteMissingValues()
-        if config.getValue("DeleteUndeterminedValue"):
-            self.deleteUndeterminedValue()
-        if config.getValue("RemoveFeaturelessRows"):
-            self.removeFeaturelessRows(config.getValue("RFlRParams"))
-        if config.getValue("FillNan"):
-            self.fillNan()
-        if config.getValue("ShowNan"):
-            self.showNan()
-        # TODO - Find out why row removal ration is n/n - some rows ought to be removed
-        self.showRowRemovalRatio()
-        logger.info(f"DataCleaner is done")
+        if config.getValue("UseCleaner"):
+            if config.getValue("DeleteNanColumns"):
+                self._deleteNanCols()
+            if config.getValue("DeleteNonfeatures"):
+                self.deleteNonfeatures()
+            if config.getValue("DeleteUndeterminedValue"):
+                self.deleteUndeterminedValue()
+            if config.getValue("RemoveFeaturelessRows"):
+                self.removeFeaturelessRows(config.getValue("RemoveFeaturelessRowsArgs"))
+            if config.getValue("FillNan"):
+                self.fillNan()
+            if config.getValue("DeleteMissingValues"):
+                self.deleteMissingValues()
+            if config.getValue("ShowNan"):
+                self.showNan()
+
+            if self.dataset == Dataset.MÅL:
+                self.cleanMålDataset()
+            elif self.dataset == Dataset.OLD:
+                self.cleanOldDataset()
+
+            self.showRowRemovalRatio()
+        else:
+            logger.info("Skipping data cleaning")
+
+        return self.df

@@ -1,10 +1,21 @@
 from typing import Self
 
-from modules.config.config_enums import CrossValidator, Model
+from modules.config.config_enums import (
+    CrossValidator,
+    FeatureScoreFunc,
+    FeatureSelectionCriterion,
+    Model,
+    LogLevel,
+    ImputationMethod,
+    NormalisationMethod,
+    OutlierRemovalMethod,
+    ModelScoreFunc,
+    TrainingMethod,
+)
 
 
 class ConfigTemplate(object):
-    """Singleton that defines as configuration template for the project.
+    """Singleton that defines  configuration template for the project.
     Note: We added additional params/longer attribute accesses for clarity."""
 
     _instance = None
@@ -22,34 +33,28 @@ class ConfigTemplate(object):
 
     @classmethod
     def _createTemplate(self) -> dict:
-        # NOTE: might be better to get callable by string id? https://www.geeksforgeeks.org/call-a-function-by-a-string-name-python/
         return {
             "General": {
-                "loglevel": "DEBUG",
+                "loglevel": LogLevel.DEBUG.name,
+                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
-                "UseModelSelector": True,
-                "UseModelTrainer": True,
-                "UseModelTester": True,
-                "UseModelEvaluator": True,
+                "UseOutlierRemoval": True,
             },
             "DataPreprocessing": {
                 "Cleaning": {
                     "DeleteNanColumns": True,
-                    "DeleteNonfeatures": False,
+                    "DeleteNonfeatures": True,
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
                     "RemoveFeaturelessRows": True,
-                    "RFlRParams": 3,
+                    "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
                     "ShowNan": True,
-                    "CleanRegsDataset": True,  # TODO - If we want clean or not can be inferred: If everything else is false, do no cleaning.
-                    "CleanMålDataset": True,  #        These three options should be handled by the run-method in the cleaner.py file
-                    "CleanOldDastaset": True,
                 },
                 "OutlierAnalysis": {
-                    "OutlierRemovalMethod": "odin",  # None, odin, avf
+                    "OutlierRemovalMethod": OutlierRemovalMethod.ODIN.name,
                     "odinParams": {
                         "k": 30,
                         "T": 0,
@@ -57,24 +62,28 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
-                    "OneHotEncode": "T",
-                    "ImputationMethod": "KNN",  # None, Mode, KNN
+                    "OneHotEncodeLabels": [],  # type: list[str]
+                    "ImputationMethod": ImputationMethod.KNN.name,
                     "NearestNeighbors": 5,
-                    "Normalisation": "minMax",  # None, minMax
+                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
+                    "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "_computeFeatureCorrelation": "",
-                    "_chi2Independence": "",
-                    "_fClassifIndependence": "",
-                    "_mutualInfoClassif": "",
-                    "genericUnivariateSelect": "",
-                    "varianceThreshold": "",
-                    "permutationFeatureImportance": "",
-                    "permutation_importance": "",
-                    "checkOverfitting": "",
-                    "recursiveFeatureValidation": "",
-                    "recursiveFeatureValidationWithCrossValidation": "",
-                },  # TODO - WORK IN PROGRESS
+                    "score_functions": [FeatureScoreFunc.CHI2.name],
+                    "MutualInfoClassifArgs": {
+                        "discrete_features": True,
+                        "n_neighbors": 3,
+                        "random_state": 12,
+                    },
+                    "GenericUnivariateSelect": True,
+                    "GenericUnivariateSelectArgs": {
+                        "mode": FeatureSelectionCriterion.PERCENTILE.name,
+                        "param": 5,  # type: int | float | str  # The parameter for the mode
+                    },
+                    "ComputeFeatureCorrelation": True,
+                    "VarianceThreshold": True,
+                    "checkOverfitting": True,
+                },
             },
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,
@@ -90,21 +99,21 @@ class ConfigTemplate(object):
                     "min_impurity_decrease": 0.0,
                     "ccp_alpha": 0.0,
                 },
-                "RandomForest": {
+                "RandomForest": {  # NOTE: DecisionTree arguments are also used for RandomForest
                     "n_estimators": 100,
                     "bootstrap": True,
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
-                    "n_jobs": -1,
                     "random_state": 53,  # type: int | None
                     "max_samples": None,  # type: int | float | None
                 },
+                "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
             },
             "CrossValidationSelection": {
                 "cross_validator": CrossValidator.STRATIFIED_KFOLD.name,  # type: CrossValidator | None
                 "StratifiedKFold": {
                     "n_splits": 5,
                     "shuffle": True,
-                    "random_state": 177,  # type: int | None # NOTE: If shuffle is false, random_state must be None
+                    "random_state": 177,  # type: int | None  # NOTE: If shuffle is false, random_state must be None
                 },
                 "TimeSeriesSplit": {
                     "n_splits": 5,
@@ -113,7 +122,30 @@ class ConfigTemplate(object):
                     "gap": 0,
                 },
             },
-            "ModelTraining": {"test3": ""},
-            "ModelTesting": {"test4": ""},
+            "ModelTraining": {
+                "training_method": TrainingMethod.FIT.name,
+                "score_functions": [ModelScoreFunc.THRESHOLD.name],
+                "score_function_params": {"threshold": 20},
+                "PermutationFeatureImportance": {
+                    "n_repeats": 10,
+                    "random_state": 298,  # type: int | None
+                },
+                "RFE": {
+                    "n_features_to_select": None,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
+                    "step": 1,  # type: float | int  # NOTE: If greater than or equal to 1, then step corresponds to the (integer) number of features to remove at each iteration. If within (0.0, 1.0), then step corresponds to the percentage (rounded down) of features to remove at each iteration.
+                },
+                "RFECV": {
+                    "min_features_to_select": 1,  # type: int
+                    "step": 1,  # type: float | int
+                },
+                "RandomizedSearchCV": {
+                    "n_iter": 10,  # NOTE: Number of parameter settings that are sampled. n_iter trades off runtime vs quality of the solution.
+                    "random_state": 378,
+                },
+                "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
+                    "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
+                },
+            },
             "ModelEvaluation": {"test5": ""},
         }

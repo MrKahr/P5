@@ -8,6 +8,8 @@ import pandas as pd
 from modules.dataPreprocessing.outlier_analysis.KNN import KNNAnalysis
 from modules.dataPreprocessing.outlier_analysis.AVF import AVFAnalysis
 from modules.logging import logger
+from modules.config.config import Config
+from modules.config.config_enums import OutlierRemovalMethod
 
 
 class OutlierProcessor:
@@ -65,6 +67,24 @@ class OutlierProcessor:
         amount = current_len - len(self.df)
         logger.info(f"Removed {amount} {"outliers" if amount != 1 else "outlier"}")
 
-    @classmethod
-    def run(self) -> None:
-        print(f"{__name__}is run")
+    def run(self) -> pd.DataFrame:
+        config = Config()
+        if config.getValue("UseOutlierRemoval"):
+            outliers = ""
+            match config.getValue("OutlierRemovalMethod"):
+                case OutlierRemovalMethod.ODIN.name:
+                    outliers = self.odin(**config.getValue("odinParams"))
+                case OutlierRemovalMethod.AVF.name:
+                    outliers = self.avf(**config.getValue("avfParams"))
+                case _:
+                    logger.warning(
+                        "Undefined outlier removal method selected. Skipping"
+                    )
+            size = len(outliers)
+            logger.info(
+                f"Found {size} outlier{"s" if size != 1 else ""} in the dataset"
+            )
+        else:
+            logger.info("Skipping outlier analysis")
+
+        return self.df

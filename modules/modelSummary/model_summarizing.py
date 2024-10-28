@@ -7,26 +7,35 @@ from sklearn.metrics import RocCurveDisplay
 from sklearn.base import BaseEstimator
 
 
+from copy import deepcopy
+from typing import Any
+from modules.logging import logger
+
+
 class ModelSummary:
-    def __init__(self, training_df: DataFrame, test_df: DataFrame, model: BaseEstimator):
-        """Load values to be used in summarizing model results
 
-        Parameters
-        ----------
-        training_df : DataFrame
-            The dataset trained on
-        test_df : DataFrame
-            The dataset for testing
-        model : BaseEstimator
-            The machine learning model used, e.g. RandomForestClassifier
-        """
-        self.training_df = training_df
-        self.test_df = test_df
-        self.model = model
+    def __init__(self, model_report: dict):
+        self._model_report = model_report
 
-    @classmethod
+    def _roundConvert(self, value: Any, digits: int = 3) -> str:
+        if isinstance(value, int):
+            return f"{value}"
+        try:
+            return f"{value:.{digits}f}"
+        except TypeError as e:
+            return f"{value}"
+
     def run(self) -> None:
-        print(f"{__name__}is run")
+        formatted = ""
+        for k, v in deepcopy(self._model_report).items():
+            if k == "feature_importances":
+                continue
+            if isinstance(v, dict):
+                for tk, tv in v.items():
+                    v[tk] = self._roundConvert(tv)
+            formatted += f"\t{k}: {self._roundConvert(v)}\n"
+
+        logger.info(f"Showing model report:\n{formatted}")
 
     # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
     def plotRocCurve(self) -> None:

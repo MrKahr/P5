@@ -5,7 +5,6 @@ import pandas as pd
 
 sys.path.insert(0, os.getcwd())
 
-from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
 from modules.logging import logger
@@ -25,7 +24,6 @@ class AVFAnalysis:
             self.df.drop("Sår ID", axis=1, inplace=True)
         except KeyError:
             logger.info("Tried to remove 'Sår ID', but feature was already removed")
-        
 
     def AVF(self, row: dict) -> float:
         """Calculate AVF score for a row
@@ -95,7 +93,7 @@ class AVFAnalysis:
         # for i in values:
         #     sums[i] = sums[i] / len(column)
         return sums
-    
+
     def calculateAVF(self) -> list:
         """Generates list of AVF scores for a dataframe
 
@@ -107,7 +105,7 @@ class AVFAnalysis:
             AVFelem = self.AVF(row)
             listAVF.append(AVFelem)
         return listAVF
-    
+
     def getOutliers(self, k: int) -> list:
         """Generates list of k outliers using AVF
 
@@ -135,7 +133,7 @@ class AVFAnalysis:
         cutoffPercentile : float
             Lower percentile to consider as outliers
         """
-        listAVF= self.calculateAVF()
+        listAVF = self.calculateAVF()
 
         lowestPercentage = math.floor(len(listAVF) * cutoffPercentile)
 
@@ -151,16 +149,3 @@ class AVFAnalysis:
         plt.ylabel("Datapoints in range")
         plt.suptitle("AVF score distribution")
         plt.show()
-
-if __name__ == "__main__":
-    dp = DataPreprocessor(Dataset.REGS)
-
-    cleaner = DataCleaner(dp.df)
-    cleaner.cleanRegsDataset()
-    cleaner.deleteMissingValues()
-
-    transformer = DataTransformer(dp.df)
-    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
-
-    op = AVFAnalysis(cleaner.getDataframe())
-    op.plotAVFs(0.01)
