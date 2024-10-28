@@ -1,77 +1,73 @@
-from pathlib import Path
-
 import pandas as pd
+from numpy.typing import NDArray
+
+
 from modules.config.config import Config
+from modules.crossValidationSelection.cross_validation_selection import (
+    CrossValidationSelector,
+)
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.dataPreprocessing.feature_selector import FeatureSelector
+from modules.dataPreprocessing.outlier_analysis.outlier_processor import (
+    OutlierProcessor,
+)
 from modules.dataPreprocessing.transformer import DataTransformer
-from modules.dataPreprocessing.outlier_analysis import OutlierProcessor
+from modules.logging import logger
 from modules.modelSelection.model_selection import ModelSelector
 from modules.modelTraining.model_training import ModelTrainer
 from modules.modelTesting.model_testing import ModelTester
 from modules.modelSummary.model_summarizing import ModelSummary
-from numpy.typing import NDArray
-
-
-from modules.logging import logger
 
 
 class Pipeline:
     """Responsible for running the entire pipeline, collecting datasets for each iteration and providing args to pipeline parts
     # NOTE - Be very careful when making changes here"""
 
-    def __init__(self, data: Dataset) -> None:
-        logger.info(f"Loading '{data.name}' dataset")
-        path = Path("data", data.value).absolute()
-        self.df = pd.read_csv(path, sep=";", comment="#")
-        self.model = None
-        self.config = Config()
+    _logger = logger
+    _config = Config()
 
-    def _formatTrainingData(self) -> pd.DataFrame:
+    def __init__(self, train_dataset: Dataset, test_dataset: Dataset) -> None:
+        self.train_dataset = train_dataset
+        self.test_dataset = test_dataset
+        self.selected_features = None  # type: NDArray
+
+    def getTrainingData(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
 
-    def getTrainingData(self) -> NDArray:
-        return self._formatTrainingData().to_numpy()
+    def getTargetData(self) -> pd.Series:
+        return self.df["Dag"]
 
-    def getTargetData(self) -> NDArray:
-        return self.df["Dag"].to_numpy(copy=True)
-
-    def getTrainingLabels(self) -> NDArray:
-        return self._formatTrainingData().columns.values
-
-    def getTargetMaxValue(self) -> int:
-        ndarr = self.df["Dag"].unique()
-        i = ndarr.argmax()
-        return ndarr[i]
+    def getTestData(self) -> pd.DataFrame:
+        return self.df[self.selected_features]
 
     def run(self) -> None:
         """Using a dataframe, calls relevant pipeline components to perform transformations of dataset as specified in the config file"""
-        df = self.df
-        if self.config.getValue("UseCleaner"):
-            logger.info("Trying to run DataCleaner...")
-            df = DataCleaner(df).run()
-        if self.config.getValue("UseFeatureSelector"):
-            logger.info("Trying to run FeatureSelector...")
-            df = (
-                FeatureSelector.run()
-            )  # TODO figure out how to pass the dataset to FeatureSelector etc.
-        if self.config.getValue("UseTransformer"):
-            logger.info("Trying to run DataTransformer...")
-            df = DataTransformer(df).run()
-        if self.config.getValue("UseOutlierRemoval"):
-            df = OutlierProcessor(
-                df
-            ).run()  # NOTE It might be smart to run outlier analysis before imputation (which happens in the DataTransformer). Consider.
-        if self.config.getValue("UseModelSelector"):
-            logger.info("Trying to run ModelSelector...")
-            self.model = ModelSelector.run()
-        if self.config.getValue("UseModelTrainer"):
-            logger.info("Trying to run ModelTrainer...")
-            estimator = ModelTrainer.run(df)
-        if self.config.getValue("UseModelTester"):
-            logger.info("Trying to run ModelTester...")
-            ModelTester.run(self.getTrainingData(), self.getTargetData(), estimator)
-        if self.config.getValue("UseModelSummary"):
-            logger.info("Trying to run ModelSummary...")
-            ModelSummary.run()
+        self._logger.info(
+            f"Initializing Pipeline: training dataset '{self.train_dataset.name}', test dataset '{self.test_dataset.name}'"
+        )
+        self.df = DataCleaner(self.train_dataset).run()
+        self.df = OutlierProcessor(self.df).run()
+        self.df = DataTransformer(self.df).run()
+
+        train_x, train_true_y, self.selected_features = FeatureSelector(
+            self.getTrainingData(), self.getTargetData()
+        ).run()
+        fit_estimator, model_report = ModelTrainer(
+            estimator=ModelSelector.getModel(),
+            cv=CrossValidationSelector.getCrossValidator(),
+            train_x=train_x,
+            true_y=train_true_y,
+        ).run()
+
+        self.df = DataCleaner(self.test_dataset).run()
+        self.df = DataTransformer(self.df).run()
+        model_report = ModelTester(
+            estimator=fit_estimator,
+            train_x=train_x,
+            train_true_y=train_true_y,
+            test_x=self.getTestData(),
+            test_true_y=self.getTargetData(),
+            model_report=model_report,
+        ).run()
+        ModelSummary(model_report).run()

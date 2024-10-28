@@ -1,86 +1,102 @@
-from typing import Callable
-
-from sklearn import metrics
-from modules.config.config_enums import ScoreFunction
-from modules.logging import logger
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
-    accuracy_score,
     confusion_matrix,
     precision_score,
     recall_score,
 )
 from modules.config.config import Config
+from modules.modelTesting.score_functions import ScoreFunctions
+from modules.types import FittedEstimator
+from modules.logging import logger
 
 
 class ModelTester:
-    def __init__(self, config: Config):
-        self.scoreFunction = self.scoreFunctionSelector(config.getValue("ScoreFunc"))
+    def __init__(
+        self,
+        estimator: FittedEstimator,
+        train_x: pd.DataFrame,
+        train_true_y: pd.Series,
+        test_x: pd.DataFrame,
+        test_true_y: pd.Series,
+        model_report: dict,
+    ):
+        self._config = Config()
+        self._estimator = estimator
+        self._train_x = train_x
+        self._train_true_y = train_true_y
+        self._test_x = test_x
+        self._test_true_y = test_true_y
+        self._model_report = model_report
 
-    def customScore(estimator, X, y):
-        def threshold(result, y, th: int = 5):
-            score = 0
-            for i, prediction in enumerate(result):
-                if y[i] >= th:
-                    score += 1
-                elif prediction < th:
-                    score += 1
-            return score
+    def run(self) -> dict:
+        logger.info(f"Testing {type(self._estimator).__name__} model")
+        _round = 3
+        _avg = "weighted"
 
-        result = estimator.predict(X)
-        score = threshold(result, y)
-        # score = threshold(result, y, th=20)
-        return float(score / len(result))
+        # Compute train stats
+        train_pred_y = self._estimator.predict(self._train_x)
+        cm = confusion_matrix(self._train_true_y, train_pred_y)
 
-    def scoreFunctionSelector(self, scoreFunction: ScoreFunction) -> Callable | None:
-        currentScoreFunction = None
-        match scoreFunction:
-            case ScoreFunction.CUSTOM_SCORE_FUNC:
-                currentScoreFunction = self.customScore
-            case ScoreFunction.ACCURACY:
-                currentScoreFunction = metrics.accuracy_score
-            case ScoreFunction.BALANCED_ACCURACY:
-                currentScoreFunction = metrics.balanced_accuracy_score
-            case ScoreFunction.EXPLAINED_VARIANCE:
-                currentScoreFunction = metrics.explained_variance_score
-        return currentScoreFunction
+        train_tn, train_fp, train_fn, train_tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
 
-    def getScoreFunc(self) -> None:
-        return self.scoreFunction
-
-    def run(self, features: pd.DataFrame, target: pd.DataFrame, estimator) -> None:
-
-        train_features, test_features = train_test_split(features)
-        train_target, test_target = train_test_split(target)
-        prediction = estimator.predict(test_features)
-        tn, fp, fn, tp = confusion_matrix(test_target, prediction)
-        accuracy = accuracy_score(test_target, prediction)
-        precision = precision_score(test_target, prediction)
-        recall = recall_score(test_target, prediction)
-        specificity = tn / (tn + fn)
-        score = self.custom_score(estimator, test_features, test_target)
-
-        print(
-            f"Custom scoring on training data: {self.custom_score(estimator, train_features, train_target):.3f}"
-        )
-        print(
-            f"Custom scoring on test data: {self.custom_score(estimator, test_features, test_target):.3f}"
+        train_precision = precision_score(
+            self._train_true_y, train_pred_y, average=_avg, zero_division=np.nan
         )
 
-        self._model_report = {
-            "feature_importances": None,  # type: Bunch
-            "feature_names_in": None,  # type: NDArray
-            "feature_count": None,  # type: int
-            "custom_scoring": score,  # type: float
-            "true_positive": tp,  # type: float
-            "true_negative": tn,  # type: float
-            "false_positive": fp,  # type: float
-            "false_negative": fn,  # type: float
-            "accuracy": accuracy,  # type: float
-            "precision": precision,  # type: float
-            "recall": recall,  # type: float
-            "specificity": specificity,  # type: float
+        train_recall = recall_score(
+            self._train_true_y, train_pred_y, average=_avg, zero_division=np.nan
+        )
+        train_tn_fn = train_tn + train_fn
+        train_specificity = train_tn / train_tn_fn if train_tn_fn > 0 else np.nan
+
+        # Compute testing stats
+        test_pred_y = self._estimator.predict(self._test_x)
+        cm = confusion_matrix(self._test_true_y, test_pred_y)
+
+        test_tn, test_fp, test_fn, test_tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+
+        test_precision = precision_score(
+            self._test_true_y, test_pred_y, average=_avg, zero_division=np.nan
+        )
+
+        test_recall = recall_score(
+            self._test_true_y, test_pred_y, average=_avg, zero_division=np.nan
+        )
+        test_tn_fn = test_tn + test_fn
+        test_specificity = test_tn / test_tn_fn if test_tn_fn > 0 else np.nan
+
+        # Compute model accuracies on train and test using all selected scoring functions
+        train_accuracies = {}
+        test_accuracies = {}
+        # FIXME: Not ideal as predictions are computed multiple times. Fix this
+        for func_name, func in ScoreFunctions.getScoreFuncsModel().items():
+            logger.info(f"Computing model accuracy using '{func_name}'")
+            train_accuracies |= {
+                func_name: func(self._estimator, self._train_x, self._train_true_y)
+            }
+
+            test_accuracies |= {
+                func_name: func(self._estimator, self._test_x, self._test_true_y)
+            }
+
+        self._model_report |= {
+            "train_true_positive": train_tp,  # type: float
+            "train_true_negative": train_tn,  # type: float
+            "train_false_positive": train_fp,  # type: float
+            "train_false_negative": train_fn,  # type: float
+            "train_accuracies": train_accuracies,  # type: list[dict[str, float]]
+            "train_precision": train_precision,  # type: float
+            "train_recall": train_recall,  # type: float
+            "train_specificity": train_specificity,  # type: float
+            "test_true_positive": test_tp,  # type: float
+            "test_true_negative": test_tn,  # type: float
+            "test_false_positive": test_fp,  # type: float
+            "test_false_negative": test_fn,  # type: float
+            "test_accuracies": test_accuracies,  # type: list[dict[str, float]]
+            "test_precision": test_precision,  # type: float
+            "test_recall": test_recall,  # type: float
+            "test_specificity": test_specificity,  # type: float
         }
 
-        logger.info(f"ModelTester is done")
+        return self._model_report
