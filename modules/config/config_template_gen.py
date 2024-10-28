@@ -36,7 +36,7 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
-                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
@@ -62,9 +62,10 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
+                    "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.KNN.name,
-                    "NearestNeighbors": 5,
+                    "ImputationMethod": ImputationMethod.MODE.name,
+                    "KNN_NearestNeighbors": 5,
                     "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
@@ -78,7 +79,7 @@ class ConfigTemplate(object):
                     "GenericUnivariateSelect": True,
                     "GenericUnivariateSelectArgs": {
                         "mode": FeatureSelectionCriterion.PERCENTILE.name,
-                        "param": 5,  # type: int | float | str  # The parameter for the mode
+                        "param": 25,  # type: int | float | str  # The parameter for the mode
                     },
                     "ComputeFeatureCorrelation": True,
                     "VarianceThreshold": True,
@@ -124,7 +125,7 @@ class ConfigTemplate(object):
             },
             "ModelTraining": {
                 "training_method": TrainingMethod.FIT.name,
-                "score_functions": [ModelScoreFunc.THRESHOLD.name],
+                "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {"threshold": 20},
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,

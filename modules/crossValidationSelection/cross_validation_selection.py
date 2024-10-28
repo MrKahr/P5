@@ -41,13 +41,13 @@ class CrossValidationSelector:
         ) in [TrainingMethod.FIT.name, TrainingMethod.RFE.name]
 
         if selected_cv == None or cv_not_applicable:
-            cv = None
+            cross_validator = None
         elif selected_cv == CrossValidator.STRATIFIED_KFOLD.name:
-            cv = cls._getStratifiedKFold(
+            cross_validator = cls._getStratifiedKFold(
                 **cls._config.getValue("StratifiedKFold", parent_key)
             )
         elif selected_cv == CrossValidator.TIMESERIES_SPLIT.name:
-            cv = cls._getTimeSeriesSplit(
+            cross_validator = cls._getTimeSeriesSplit(
                 **cls._config.getValue("TimeSeriesSplit", parent_key)
             )
         else:
@@ -55,8 +55,8 @@ class CrossValidationSelector:
                 f"Invalid cross-validator '{selected_cv}'. Expected one of {CrossValidator._member_names_}"
             )
 
-        if cv:
-            logger.info(f"Using cross-validator: {type(cv).__name__}")
+        if cross_validator:
+            logger.info(f"Using cross-validator: {type(cross_validator).__name__}")
         else:
             logger.info(f"Skipping cross-validation")
-        return cv
+        return cross_validator

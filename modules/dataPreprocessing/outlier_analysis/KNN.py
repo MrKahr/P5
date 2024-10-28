@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.getcwd())
 
+from modules.config.config import Config
+from modules.config.config_enums import OutlierRemovalMethod
+from modules.dataPreprocessing.dataset_enums import Dataset
+from modules.pipeline import Pipeline
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
 
@@ -23,7 +27,7 @@ class KNNAnalysis:
         self.df = transformer.getDataframe()
 
     def KNN(self, degree: int) -> None:
-        """Generate a k nearest neighbors graph and store it in the KNN class as ndarrays self.distances and self.neighbors
+        """Generate a k-nearest neighbors graph and store it in the KNN class as ndarrays self.distances and self.neighbors
 
         Parameters
         ----------
@@ -149,3 +153,34 @@ class KNNAnalysis:
                     )
                     k += 1
         plt.show()
+
+
+# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
+if __name__ == "__main__":
+    dataset = Dataset.REGS
+    config = Config()
+
+    general_key = "General"
+    config.setValue("UseCleaner", True, general_key)
+    config.setValue("UseTransformer", True, general_key)
+
+    cleaning_key = "Cleaning"
+    config.setValue("DeleteNanColumns", True, cleaning_key)
+    config.setValue("DeleteNonfeatures", True, cleaning_key)
+    config.setValue("DeleteMissingValues", True, cleaning_key)
+    config.setValue("RemoveFeaturelessRows", True, cleaning_key)
+    config.setValue("OutlierRemovalMethod", OutlierRemovalMethod.ODIN.name)
+
+    odin_param_key = "odinParams"
+    config.setValue("k", 30, odin_param_key)
+    config.setValue("T", 0, odin_param_key)
+
+    # FIXME: Data loading in pipeline causing circular import!
+    df = DataCleaner(Pipeline.loadDataset(dataset), dataset).run()
+    transformer = DataTransformer(df)
+    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
+
+    op = KNNAnalysis(transformer.df)
+    threshold = 0
+    k = [10, 20, 30]
+    op.PlotNeighborMultiHist(k, threshold, 3, 1)

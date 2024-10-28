@@ -1,4 +1,3 @@
-from pathlib import Path
 import re
 import pandas as pd
 
@@ -9,11 +8,9 @@ from modules.logging import logger
 
 class DataCleaner(object):
 
-    def __init__(self, dataset: Dataset) -> None:
-        logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("data", dataset.value).absolute()
+    def __init__(self, df: pd.DataFrame, dataset: Dataset) -> None:
+        self.df = df
         self.dataset = dataset
-        self.df = pd.read_csv(path, sep=";", comment="#")
         self.initial_row_count = self.df.shape[0]
 
     def _deleteNanCols(self) -> None:

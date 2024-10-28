@@ -24,7 +24,7 @@ class ModelTrainer:
     def __init__(
         self,
         estimator: UnfittedEstimator,
-        cv: CrossValidator,
+        cross_validator: CrossValidator,
         train_x: pd.DataFrame,
         true_y: pd.Series,
     ) -> None:
@@ -35,7 +35,7 @@ class ModelTrainer:
         estimator : UnfittedEstimator
             The model to train.
 
-        cv : CrossValidator
+        cross_validator : CrossValidator
             The cross-validator to use with the model.
 
         score_funcs : ModelScoreCallable
@@ -48,7 +48,7 @@ class ModelTrainer:
             Target data.
         """
         self._unfit_estimator = estimator
-        self._cv = cv
+        self._cross_validator = cross_validator
         self._model_score_funcs = ScoreFunctions.getScoreFuncsModel()
         self._train_x = train_x
         self._true_y = true_y
@@ -61,6 +61,7 @@ class ModelTrainer:
         }
 
     def _checkAllFeaturesPresent(self) -> None:
+        """Warn user if they select a training method incompatible with premature feature selection"""
         key = "GenericUnivariateSelect"
         parent_key = "DataPreprocessing"
         if self._config.getValue(key, parent_key=parent_key):
@@ -152,7 +153,7 @@ class ModelTrainer:
             param_grid={},  # TODO: Implement
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            cv=self._cv,
+            cv=self._cross_validator,
             **kwargs,
         )
         return gscv.best_estimator_
@@ -165,7 +166,7 @@ class ModelTrainer:
             param_distributions={},  # TODO: Implement
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            cv=self._cv,
+            cv=self._cross_validator,
             **kwargs,
         )
         return rscv.best_estimator_
@@ -183,7 +184,7 @@ class ModelTrainer:
 
         rfecv = RFECV(
             self._unfit_estimator,
-            cv=self._cv,
+            cv=self._cross_validator,
             scoring=next(iter(self._model_score_funcs.values())),
             n_jobs=self._n_jobs,
             **kwargs,
@@ -206,7 +207,7 @@ class ModelTrainer:
             X=self._train_x,
             y=self._true_y,
             scoring=self._model_score_funcs,
-            cv=self._cv,
+            cv=self._cross_validator,
             n_jobs=self._n_jobs,
             return_estimator=True,
         )
@@ -229,7 +230,7 @@ class ModelTrainer:
             fitted_estimator = self._fit()
         elif training_method == TrainingMethod.CROSS_VALIDATION:
             fitted_estimator = self._fitCV(
-                cv=self._cv,
+                cv=self._cross_validator,
                 scoring=self._model_score_funcs,
             )
         elif training_method == TrainingMethod.RFE.name:

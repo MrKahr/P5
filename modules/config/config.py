@@ -63,7 +63,7 @@ class Config:
         """
         return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
 
-    def setValue(self, key: str, value: Any) -> bool:
+    def setValue(self, key: str, value: Any, parent_key: Optional[str] = None) -> bool:
         """Update the config dict with `value` using `key`.
 
         Parameters
@@ -80,7 +80,7 @@ class Config:
             If the key was not found in the config.
         """
         try:
-            insertDictValue(self._config, key, value)
+            insertDictValue(self._config, key, value, parent_key)
             writeConfig(self._config, self._config_path)
         except KeyError:
             self._logger.error(

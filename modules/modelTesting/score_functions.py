@@ -15,9 +15,13 @@ from modules.logging import logger
 from modules.types import FittedEstimator, ModelScoreCallable, NoModelScoreCallable
 
 
+# FIXME: Optimize code structure of class
 class ScoreFunctions:
     _config = Config()
-    _cache = {"model": None, "no_model": None}  # Score function cache
+    _cache = {
+        "model": None,
+        "no_model": None,
+    }  # Score function cache # TODO: Explain why it's here
 
     @classmethod
     def _threshold(

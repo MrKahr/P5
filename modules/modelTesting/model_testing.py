@@ -31,14 +31,18 @@ class ModelTester:
 
     def run(self) -> dict:
         logger.info(f"Testing {type(self._estimator).__name__} model")
-        _round = 3
         _avg = "weighted"
 
         # Compute train stats
         train_pred_y = self._estimator.predict(self._train_x)
-        cm = confusion_matrix(self._train_true_y, train_pred_y)
+        confusion_matrix_ = confusion_matrix(self._train_true_y, train_pred_y)
 
-        train_tn, train_fp, train_fn, train_tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+        train_tn, train_fp, train_fn, train_tp = (
+            confusion_matrix_[0][0],
+            confusion_matrix_[0][1],
+            confusion_matrix_[1][0],
+            confusion_matrix_[1][1],
+        )
 
         train_precision = precision_score(
             self._train_true_y, train_pred_y, average=_avg, zero_division=np.nan
@@ -52,9 +56,14 @@ class ModelTester:
 
         # Compute testing stats
         test_pred_y = self._estimator.predict(self._test_x)
-        cm = confusion_matrix(self._test_true_y, test_pred_y)
+        confusion_matrix_ = confusion_matrix(self._test_true_y, test_pred_y)
 
-        test_tn, test_fp, test_fn, test_tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+        test_tn, test_fp, test_fn, test_tp = (
+            confusion_matrix_[0][0],
+            confusion_matrix_[0][1],
+            confusion_matrix_[1][0],
+            confusion_matrix_[1][1],
+        )
 
         test_precision = precision_score(
             self._test_true_y, test_pred_y, average=_avg, zero_division=np.nan
@@ -69,7 +78,7 @@ class ModelTester:
         # Compute model accuracies on train and test using all selected scoring functions
         train_accuracies = {}
         test_accuracies = {}
-        # FIXME: Not ideal as predictions are computed multiple times. Fix this
+        # FIXME: Not ideal as predictions are computed multiple times.
         for func_name, func in ScoreFunctions.getScoreFuncsModel().items():
             logger.info(f"Computing model accuracy using '{func_name}'")
             train_accuracies |= {

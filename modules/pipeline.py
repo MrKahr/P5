@@ -1,6 +1,6 @@
 import pandas as pd
+from pathlib import Path
 from numpy.typing import NDArray
-
 
 from modules.config.config import Config
 from modules.crossValidationSelection.cross_validation_selection import (
@@ -21,24 +21,42 @@ from modules.modelSummary.model_summarizing import ModelSummary
 
 
 class Pipeline:
-    """Responsible for running the entire pipeline, collecting datasets for each iteration and providing args to pipeline parts
-    # NOTE - Be very careful when making changes here"""
-
     _logger = logger
     _config = Config()
 
     def __init__(self, train_dataset: Dataset, test_dataset: Dataset) -> None:
+        """Responsible for running the entire pipeline, collecting datasets for each iteration and providing args to pipeline parts
+
+        # NOTE - Be very careful when making changes here
+
+        Parameters
+        ----------
+        train_dataset : Dataset
+            Dataset used for model training.
+            Please ensure it is compatible with `test_dataset`.
+
+        test_dataset : Dataset
+            Dataset used for model testing.
+            Please ensure it is compatible with `train_dataset`.
+        """
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
+        self.df = None  # type: pd.DataFrame
         self.selected_features = None  # type: NDArray
 
-    def getTrainingData(self) -> pd.DataFrame:
+    @classmethod
+    def loadDataset(cls, dataset: Dataset) -> pd.DataFrame:
+        logger.info(f"Loading '{dataset.name}' dataset")
+        path = Path("data", dataset.value).absolute()
+        return pd.read_csv(path, sep=";", comment="#")
+
+    def getTrainX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
 
-    def getTargetData(self) -> pd.Series:
+    def getTrueY(self) -> pd.Series:
         return self.df["Dag"]
 
-    def getTestData(self) -> pd.DataFrame:
+    def getTestX(self) -> pd.DataFrame:
         return self.df[self.selected_features]
 
     def run(self) -> None:
@@ -46,28 +64,34 @@ class Pipeline:
         self._logger.info(
             f"Initializing Pipeline: training dataset '{self.train_dataset.name}', test dataset '{self.test_dataset.name}'"
         )
-        self.df = DataCleaner(self.train_dataset).run()
+        self.df = DataCleaner(
+            self.loadDataset(self.train_dataset), self.train_dataset
+        ).run()
         self.df = OutlierProcessor(self.df).run()
         self.df = DataTransformer(self.df).run()
 
         train_x, train_true_y, self.selected_features = FeatureSelector(
-            self.getTrainingData(), self.getTargetData()
+            self.getTrainX(), self.getTrueY()
         ).run()
         fit_estimator, model_report = ModelTrainer(
             estimator=ModelSelector.getModel(),
-            cv=CrossValidationSelector.getCrossValidator(),
+            cross_validator=CrossValidationSelector.getCrossValidator(),
             train_x=train_x,
             true_y=train_true_y,
         ).run()
 
-        self.df = DataCleaner(self.test_dataset).run()
+        print("")  # Visually separate train and test section in the terminal
+        self._logger.info("Beginning model testing")
+        self.df = DataCleaner(
+            self.loadDataset(self.test_dataset), self.test_dataset
+        ).run()
         self.df = DataTransformer(self.df).run()
         model_report = ModelTester(
             estimator=fit_estimator,
             train_x=train_x,
             train_true_y=train_true_y,
-            test_x=self.getTestData(),
-            test_true_y=self.getTargetData(),
+            test_x=self.getTestX(),
+            test_true_y=self.getTrueY(),
             model_report=model_report,
         ).run()
         ModelSummary(model_report).run()

@@ -1,4 +1,3 @@
-from typing import Self
 import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
@@ -13,16 +12,7 @@ class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 
-    def getDataframe(self) -> pd.DataFrame:
-        """Get a deep copy of the transformed dataframe.
-
-        Returns
-        -------
-        pd.DataFrame
-            The transformed dataframe
-        """
-        return self.df.copy(deep=True)
-
+    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
         """One-hot encode one or more categorical attributes, selected by `lables`.
 
@@ -53,6 +43,7 @@ class DataTransformer:
         # find the most common value in that column for that day
         # replace the missing value
         # repeat
+        logger.info(f"Using imputation method: mode")
         df = self.df
         impute_count = 0
         for index, row in df.iterrows():
@@ -154,9 +145,11 @@ class DataTransformer:
         -------
         Nothing
         """
+        logger.info(
+            f"Using imputation method: KNN. Args: nearest_neighbors={neighbors}"
+        )
         df = self.df
-        self.logValues(df)
-        logger.info("Starting KNN-Imputation.")
+        self.logValues(df)  # TODO: Consider removing or logging in a quieter way
         imputer = KNNImputer(
             missing_values=100,
             n_neighbors=neighbors,
@@ -164,17 +157,18 @@ class DataTransformer:
             metric=self.zeroOneDistance,
             copy=False,
         )
+
+        # NOTE makes the imputer return a proper dataframe, rather than a numpy array
         imputer.set_output(transform="pandas")
-        # working_df = df.drop(
-        #     ["Gris ID", "Sår ID"], axis=1
-        # )  # remove ID columns so we don't use those for distance calculations
-        working_df = imputer.fit_transform(
-            working_df
-        )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
+        working_df = imputer.fit_transform(df)  # type: pd.DataFrame
+
         for column in working_df.columns:
             df[column] = working_df[column]
-        logger.info("Imputation done.")
-        self.logValues(df)
+
+        logger.info(
+            "Imputation done."
+        )  # TODO: Consider logging here how many rows where imputed or similar
+        self.logValues(df)  # TODO: Consider removing or logging in a quieter way
         self.df = df
 
     def logValues(self, df: pd.DataFrame, value=100) -> None:
@@ -246,32 +240,38 @@ class DataTransformer:
         """
         config = Config()
         if config.getValue("UseTransformer"):
-            if len(config.getValue("OneHotEncodeLabels")) > 0:
+            if config.getValue("UseOneHotEncoding"):
                 self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
+
             match config.getValue("ImputationMethod"):
                 case ImputationMethod.MODE.name:
                     self.modeImputationByDay()
                 case ImputationMethod.KNN.name:
-                    self.KNNImputation(config.getValue("NearestNeighbors"))
+                    self.KNNImputation(config.getValue("KNN_NearestNeighbors"))
                 case ImputationMethod.NONE.name:
                     logger.info("Skipping imputation")
-                # default
-                case _:
-                    logger.warning(
-                        "Undefined imputation method selected for DataTransformer. Skipping"
-                    )
+                case _:  # default
+                    logger.warning("Undefined imputation method selected. Skipping")
+
             match config.getValue("NormalisationMethod"):
                 case NormalisationMethod.MIN_MAX.name:
                     normalize_features = config.getValue("NormaliseFeatures")
+                    logger.info(f"Using normalisation method: min-max")
                     for feature in normalize_features:
                         self.minMaxNormalization(feature)
-                    logger.info(
-                        f"Normalized {len(normalize_features)}: {", ".join(normalize_features)}"
-                    )
+
+                    size = len(normalize_features)
+                    if size > 0:
+                        logger.info(
+                            f"Normalized {size} feature{"s" if size !=  1 else ""}: {", ".join(normalize_features)}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to normalize features: Feature list is empty!"
+                        )
                 case NormalisationMethod.NONE.name:
                     logger.info("Skipping normalisation")
-                # default
-                case _:
+                case _:  # default
                     logger.warning("Undefined normalisation method selected. Skipping")
         else:
             logger.info("Skipping data transformation")

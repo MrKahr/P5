@@ -1,16 +1,18 @@
 import sys
 import os
-
 import pandas as pd
+import matplotlib.pyplot as plt
+import math
 
 sys.path.insert(0, os.getcwd())
 
+from modules.config.config_enums import OutlierRemovalMethod
+from modules.dataPreprocessing.dataset_enums import Dataset
+from modules.pipeline import Pipeline
+from modules.config.config import Config
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
 from modules.logging import logger
-
-import matplotlib.pyplot as plt
-import math
 
 
 class AVFAnalysis:
@@ -149,3 +151,31 @@ class AVFAnalysis:
         plt.ylabel("Datapoints in range")
         plt.suptitle("AVF score distribution")
         plt.show()
+
+
+# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
+if __name__ == "__main__":
+    dataset = Dataset.REGS
+    config = Config()
+
+    general_key = "General"
+    config.setValue("UseCleaner", True, general_key)
+    config.setValue("UseTransformer", True, general_key)
+
+    cleaning_key = "Cleaning"
+    config.setValue("DeleteNanColumns", True, cleaning_key)
+    config.setValue("DeleteNonfeatures", True, cleaning_key)
+    config.setValue("DeleteMissingValues", True, cleaning_key)
+    config.setValue("RemoveFeaturelessRows", True, cleaning_key)
+    config.setValue("OutlierRemovalMethod", OutlierRemovalMethod.AVF.name)
+
+    avf_param_key = "avfParams"
+    config.setValue("k", 10, avf_param_key)
+
+    # FIXME: Data loading in pipeline causing circular import!
+    df = DataCleaner(Pipeline.loadDataset(dataset), dataset).run()
+    transformer = DataTransformer(df)
+    transformer.oneHotEncode(["Eksudattype", "Hyperæmi"])
+
+    op = AVFAnalysis(transformer.df)
+    op.plotAVFs(0.01)
