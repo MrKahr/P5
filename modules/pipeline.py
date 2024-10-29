@@ -70,4 +70,11 @@ class Pipeline:
             test_true_y=self.getTargetData(),
             model_report=model_report,
         ).run()
-        ModelSummary(model_report).run()
+        ModelSummary(
+            estimator=fit_estimator,
+            train_x=train_x,
+            train_true_y=train_true_y,
+            test_x=self.getTestData(),
+            test_true_y=self.getTargetData(),
+            model_report=model_report,
+        ).run()
