@@ -46,7 +46,7 @@ class ModelSummary:
         Returns
         -------
         dict
-            
+            fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
         """
         fpr, tpr, roc_auc = dict(), dict(), dict()
         # Compute micro-average ROC curve and ROC area
@@ -73,8 +73,10 @@ class ModelSummary:
         roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
 
         return fpr, tpr, roc_auc
-
-    def run(self) -> None:
+    
+    def _printModelReport(self):
+        """print results for model evaluation from model_report
+        """
         formatted = ""
         for k, v in deepcopy(self._model_report).items():
             if k == "feature_importances":
@@ -88,6 +90,9 @@ class ModelSummary:
 
         logger.info(f"Showing model report:\n{formatted}")
 
+    def run(self) -> None:
+        if self._config.getValue("print_model_report"):
+            self._printModelReport()
         if self._config.getValue("plot_confusion_matrix"):
             self.plotConfusionMatrix()
         if self._config.getValue("plot_roc_curves"):
