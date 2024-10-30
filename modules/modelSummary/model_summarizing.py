@@ -1,34 +1,23 @@
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.calibration import CalibrationDisplay
-from sklearn.inspection import PartialDependenceDisplay
-from sklearn.metrics import ConfusionMatrixDisplay
+from numpy.typing import ArrayLike
+from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_auc_score, roc_curve
 from sklearn.metrics import RocCurveDisplay
 from copy import deepcopy
 from typing import Any
+from itertools import cycle
+from sklearn.naive_bayes import LabelBinarizer
 from modules.config.config import Config
 from modules.logging import logger
-from modules.types import FittedEstimator
+import matplotlib.colors as mcolors
 
 
 class ModelSummary:
 
-    def __init__(
-        self,
-        estimator: FittedEstimator,
-        train_x: pd.DataFrame,
-        train_true_y: pd.Series,
-        test_x: pd.DataFrame,
-        test_true_y: pd.Series,
-        model_report: dict,
-    ):
+    def __init__(self, model_report: dict):
         self._config = Config()
-        self._estimator = estimator
-        self._train_x = train_x
-        self._train_true_y = train_true_y
-        self._test_x = test_x
-        self._test_true_y = test_true_y
-        self._model_report = model_report
+        self._model_report = model_report # Values added in model_test run
 
     def _roundConvert(self, value: Any, digits: int = 3) -> str:
         if isinstance(value, int):
@@ -37,12 +26,61 @@ class ModelSummary:
             return f"{value:.{digits}f}"
         except TypeError as e:
             return f"{value}"
+        
+    def _computeAverages(self, y_onehot_test: np.ndarray, y_score: ArrayLike, n_classes: int) -> dict:
+        """Compute the micro and macro average of Roc curves for plotRocCurve
+
+        https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-micro-averaged-ovr
+
+        https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-the-ovr-macro-average
+
+        Parameters
+        ----------
+        y_onehot_test : np.ndarray
+            Days from test dataset after one-hot-encoding
+        y_score : np.ArrayLike
+            Probability estimates the used classifier on the test dataset
+        n_classes : int
+            Number of unique categories the classifier predicts for
+
+        Returns
+        -------
+        dict
+            
+        """
+        fpr, tpr, roc_auc = dict(), dict(), dict()
+        # Compute micro-average ROC curve and ROC area
+        fpr["micro"], tpr["micro"], _ = roc_curve(y_onehot_test.ravel(), y_score.ravel())
+        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(y_onehot_test[:, i], y_score[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+
+        fpr_grid = np.linspace(0.0, 1.0, 1000)
+
+        # Interpolate all ROC curves at these points
+        mean_tpr = np.zeros_like(fpr_grid)
+
+        for i in range(n_classes):
+            mean_tpr += np.interp(fpr_grid, fpr[i], tpr[i])  # linear interpolation
+
+        # Average it and compute AUC
+        mean_tpr /= n_classes
+
+        fpr["macro"] = fpr_grid
+        tpr["macro"] = mean_tpr
+        roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+        return fpr, tpr, roc_auc
 
     def run(self) -> None:
         formatted = ""
         for k, v in deepcopy(self._model_report).items():
             if k == "feature_importances":
                 continue
+            if k == "train_pred_y": 
+                break # Avoids printing extra stuff used in plotting
             if isinstance(v, dict):
                 for tk, tv in v.items():
                     v[tk] = self._roundConvert(tv)
@@ -50,44 +88,82 @@ class ModelSummary:
 
         logger.info(f"Showing model report:\n{formatted}")
 
-    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
+        if self._config.getValue("plot_confusion_matrix"):
+            self.plotConfusionMatrix()
+        if self._config.getValue("plot_roc_curves"):
+            self.plotRocCurve()
+
     def plotRocCurve(self) -> None:
-        classifier = self._estimator
-        test_X = self._test_x # Load from test dataset, input features and day
-        test_y = self._test_true_y
+        """Plot Roc (Receiver operating characteristic) Curve using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
 
-        disp = RocCurveDisplay.from_estimator(classifier, test_X, test_y)
-        disp.plot()
+        Adapted to work with multiple categories using OvR strategy based on https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#one-vs-one-multiclass-roc
 
-    # https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibrationDisplay.html#sklearn.calibration.CalibrationDisplay
-    def plotCalibrationDisplay(self) -> None:
-        classifier = self._estimator
-        test_X = self._test_x # Load from test dataset, input features and day
-        test_y = self._test_true_y
+        `The One-vs-the-Rest (OvR) multiclass strategy, also known as one-vs-all, consists in computing a ROC curve per each of the n_classes. In each step, a given class is regarded as the positive class and the remaining classes are regarded as the negative class as a bulk.`
+        """
 
-        disp = CalibrationDisplay.from_estimator(classifier, test_X, test_y)
-        disp.plot()
+        # Load model results from model report
+        train_true_y = self._model_report["train_true_y"]
+        test_true_y = self._model_report["test_true_y"]
+        y_score = self._model_report["estimator"].predict_proba(self._model_report["test_x"])
+
+        # Get the different days trained on
+        target_names = np.unique(train_true_y)
+        n_classes = len(target_names)
+
+        # Split categorical classification into multiple binary classifications (one-vs-all)
+        label_binarizer = LabelBinarizer().fit(train_true_y)
+        y_onehot_test = label_binarizer.transform(test_true_y)
+        y_onehot_test.shape  # (n_samples, n_classes)
+
+        # Store the fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve) for micro and macro averaging strategies
+        fpr, tpr, roc_auc = self._computeAverages(y_onehot_test, y_score, n_classes)
+
+        # Plot every curve as subplots
+        figure, axes = plt.subplots(figsize=(6, 6))
+
+        plt.plot(
+            fpr["micro"],
+            tpr["micro"],
+            label=f"micro-average ROC curve (AUC = {roc_auc['micro']:.2f})",
+            color="deeppink",
+            linestyle=":",
+            linewidth=4,
+        )
+
+        plt.plot(
+            fpr["macro"],
+            tpr["macro"],
+            label=f"macro-average ROC curve (AUC = {roc_auc['macro']:.2f})",
+            color="navy",
+            linestyle=":",
+            linewidth=4,
+        )
+
+        colors = cycle(mcolors.XKCD_COLORS) # Long list of colors from https://matplotlib.org/stable/gallery/color/named_colors.html
+        for class_id, color in zip(range(n_classes), colors):
+            RocCurveDisplay.from_predictions(
+                y_onehot_test[:, class_id],
+                y_score[:, class_id],
+                name=f"ROC curve for {target_names[class_id]}",
+                color=color,
+                ax=axes,
+                plot_chance_level=(class_id == 2),
+            )
+
+        axes.set(
+            xlabel="False Positive Rate",
+            ylabel="True Positive Rate",
+            title="Extension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
+        )
+        
         plt.show()
 
-    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix
     def plotConfusionMatrix(self) -> None:
-        y_true = self._test_true_y
-        y_pred = self._estimator.predict(self._test_x) # Load predictions based on the test data
+        """Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix
+        """
 
-        confusion_matrix = confusion_matrix(y_true, y_pred)
-        disp = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix)
+        disp = ConfusionMatrixDisplay(confusion_matrix=self._model_report["confusion_matrix"])
 
         disp.plot()
         plt.show()
 
-
-    # https://scikit-learn.org/stable/modules/generated/sklearn.inspection.PartialDependenceDisplay.html#sklearn.inspection.PartialDependenceDisplay
-    # https://scikit-learn.org/stable/modules/partial_dependence.html
-    def plotPartialDependence(self) -> None:
-        classifier = self._estimator
-        train_X = self._train_x
-        features = None # TODO: Add features we want to inspect dependence between
-
-        disp = PartialDependenceDisplay.from_estimator(classifier, train_X, features)
-        disp.plot()
-        plt.show()
