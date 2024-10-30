@@ -48,13 +48,14 @@ class ModelSummary:
         dict
             fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
         """
+        # fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
         fpr, tpr, roc_auc = dict(), dict(), dict()
         # Compute micro-average ROC curve and ROC area
-        fpr["micro"], tpr["micro"], _ = roc_curve(y_onehot_test.ravel(), y_score.ravel())
+        fpr["micro"], tpr["micro"], pos_label = roc_curve(y_onehot_test.ravel(), y_score.ravel())
         roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
         for i in range(n_classes):
-            fpr[i], tpr[i], _ = roc_curve(y_onehot_test[:, i], y_score[:, i])
+            fpr[i], tpr[i], pos_label = roc_curve(y_onehot_test[:, i], y_score[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
 
         fpr_grid = np.linspace(0.0, 1.0, 1000)
@@ -99,7 +100,7 @@ class ModelSummary:
             self.plotRocCurve()
 
     def plotRocCurve(self) -> None:
-        """Plot Roc (Receiver operating characteristic) Curve using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
+        """Plot ROC (Receiver Operating Characteristic) Curve using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
 
         Adapted to work with multiple categories using OvR strategy based on https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#one-vs-one-multiclass-roc
 
@@ -115,7 +116,7 @@ class ModelSummary:
         target_names = np.unique(train_true_y)
         n_classes = len(target_names)
 
-        # Split categorical classification into multiple binary classifications (one-vs-all)
+        # Split categorical classification into multiple binary classifications (one-vs-all/one-vs-rest)
         label_binarizer = LabelBinarizer().fit(train_true_y)
         y_onehot_test = label_binarizer.transform(test_true_y)
         y_onehot_test.shape  # (n_samples, n_classes)
