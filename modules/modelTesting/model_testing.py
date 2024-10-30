@@ -97,6 +97,15 @@ class ModelTester:
             "test_precision": test_precision,  # type: float
             "test_recall": test_recall,  # type: float
             "test_specificity": test_specificity,  # type: float
+
+            "train_pred_y": train_pred_y,  # type: ndarray
+            "train_x": self._train_x,  # type: pd.DataFrame
+            "train_true_y": self._train_true_y,  # type: pd.Series
+            "test_pred_y": test_pred_y,  # type: ndarray
+            "test_x": self._test_x,  # type: pd.DataFrame
+            "test_true_y": self._test_true_y,  # type: pd.Series
+            "confusion_matrix": cm,  # type: ndarray
+            "estimator": self._estimator,  # type: FittedEstimator
         }
 
         return self._model_report

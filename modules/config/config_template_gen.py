@@ -147,5 +147,9 @@ class ConfigTemplate(object):
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                 },
             },
-            "ModelEvaluation": {"test5": ""},
+            "ModelEvaluation": {
+                "print_model_report": True,
+                "plot_confusion_matrix": False,
+                "plot_roc_curves": False,
+            },
         }

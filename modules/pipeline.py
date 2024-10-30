@@ -70,4 +70,4 @@ class Pipeline:
             test_true_y=self.getTargetData(),
             model_report=model_report,
         ).run()
-        ModelSummary(model_report).run()
+        ModelSummary(model_report=model_report).run()
