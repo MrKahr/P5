@@ -2,6 +2,8 @@ from pathlib import Path
 
 
 class SetupConfig:
+    """This class contains values which are globally applicable across our entire codebase"""
+
     # General
     app_name = "P5"
     is_release = False

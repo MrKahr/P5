@@ -9,24 +9,32 @@ from modules.logging import logger
 
 class DataCleaner(object):
 
-    def __init__(self, dataset: Dataset) -> None:
-        logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("data", dataset.value).absolute()
+    def __init__(self, df: pd.DataFrame, dataset: Dataset) -> None:
+        """
+        Performs low-level cleaning of `df` such as removing NaN values.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The dataframe to clean.
+
+        dataset : Dataset
+            The dataset from which `df` originates.
+            Used for required cleaning of `MÅL` and `OLD` datasets.
+        """
+        self.df = df
         self.dataset = dataset
-        self.df = pd.read_csv(path, sep=";", comment="#")
-        self.initial_row_count = self.df.shape[0]
+        self.initial_row_count = self.df.shape[0]  # Used to keep track of rows removed
 
     def _deleteNanCols(self) -> None:
-        """Remove columns where all entries are missing"""
-        current_col_count = self.df.shape[1]
+        """Remove columns where all entries are NaN."""
+        current_col_count = self.df.shape[1]  # Get number of columns
         self.df.dropna(axis=1, how="all", inplace=True)
-        amount = current_col_count - self.df.shape[1]
+        amount = current_col_count - self.df.shape[1]  # Compute column removal count
         logger.info(f"Removed {amount} NaN {"columns" if amount != 1 else "column"}")
 
     def deleteNonfeatures(self) -> None:
-        """
-        Removes pig ID and sår ID from dataset because we consider neither a feature.
-        """
+        """Remove columns `Gris ID` and `Sår ID` because we consider neither feature."""
         non_features = ["Gris ID", "Sår ID"]
         self.df.drop(non_features, axis=1, inplace=True)
         logger.info(
@@ -34,8 +42,10 @@ class DataCleaner(object):
         )
 
     def deleteMissingValues(self) -> None:
-        """Drop all rows that contains value `100`: Manglende Værdi."""
-        current_row_count = self.df.shape[0]
+        """Drop all rows that contains value `100` (a.k.a. `Manglende værdi`)."""
+        current_row_count = self.df.shape[0]  # Get number of rows
+
+        # Check all labels for missing values and remove all rows containing any
         for label in self.df.columns.values:
             if label:
                 self.df.drop(
@@ -47,8 +57,10 @@ class DataCleaner(object):
         )
 
     def deleteUndeterminedValue(self) -> None:
-        """Drop all rows that contains value `2`: Kan ikke vurderes"""
-        current_row_count = self.df.shape[0]
+        """Drop all rows that contains value `2` (a.k.a. `Kan ikke vurderes`)"""
+        current_row_count = self.df.shape[0]  # Get number of rows
+
+        # We check these labels for `2`
         labels = [
             "Kontraktion",
             "Ødem",
@@ -56,6 +68,8 @@ class DataCleaner(object):
             "Eksudat",
             "Granulationsvæv",
         ]
+
+        # For each label, drop all rows that contain `2`
         for label in labels:
             self.df.drop(
                 self.df[(self.df[label] == 2)].index,
@@ -66,60 +80,69 @@ class DataCleaner(object):
         )
 
     def showRowRemovalRatio(self) -> None:
-        """
-        Displays row removal ratio from start to present state of dataframe
-        """
+        """Displays row removal ratio from start to present state of dataframe"""
         percentage_row_removal = (1 - (self.df.shape[0] / self.initial_row_count)) * 100
         logger.info(
             f"Row removal ratio is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
         )
 
-    def removeFeaturelessRows(self, threshold: int = 4) -> None:
-        """Removes rows containing a critical number of NaN
-        This is meant to remove dead pigs from the dataset whose rows only contain grisid and sårid
+    def removeFeaturelessRows(self, threshold: int) -> None:
+        """
+        Removes rows containing a critical number of NaN.
+
+        This is meant to remove dead pigs from the dataset
+        (where every column except `Gris ID`, `Sår ID`, and `Dag` are NaN).
 
         Parameters
         ----------
-        threshold : int, optional
-            The critical count of NaN in a row before it is removed, by default `4`
+        threshold : int
+            The critical count of NaN in a row before it is removed.
         """
-        current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]  # Get number of rows
         self.df.dropna(axis=0, thresh=threshold, inplace=True)
         logger.info(
             f"Removed {current_row_count - self.df.shape[0]} rows containing {threshold} or more NaN values"
         )
 
     def convertHourToDay(self) -> None:
-        """Cleans cells in a dataset containing hours < one day"""
-        # Find all indeces of rows containing "time"
-        indexes = []
+        """
+        If a value for label `Dag` is measured in hours, convert it to a measurement in days.
+        NOTE: It is currently hardcoded to 0, i.e., any value measured in hours is converted to `0` days.
+        """
+        # Store the index for each row where the `Dag` value is measured in hours
+        indices = []
+
+        # Find all indices of rows where the `Dag` value contains the danish word "time" (i.e. "hour")
         for i, value in self.df["Dag"].items():
-            match_obj = re.search("time", value)
-            if match_obj:
-                indexes.append(i)
-        if indexes:
+            if re.search("time", value):
+                indices.append(i)
+
+        if indices:
             # Change time to 0 for rows with hours
-            self.df.loc[indexes, "Dag"] = 0
-        # The orignal "Tid" column was all strings. Convert them to integers
+            self.df.loc[indices, "Dag"] = 0
+
+        # The type of the rows measured in hours is a string. Convert them to integers
         self.df["Dag"] = pd.to_numeric(self.df["Dag"])
-        logger.info(f"Converted {len(indexes)} rows from hour to day")
+
+        logger.info(f"Converted {len(indices)} rows from hour to day")
 
     def fillNan(self, fill_value: int = 100) -> None:
-        """Fills all nan values in the dataset with an arbitrary fill value
+        """
+        Fills all NaN values in the dataset with an arbitrary fill value.
 
         Parameters
         ----------
         fill_value : int, optional
-            values to replace empty cells in the dataset, by default 100
+            The value to replace empty cells in the dataset, by default 100.
         """
-        current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]  # Get number of rows
         self.df.fillna(fill_value, inplace=True)
         logger.info(
             f"Filled {current_row_count - self.df.shape[0]} rows with '{fill_value}'"
         )
 
     def showNan(self) -> None:
-        """Subsets and shows the current dataframe to include only"""
+        """Check the dataset for NaN values and show all NaN values detected."""
         nan_df = self.df[self.df.isna().any(axis=1)]
         if len(nan_df) == 0:
             logger.info("No NaN values to display")
@@ -128,7 +151,8 @@ class DataCleaner(object):
 
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        current_row_count = self.df.shape[0]
+        current_row_count = self.df.shape[0]  # Get number of rows
+
         # Remove data not used in training
         cols = ["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"]
         self.df.drop(
@@ -148,8 +172,9 @@ class DataCleaner(object):
             f"Removed {dropped_rows} NaN rows from features {", ".join(subset)}"
         )
 
-        # Insert missing IDs for pigs using the single existing ID
+        # Insert missing `Gris ID` for pigs using the single existing `Gris ID`
         self.df["Gris ID"] = self.df["Gris ID"].ffill(axis=0).values
+
         logger.info(f"Removed {current_row_count - self.df.shape[0]} rows")
 
     def cleanOldDataset(self):
@@ -157,12 +182,13 @@ class DataCleaner(object):
         self.convertHourToDay()
 
     def run(self) -> pd.DataFrame:
-        """Run all applicable data cleaning methods
+        """
+        Run all applicable data cleaning methods.
 
         Returns
         -------
         pd.DataFrame
-            The cleaned dataset that is returned to the pipeline
+            The cleaned dataset.
         """
         config = Config()
         if config.getValue("UseCleaner"):

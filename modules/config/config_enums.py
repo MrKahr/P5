@@ -36,9 +36,6 @@ class FeatureSelectionCriterion(Enum):
 
 
 class FeatureScoreFunc(Enum):
-    # Use all score functions available
-    ALL = -1
-
     CHI2 = 0
     ANOVA_F = 1
     MUTUAL_INFO_CLASSIFER = 2

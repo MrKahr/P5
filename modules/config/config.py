@@ -15,6 +15,7 @@ class Config:
     _instance = None
     _logger = logger
 
+    # This is a singleton class since we only want 1 instance of a Config at all times
     def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -30,7 +31,8 @@ class Config:
             self._created = True
 
     def _initConfig(self) -> dict[str, Any]:
-        """Loads the config from a file.
+        """
+        Loads the config from a file.
 
         Returns
         -------
@@ -45,8 +47,9 @@ class Config:
         return config
 
     def getValue(self, key: str, parent_key: Optional[str] = None) -> Any:
-        """Get a value from the config dict object.
-        Return first value found. If there is no item with `key`.
+        """
+        Get a value from the config dict object.
+        Returns first value found.
 
         Note: the config is usually nested. Thus, the "get" method of a Python dict
         is insufficient to retrieve all values.
@@ -54,17 +57,23 @@ class Config:
         Parameters
         ----------
         key : str
-            The key to search for in the config
+            The key to search for in the config.
 
         Returns
         -------
         Any
-            The value of the key if found, else `default`.
+            The value of `key`, if found.
+
+        Raises
+        ------
+        UnboundLocalError
+            If `key` was not found in the config.
         """
         return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
 
-    def setValue(self, key: str, value: Any) -> bool:
-        """Update the config dict with `value` using `key`.
+    def setValue(self, key: str, value: Any, parent_key: Optional[str] = None) -> bool:
+        """
+        Assign `value` to `key` in the config's underlying dict, overwriting any previous value.
 
         Parameters
         ----------
@@ -77,7 +86,7 @@ class Config:
         Raises
         ------
         KeyError
-            If the key was not found in the config.
+            If `key` was not found in the config.
         """
         try:
             insertDictValue(self._config, key, value)

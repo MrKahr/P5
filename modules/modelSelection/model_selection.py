@@ -35,7 +35,8 @@ class ModelSelector:
 
     @classmethod
     def getModel(cls) -> UnfittedEstimator:
-        """Get an unfit instance of the model as specified in the config file.
+        """
+        Get an unfit instance of the model as specified in the config file.
 
         Returns
         -------
@@ -45,6 +46,9 @@ class ModelSelector:
         cls._config = Config()
         parent_key = "ModelSelection"
         selected_model = cls._config.getValue("model", parent_key)
+
+        # Create job count dict to allow combining it with other kwargs when passing args from the config
+        # (this is necessary since n_jobs is globally used and not tied to a particular model)
         n_jobs = {"n_jobs": cls._config.getValue("n_jobs", "General")}
 
         if selected_model == Model.DECISION_TREE.name:
@@ -68,7 +72,7 @@ class ModelSelector:
         elif selected_model == Model.NEURAL_NETWORK.name:
             model = cls._getNeuralNetwork()
         else:
-            raise TypeError(
+            raise ValueError(
                 f"Invalid model '{selected_model}'. Expected one of {Model._member_names_}"
             )
         logger.info(f"Using model: {type(model).__name__}")
