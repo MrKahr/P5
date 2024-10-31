@@ -1,15 +1,14 @@
-from typing import Any, Callable, Literal, Union
 import pandas as pd
-from sklearn.feature_selection import (
-    GenericUnivariateSelect,
-    chi2,
-    f_classif,
-    mutual_info_classif,
-)
+
+from typing import Any, Literal, Union
+from sklearn.feature_selection import GenericUnivariateSelect
 from numpy.typing import NDArray
+
 from modules.config.config import Config
-from modules.config.config_enums import FeatureScoreFunc, FeatureSelectionCriterion
+from modules.config.config_enums import FeatureSelectionCriterion
 from modules.logging import logger
+from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
+from modules.types import FeatureSelectScoreCallable
 
 # SECTION
 # https://scikit-learn.org/stable/modules/feature_selection.html
@@ -18,51 +17,55 @@ from modules.logging import logger
 # https://scikit-learn.org/stable/auto_examples/compose/plot_compare_reduction.html#sphx-glr-auto-examples-compose-plot-compare-reduction-py
 
 
-# SECTION
-# GRID SEARCH (hyperparameter tuning) {On any hyperparamter}
-
-# Custom refit strategy of a grid search with cross-validation
-# https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html
-
-# Running GridSearchCV using multiple evaluation metrics
-# https://scikit-learn.org/stable/auto_examples/model_selection/plot_multi_metric_evaluation.html#sphx-glr-auto-examples-model-selection-plot-multi-metric-evaluation-py
-
-# Statistical comparison of models:
-# https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
-
-
 # TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
     def __init__(self, train_x: pd.DataFrame, true_y: pd.Series) -> None:
+        """
+        Using algorithms from statistics, figure out which features to use for model training.
+
+        Parameters
+        ----------
+        train_x : pd.DataFrame
+            Training feature(s).
+
+        true_y : pd.Series
+            Target feature, i.e., "Dag".
+        """
+        self._train_x = train_x
+        self._true_y = true_y
         self._config = Config()
         self._parent_key = "FeatureSelection"
         self.df = None
-        self._train_x = train_x
-        self._true_y = true_y
         self._selected_features = None
 
     def __modeArgCompare(
         self,
     ) -> tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]:
-        """Auxiliary function for GenericUnivariate select.
-          It compares and selecting the right mode and ensuring that supplied args are type correctly
+        """
+        Auxiliary function for `GenericUnivariateSelect`.\n
+        It ensures that the config arguments `mode` and `param` are a valid combination.
 
         Returns
         -------
-        Pair containing mode name and mode arg
+        tuple[Literal["percentile", "k_best", "fpr", "fdr", "fwe"], int | float | str]
+            [0]: `mode`.
+            [1]: `param`.
 
         Raises
         ------
         TypeError
-            If supplied arg does not match mode.
+            If the config arguments `mode` and `param` are an invalid combination.
+
+        ValueError
+            If `mode` is invalid.
         """
 
-        # Get args associated with selection of mode
+        # Get `mode` and `paran` from the config
         parent_key = "GenericUnivariateSelectArgs"
         arg = self._config.getValue("param", parent_key)
         mode = self._config.getValue("mode", parent_key)
 
-        # Use boolean to check whether a mode/param arg is a valid permutation
+        # Check whether a mode/param arg is a valid permutation
         isinteger = isinstance(arg, int)
         isnumeric = isinteger | isinstance(arg, float)
 
@@ -89,111 +92,18 @@ class FeatureSelector:
                     raise TypeError("fwe must be specified as numeric")
                 return ("fwe", arg)
             case _:
-                logger.warning(
-                    "Assuming parameter: 'all' specified for generic univariate select"
+                raise ValueError(
+                    f"Invalid mode '{mode}' selected. Expected one of {FeatureSelectionCriterion._member_names_}"
                 )
-                return ("all", arg)
 
     def _computeFeatureCorrelation(self) -> Any:
         # Using Spearman rank-order correlations from SciPy
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#handling-multicollinear-features
         pass
 
-    def _chi2Independence(
-        self, train_x: NDArray, true_y: NDArray
-    ) -> tuple[NDArray, NDArray]:
-        """
-        Compute chi-squared stats between each non-negative feature and class.
-        This score can be used to select the features with the highest values for the
-        test chi-squared statistic from `X`.
-
-        Recall that the chi-square test measures dependence between stochastic variables, so using this
-        function “weeds out” the features that are the most likely to be independent of class and therefore
-        irrelevant for classification.
-
-        Notes
-        -----
-        The chi-squared test should only be applied to non-negative features.
-
-        Returns
-        -------
-        tuple[NDArray, NDArray]
-            [0]: Chi-squared statistics for the input data.
-            [1]: P-values for the input data.
-
-        Links
-        -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html#sklearn.feature_selection.chi2
-        """
-        logger.info("Computing chi-squared statistics")
-        chi2_stats, p_values = chi2(train_x, true_y)
-        return chi2_stats, p_values
-
-    def _fClassifIndependence(
-        self, train_x: NDArray, true_y: NDArray
-    ) -> tuple[NDArray, NDArray]:
-        """
-        Compute the Analysis of Variance (ANOVA) F-value for the provided sample.
-
-        Notes
-        -----
-        F-test estimate the degree of linear dependency between two random variables.
-
-        Returns
-        -------
-        tuple[NDArray, NDArray]
-            [0]: F-statistics for the input data.
-            [1]: P-values for the input data.
-
-        Links
-        -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html
-        - https://en.wikipedia.org/wiki/F-test
-
-        """
-        logger.info("Computing ANOVA F-statistics")
-        f_stats, p_values = f_classif(train_x, true_y)
-        return f_stats, p_values
-
-    def _mutualInfoClassif(
-        self, train_x: NDArray, true_y: NDArray, **kwargs
-    ) -> NDArray:
-        """
-        Estimate mutual information for a discrete target variable.
-        Mutual information (MI) between two random variables is a non-negative value,
-        which measures the dependency between the variables. It is equal to zero if and only if
-        two random variables are independent, and higher values mean higher dependency.
-
-        The function relies on nonparametric methods based on entropy estimation from k-nearest neighbors distances.
-
-        Notes
-        -----
-        - The term “discrete features” is used instead of naming them “categorical”, because it describes the essence more accurately.
-        - Mutual information methods can capture any kind of statistical dependency, but being nonparametric, they require more samples for accurate estimation.
-        - Also note, that treating a continuous variable as discrete and vice versa will usually give incorrect results, so be attentive about that.
-
-        **kwargs : dict
-            Additional parameters defined in the config.
-
-        Returns
-        -------
-        NDArray
-            Estimated mutual information between each feature and the target in nat units.
-
-        Links
-        -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html
-        """
-        logger.info("Computing estimates of mutual information")
-        return mutual_info_classif(
-            train_x,
-            true_y,
-            **kwargs,
-        )
-
     def genericUnivariateSelect(
         self,
-        scoreFunc: Callable[[NDArray, NDArray], tuple[NDArray, NDArray] | NDArray],
+        scoreFunc: FeatureSelectScoreCallable,
         mode: Literal["percentile", "k_best", "fpr", "fdr", "fwe"],
         param: Union[int, float, str],
     ) -> NDArray:
@@ -209,7 +119,7 @@ class FeatureSelector:
 
         Parameters
         ----------
-        scoreFunc : Callable
+        scoreFunc : FeatureSelectScoreCallable
             Function taking two arrays `X` and `y`, and returning a pair of arrays (scores, pvalues) or a single array with scores.
             This could for instance be: 'chi2', 'f_classif', or 'mutual_info_classif'.
 
@@ -263,59 +173,23 @@ class FeatureSelector:
         # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-py
         pass
 
-    # FIXME: Temporary solution until multi-score is implemented
-    def getScoreFunc(
-        self,
-    ) -> Callable[[NDArray, NDArray], tuple[NDArray, NDArray] | NDArray]:
-        score_funcs = self._config.getValue("score_functions", self._parent_key)
-        if not isinstance(score_funcs, list):
-            score_funcs = [score_funcs]
-
-        selected_score_funcs = {}
-        for score_func in score_funcs:
-            if score_func == FeatureScoreFunc.CHI2.name:
-                selected_score_funcs |= {
-                    FeatureScoreFunc.CHI2.name.lower(): self._chi2Independence
-                }
-            elif score_func == FeatureScoreFunc.ANOVA_F.name:
-                selected_score_funcs |= {
-                    FeatureScoreFunc.ANOVA_F.name.lower(): self._fClassifIndependence
-                }
-            elif score_func == FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name:
-                selected_score_funcs |= {
-                    FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name.lower(): lambda train_x, true_y: self._mutualInfoClassif(
-                        train_x=train_x,
-                        true_y=true_y,
-                        **self._config.getValue(
-                            "MutualInfoClassifArgs", self._parent_key
-                        ),
-                    )
-                }
-            else:
-                raise TypeError(
-                    f"Invalid score function '{score_func}'. Expected one of {FeatureScoreFunc._member_names_}"
-                )
-        logger.info(
-            f"Using feature select score functions: '{", ".join(selected_score_funcs.keys())}'"
-        )
-        return next(
-            iter(selected_score_funcs.values())
-        )  # FIXME: Temporary solution until multi-score is implemented
-
     def run(self) -> tuple[pd.DataFrame, pd.Series, NDArray]:
-        """Runs all applicable feature selection methods.
+        """
+        Runs all applicable feature selection methods.
 
         Returns
         -------
-        pd.DataFrame
-            The dataframe containing only select features.
+        tuple[pd.DataFrame, pd.Series, NDArray]
+            [0]: Selected training feature(s).
+            [1]: Target feature, i.e., "Dag".
+            [2]: Selected feature labels.
         """
         if self._config.getValue("UseFeatureSelector"):
             if self._config.getValue("ComputeFeatureCorrelation", self._parent_key):
                 self._computeFeatureCorrelation()
             if self._config.getValue("GenericUnivariateSelect", self._parent_key):
                 self.genericUnivariateSelect(
-                    self.getScoreFunc(),
+                    ScoreFunctionSelector.getScoreFuncFeatureSelect(),
                     *self.__modeArgCompare(),
                 )
             if self._config.getValue("VarianceThreshold", self._parent_key):

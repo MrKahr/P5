@@ -25,38 +25,47 @@ class CrossValidationSelector:
     def getCrossValidator(
         cls,
     ) -> CrossValidator | None:
-        """Get an instance of the cross-validator as specified in the config file.
+        """
+        Get an instance of the cross-validator as specified in the config file.
 
         Returns
         -------
         CrossValidator | None
             An instance of the cross-validator as specified in the config file.
+
+        Raises
+        ------
+        ValueError
+            If the selected cross-validator is invalid.
         """
         cls._config = Config()
         parent_key = "CrossValidationSelection"
-        selected_cv = cls._config.getValue("cross_validator", parent_key)
+        selected_cross_validator = cls._config.getValue("cross_validator", parent_key)
 
-        cv_not_applicable = cls._config.getValue(
+        # Some model training methods are NOT compatible with cross-validation.
+        # Thus, we will disable cross-validation if an incompatible training method is selected in the config.
+        cross_validator_not_applicable = cls._config.getValue(
             "training_method", "ModelTraining"
         ) in [TrainingMethod.FIT.name, TrainingMethod.RFE.name]
 
-        if selected_cv == None or cv_not_applicable:
-            cv = None
-        elif selected_cv == CrossValidator.STRATIFIED_KFOLD.name:
-            cv = cls._getStratifiedKFold(
+        # Find a cross-validator to use according to the config
+        if selected_cross_validator == None or cross_validator_not_applicable:
+            cross_validator = None
+        elif selected_cross_validator == CrossValidator.STRATIFIED_KFOLD.name:
+            cross_validator = cls._getStratifiedKFold(
                 **cls._config.getValue("StratifiedKFold", parent_key)
             )
-        elif selected_cv == CrossValidator.TIMESERIES_SPLIT.name:
-            cv = cls._getTimeSeriesSplit(
+        elif selected_cross_validator == CrossValidator.TIMESERIES_SPLIT.name:
+            cross_validator = cls._getTimeSeriesSplit(
                 **cls._config.getValue("TimeSeriesSplit", parent_key)
             )
         else:
-            raise TypeError(
-                f"Invalid cross-validator '{selected_cv}'. Expected one of {CrossValidator._member_names_}"
+            raise ValueError(
+                f"Invalid cross-validator '{selected_cross_validator}'. Expected one of {CrossValidator._member_names_}"
             )
 
-        if cv:
-            logger.info(f"Using cross-validator: {type(cv).__name__}")
+        if cross_validator:
+            logger.info(f"Using cross-validator: {type(cross_validator).__name__}")
         else:
             logger.info(f"Skipping cross-validation")
-        return cv
+        return cross_validator

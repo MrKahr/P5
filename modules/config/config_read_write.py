@@ -15,7 +15,7 @@ from modules.types import StrPath
 
 def writeConfig(
     config: dict,
-    dst_path: StrPath,
+    destionation_path: StrPath,
 ) -> None:
     """
     Convert and write a Python config object to config files of different types.
@@ -27,50 +27,52 @@ def writeConfig(
         The Python config object to convert and write to a file.
         Can be an instance of a validation model.
 
-    dst_path : StrPath
+    destionation_path : StrPath
         Path-like object pointing to a supported config file.
         Note: the file does not have to exist.
     """
-    dst_dir = Path(os.path.dirname(dst_path))
-    file = os.path.split(dst_path)[1]
-    extension = os.path.splitext(dst_path)[1].strip(".")
+    destination_directory = Path(os.path.dirname(destionation_path))
+    # Split to get file name from path. E.g. "modules\config\setup_config.py", get "setup_config.py"
+    file_name = os.path.split(destionation_path)[1]
+    extension = os.path.splitext(destionation_path)[1].strip(".")
     try:
-        dst_dir.mkdir(parents=True, exist_ok=True)
+        destination_directory.mkdir(parents=True, exist_ok=True)
 
         if extension.lower() == "json":
-            _generateJSONConfig(config, dst_path)
+            _generateJSONConfig(config, destionation_path)
         else:
-            logger.warning(f"Cannot write unsupported file '{file}'")
-    # We don't know which exceptions would be thrown, we just want some logging
+            logger.warning(f"Cannot write unsupported file '{file_name}'")
     except Exception:
+        # Catch exception to provide more descriptive cause of error, then re-raise exception to fail fast
         logger.error(
-            f"Failed to write {file} to '{dst_path}'\n"
+            f"Failed to write {file_name} to '{destionation_path}'\n"
             + traceback.format_exc(limit=SetupConfig.traceback_limit)
         )
-        # Reraise the current exception
-        raise
+        raise  # Re-raise the current exception
 
 
-def _generateJSONConfig(config: dict, dstPath: StrPath) -> None:
-    """Convert a Python config object to the '.json'-format and write it to a '.json' file.
+def _generateJSONConfig(config: dict, destination_path: StrPath) -> None:
+    """
+    Convert a Python config object to the '.json'-format and write it to a '.json' file.
 
     Parameters
     ----------
     config : dict
         A Python config object
 
-    dstPath : StrPath
+    destination_path : StrPath
         Path-like object pointing to a JSON file.
         Note: the file does not have to exist.
     """
-    fileName = os.path.split(dstPath)[1]
-    with open(dstPath, "w", encoding="utf-8") as file:
-        logger.debug(f"Writing '{fileName}' to '{dstPath}'")
+    file_name = os.path.split(destination_path)[1]
+    with open(destination_path, "w", encoding="utf-8") as file:
+        logger.debug(f"Writing '{file_name}' to '{destination_path}'")
         file.write(json.dumps(config, indent=4))
 
 
 def checkMissingFields(config: dict, template: dict) -> None:
-    """Compare the config against the template for missing
+    """
+    Compare the config against the template for missing
     sections/settings and vice versa.
 
     Parameters
@@ -92,7 +94,8 @@ def checkMissingFields(config: dict, template: dict) -> None:
     def searchFields(
         config: dict, template: dict, search_mode: Literal["missing", "unknown"]
     ) -> None:
-        """Helper function to keep track of parents while traversing.
+        """
+        Helper function to keep track of parents while traversing.
         Use `search_mode` to select which type of field to search for.
 
         Parameters
@@ -125,7 +128,7 @@ def checkMissingFields(config: dict, template: dict) -> None:
                     section_errors.append(
                         f"{search_mode.capitalize()} {f"subsection '{".".join(parents)}.{key}'" if parents else f"section '{key}'"}"
                     )
-            # We've reached the bottom of the nesting (non-dict key/value pairs)
+            # We've reached the bottom level of the dict nesting (non-dict key/value pairs)
             elif key not in validation_dict:
                 if parents:
                     field_errors.append(
@@ -135,6 +138,7 @@ def checkMissingFields(config: dict, template: dict) -> None:
                     field_errors.append(f"{search_mode.capitalize()} setting '{key}'")
         else:
             if parents:
+                # We're done with this dict level. Thus, its parent is no longer applicable
                 parents.pop()
 
     searchFields(config, template, search_mode="missing")
@@ -153,7 +157,8 @@ def retrieveDictValue(
     key: str,
     parent_key: Optional[str] = None,
 ) -> Any:
-    """Return first value found.
+    """
+    Return first value found.
 
     Has support for defining search scope with `parent_key`;
     A value will only be returned if it is within the scope of `parent_key`.
@@ -183,36 +188,43 @@ def retrieveDictValue(
     stack = [iter(input.items())]
     parent_keys = []
     while stack:
-        for k, v in stack[-1]:
-            if k == key:
+        for stack_key, stack_value in stack[-1]:
+            # The stack key is what we're looking for
+            if stack_key == key:
+                # The key need a parent to be considered relevant
                 if parent_key:
+                    # The stack key has the correct parent key
                     if parent_key in parent_keys:
-                        found_value = v
+                        found_value = stack_value
                         stack.clear()
                         break
+                # The stack key does not need a parent
                 else:
-                    found_value = v
+                    found_value = stack_value
                     stack.clear()
                     break
-            elif isinstance(v, dict):
-                stack.append(iter(v.items()))
-                parent_keys.append(k)
+            # This level of the dict is still nested
+            elif isinstance(stack_value, dict):
+                stack.append(iter(stack_value.items()))
+                parent_keys.append(stack_key)
                 break
         else:
-            stack.pop()
+            stack.pop()  # We're reached the end of this dict level. Remove from stack
             if parent_keys:
+                # We're done with this dict level. Thus, its parent is no longer applicable
                 parent_keys.pop()
     try:
         return found_value
+    # If we did not find a value, `found_value` is unbound (undefined)
     except UnboundLocalError as err:
         err.add_note(f"Error: Key {key} does not exists")
-        raise
+        raise  # Re-raise the current exception (UnboundLocalError) to fail fast
 
 
 # TODO: Make dynamic programming version
 def insertDictValue(
     input: dict, key: str, value: Any, parent_key: Optional[str] = None
-) -> list | None:
+) -> None:
     """
     Recursively look for key in input.
     If found, replace the original value with the provided value and return the original value.
@@ -242,11 +254,6 @@ def insertDictValue(
         Limit the search scope to the children of this key.
         By default None.
 
-    Returns
-    -------
-    list | None
-        The replaced old value, if found. Otherwise, None.
-
     Raises
     ------
     KeyError
@@ -256,24 +263,50 @@ def insertDictValue(
     parent_keys = []
 
     # Nested function is ONLY used in this function. Placement of source code considered more readable here.
-    def traverseDict(_input: dict, _key, _value, _parent_key) -> list | None:
-        for k, v in _input.items():
+    def traverseDict(
+        _input: dict, search_key: str, value: Any, _parent_key: str
+    ) -> None:
+        """
+        Recursively search through `_input` depth-first.
+
+        Parameters
+        ----------
+        _input : dict
+            Dict to search in.
+
+        search_key : str
+            The key to search for.
+
+        value : Any
+            The value assigned to `search_key`.
+
+        _parent_key : str
+            `search_key` must have this key as a parent.
+        """
+        for traverse_key, traverse_value in _input.items():
             # TODO: rewrite condition e.g. by raising an exception (remove old_value in favor of exceptions)
+            # We've found the value we're looking for
             if old_value:
                 break
             # TODO: Rewrite cases for clarity
-            if isinstance(v, dict):
-                parent_keys.append(k)
-                traverseDict(v, _key, _value, _parent_key)
-            elif k == _key:
+
+            # The dict is still nested
+            if isinstance(traverse_value, dict):
+                parent_keys.append(traverse_key)
+                traverseDict(traverse_value, search_key, value, _parent_key)
+            # The key is what we're looking for
+            elif traverse_key == search_key:
+                # The key need a parent to be considered relevant
                 if parent_key:
+                    # The key has the correct parent key
                     if _parent_key in parent_keys:
-                        _input[k] = _value
-                        old_value.append(v)
+                        _input[traverse_key] = value
+                        old_value.append(traverse_value)
+                # The key does not need a parent
                 else:
-                    _input[k] = _value
+                    _input[traverse_key] = value
                     old_value.clear()
-                    old_value.append(v)
+                    old_value.append(traverse_value)
                 break
 
     traverseDict(input, key, value, parent_key)
@@ -287,7 +320,8 @@ def loadConfig(
     template: dict[str, Any],
     retries: int = 1,
 ) -> dict[str, Any] | None:
-    """Read and validate the config file residing at the supplied config path.
+    """
+    Read and validate the config file residing at the supplied config path.
 
     Parameters
     ----------
@@ -312,47 +346,52 @@ def loadConfig(
     Raises
     ------
     NotImplementedError
-        If the file at the config path is not supported
+        If the file at the config path is not supported.
     """
     # TODO: Nesting level is too high - needs refactoring
-    isError = False
+    is_error = False
     config = None
     filename = os.path.split(config_path)[1]
     extension = os.path.splitext(filename)[1].strip(".")
     try:
+        # Read file from disk
         with open(config_path, "rb") as file:
             if extension.lower() == "json":
                 config = json.load(file)
             else:
                 err_msg = f"{config_name}: Cannot load unsupported file '{config_path}'"
                 raise NotImplementedError(err_msg)
+
+        # Validate the read config (its considered valid if no exceptions occur)
         checkMissingFields(config, template)
     except MissingFieldError as err:
-        isError, isRecoverable = True, True
+        is_error, is_recoverable = True, True
         err_msg = f"{config_name}: Detected incorrect fields in '{filename}':\n"
+        # Format error message for printing
         for item in err.args[0]:
             err_msg += f"  {item}\n"
         logger.warning(err_msg)
         logger.info(f"{config_name}: Repairing config")
-        repairedConfig = repairConfig(config, template)
-        writeConfig(repairedConfig, config_path)
+        repaired_config = repairConfig(config, template)
+        writeConfig(repaired_config, config_path)
     except json.JSONDecodeError as err:
-        isError, isRecoverable = True, True
+        is_error, is_recoverable = True, True
         logger.warning(f"{config_name}: Failed to parse '{filename}':\n  {err.msg}\n")
         writeConfig(template, config_path)
     except FileNotFoundError:
-        isError, isRecoverable = True, True
+        is_error, is_recoverable = True, True
         logger.info(f"{config_name}: Creating '{filename}'")
         writeConfig(template, config_path)
     except Exception:
-        isError, isRecoverable = True, False
+        is_error, is_recoverable = True, False
         logger.error(
             f"{config_name}: An unexpected error occurred while loading '{filename}'\n"
             + traceback.format_exc(limit=SetupConfig.traceback_limit)
         )
     finally:
-        if isError:
-            if retries > 0 and isRecoverable:
+        if is_error:
+            # Reload the config if no fatal exceptions occured (i.e. only those we can recover from)
+            if retries > 0 and is_recoverable:
                 logger.info(f"{config_name}: Reloading '{filename}'")
                 config = loadConfig(
                     config_name=config_name,
@@ -360,6 +399,7 @@ def loadConfig(
                     template=template,
                     retries=retries - 1,
                 )
+            # We failed to load the config
             else:
                 load_failure_msg = f"{config_name}: Failed to load '{filename}'"
                 if template:
@@ -367,6 +407,7 @@ def loadConfig(
                     config = template  # Use template config if all else fails
                     logger.warning(load_failure_msg)
                 else:
+                    # We have no way of recovering
                     logger.error(load_failure_msg)
         else:
             logger.info(f"{config_name}: Config '{filename}' loaded!")
@@ -374,7 +415,8 @@ def loadConfig(
 
 
 def repairConfig(config: dict, template: dict) -> dict:
-    """Preserve all valid values in `config` when some of its fields are determined invalid.
+    """
+    Preserve all valid values in `config` when some of its fields are determined invalid.
     Fields are taken from `template` if they could not be preserved from `config`.
 
     Parameters
@@ -393,13 +435,13 @@ def repairConfig(config: dict, template: dict) -> dict:
     """
     repaired_config = {}
     for template_key, value in template.items():
+        # Search config/template recursively, depth-first
         if isinstance(value, dict) and template_key in config:
-            # Search config/template recursively, depth-first
             repaired_config |= {template_key: repairConfig(config[template_key], value)}
+        # Preserve value from config
         elif template_key in config:
-            # Preserve value from config
             repaired_config |= {template_key: config[template_key]}
+        # Use value from template
         else:
-            # Use value from template
             repaired_config |= {template_key: value}
     return repaired_config

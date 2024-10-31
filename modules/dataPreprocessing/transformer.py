@@ -1,4 +1,3 @@
-from typing import Self
 import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
@@ -13,18 +12,10 @@ class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 
-    def getDataframe(self) -> pd.DataFrame:
-        """Get a deep copy of the transformed dataframe.
-
-        Returns
-        -------
-        pd.DataFrame
-            The transformed dataframe
-        """
-        return self.df.copy(deep=True)
-
+    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
-        """One-hot encode one or more categorical attributes, selected by `lables`.
+        """
+        One-hot encode one or more categorical attributes, selected by `labels`.
 
         Based on https://stackoverflow.com/questions/37292872/how-can-i-one-hot-encode-in-python
 
@@ -43,7 +34,8 @@ class DataTransformer:
         )
 
     def modeImputationByDay(self) -> None:
-        """Imputes missing values by replacing them with the most common value for the day where the value is missing.
+        """
+        Imputes missing values by replacing them with the most common value for the day where the value is missing.
         Takes no arguments and modifies the Dataframe on the class itself.
         """
         # for this method
@@ -85,18 +77,21 @@ class DataTransformer:
         self.df = df
 
     def zeroOneDistance(
-        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
     ) -> int:
-        """An implementation of a zero-one distance metric in a format scikit's KNNImputer can use
+        """
+        An implementation of a zero-one distance metric in a format scikit's KNNImputer can use.
 
         Parameters
         ----------
-        x : 1D Numpy Array
-            A representation of a row in the dataset as an array of numbers
-        y : 1D Numpy Array
-            A representation of a row in the dataset as an array of numbers
-        missing_values :
-            What value should be considered missing and ineligible for comparison, by default 100
+        x : 1D Array
+            A representation of a row in the dataset as an array of numbers.
+
+        y : 1D Array
+            A representation of a row in the dataset as an array of numbers.
+
+        missing_values : int
+            The value which should be considered missing and ineligible for comparison, by default 100.
 
         Returns
         -------
@@ -113,18 +108,22 @@ class DataTransformer:
 
     # TODO - Dicussing with Emil, if you see me, delete me!
     def matrixDistance(
-        self, x: ArrayLike, y: ArrayLike, *args, missing_values=100
+        self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
     ) -> int:
-        """An implementation of a distance metric in a format scikit's KNNImputer can use. This one is uses distance matrices for each variable
+        """
+        An implementation of a distance metric in a format scikit's KNNImputer can use.
+        This one uses distance matrices for each variable.
 
         Parameters
         ----------
-        x : 1D Numpy Array
-            A representation of a row in the dataset as an array of numbers
-        y : 1D Numpy Array
-            A representation of a row in the dataset as an array of numbers
-        missing_values :
-            What value should be considered missing and ineligible for comparison, by default 100
+        x : 1D Array
+            A representation of a row in the dataset as an array of numbers.
+
+        y : 1D Array
+            A representation of a row in the dataset as an array of numbers.
+
+        missing_values : int
+            The value which should be considered missing and ineligible for comparison, by default 100.
 
         Returns
         -------
@@ -143,17 +142,19 @@ class DataTransformer:
         eksudattype_matrix = [[]]
         infektionsniveau_matrix = [[]]
 
-    def KNNImputation(self, neighbors=5) -> None:
-        """Imputes missing values using Scikit's KNNImputer. Takes no arguments and modifies the Dataframe on the class itself.
+    def knnImputation(self, neighbors: int = 5) -> None:
+        """
+        Imputes missing values using Scikit's KNNImputer.
+        Takes no arguments and modifies the dataframe on the class itself.
 
         Parameters
         ----------
-        neighbors : How many nearest neighbors should be considered
-
-        Returns
-        -------
-        Nothing
+        neighbors : int
+            How many nearest neighbors should be considered.
         """
+        logger.info(
+            f"Using imputation method: KNN. Args: nearest_neighbors={neighbors}"
+        )
         df = self.df
         self.logValues(df)
         logger.info("Starting KNN-Imputation.")
@@ -164,27 +165,37 @@ class DataTransformer:
             metric=self.zeroOneDistance,
             copy=False,
         )
+
+        # remove ID columns so we don't use those for distance calculations. Errors are ignored so this goes through even if the columns are already gone.
+        # NOTE we do this here even if we might have done it earlier to ensure that Pig ID and Wound ID don't affect imputation regardless of whether "DeleteNonfeatures" in the config is true or not.
+        # TODO Consider: Maybe we want to use them, actually? Surely a wound would behave similarly to other wounds on the same animal, or similarly to what it has done in the past?
+        working_df = df.drop(["Gris ID", "Sår ID"], axis=1, errors="ignore")
+
+        # NOTE this makes the imputer return a proper dataframe, rather than a numpy array
         imputer.set_output(transform="pandas")
-        # working_df = df.drop(
-        #     ["Gris ID", "Sår ID"], axis=1
-        # )  # remove ID columns so we don't use those for distance calculations
-        working_df = imputer.fit_transform(
-            working_df
-        )  # type: pd.DataFrame # NOTE imputer.set_output(transform="pandas") makes the imputer return a proper dataframe, rather than a numpy array
+        working_df = imputer.fit_transform(working_df)  # type: pd.DataFrame
+
         for column in working_df.columns:
             df[column] = working_df[column]
-        logger.info("Imputation done.")
-        self.logValues(df)
+
+        logger.info(
+            "Imputation done."
+        )  # TODO: Consider logging here how many rows where imputed or similar
+        self.logValues(df)  # TODO: Consider removing or logging in a quieter way
         self.df = df
 
-    def logValues(self, df: pd.DataFrame, value=100) -> None:
-        """Finds and logs a specified value in a dataframe for every ocurrence
+    def logValues(self, df: pd.DataFrame, value: int = 100) -> None:
+        """
+        Finds and logs a specified value in a dataframe for every ocurrence.
 
         Parameters
         ----------
         df : DataFrame
-            The DataFrame to search
-        value : The value to find and log using the logger. Default is 100 to help find missing values
+            The DataFrame to search.
+
+        value : int
+            The value to find and log using the logger.
+            Default is `100` to help find missing values.
         """
         # logger.info(f"Checking for {value}...")
         count = 0
@@ -205,73 +216,97 @@ class DataTransformer:
         )
 
     def minMaxNormalization(self, feature: str) -> None:
-        """Uses min-max normalization on a single feature
+        """
+        Uses min-max normalization on a single feature.
 
         Parameters
         ----------
         feature : str
-            The feature to be normalized
+            The feature to be normalized.
         """
         self.df[feature] = (self.df[feature] - self.df[feature].min()) / (
             self.df[feature].max() - self.df[feature].min()
         )
 
-    def swapValues(self, attribute: str, value1: float, value2: float) -> None:
-        """Swap all instances of value1 and value2 in attribute
+    # REVIEW: What is this method used for?
+    def swapValues(self, feature: str, value1: float, value2: float) -> None:
+        """
+        Swap all instances of `value1` and `value2` in `feature`.
 
         Parameters
         ----------
-        attribute : str
-            Name of the attribute to swap values in
+        feature : str
+            Name of the feature to swap values in.
+
         value1 : float
-            First value
+            First value.
+
         value2 : float
-            Second value
+            Second value.
         """
         i = 0
-        for value in self.df[attribute]:
+        for value in self.df[feature]:
             if value == value1:
-                self.df.loc[self.df.index[i], attribute] = value2
+                self.df.loc[self.df.index[i], feature] = value2
             elif value == value2:
-                self.df.loc[self.df.index[i], attribute] = value1
+                self.df.loc[self.df.index[i], feature] = value1
             i += 1
 
     def run(self) -> pd.DataFrame:
-        """Run all applicable transformation methods
+        """
+        Runs all applicable transformation methods.
 
         Returns
         -------
         pd.DataFrame
-            The transformed dataset returned to the pipeline
+            The transformed dataframe.
         """
         config = Config()
         if config.getValue("UseTransformer"):
-            if len(config.getValue("OneHotEncodeLabels")) > 0:
+
+            # One-hot encoding
+            if config.getValue("UseOneHotEncoding"):
                 self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
-            match config.getValue("ImputationMethod"):
-                case ImputationMethod.MODE.name:
-                    self.modeImputationByDay()
-                case ImputationMethod.KNN.name:
-                    self.KNNImputation(config.getValue("NearestNeighbors"))
-                case ImputationMethod.NONE.name:
-                    logger.info("Skipping imputation")
-                # default
-                case _:
+
+            # Imputation
+            imputation_method = config.getValue("ImputationMethod")
+            if imputation_method != ImputationMethod.NONE.name:
+                missing_val_key = "DeleteMissingValues"
+                if config.getValue(missing_val_key, "Cleaning"):
                     logger.warning(
-                        "Undefined imputation method selected for DataTransformer. Skipping"
+                        f"Cannot impute correctly when {missing_val_key} is True. Aborting"
                     )
+                elif imputation_method == ImputationMethod.MODE.name:
+                    self.modeImputationByDay()
+                elif imputation_method == ImputationMethod.KNN.name:
+                    self.knnImputation(config.getValue("KNN_NearestNeighbors"))
+                else:
+                    logger.warning(
+                        f"Undefined imputation method '{imputation_method}'. Skipping"
+                    )
+            else:
+                logger.info("Skipping imputation")
+
+            # Normalization
             match config.getValue("NormalisationMethod"):
                 case NormalisationMethod.MIN_MAX.name:
                     normalize_features = config.getValue("NormaliseFeatures")
+                    logger.info(f"Using normalisation method: min-max")
                     for feature in normalize_features:
                         self.minMaxNormalization(feature)
-                    logger.info(
-                        f"Normalized {len(normalize_features)}: {", ".join(normalize_features)}"
-                    )
+
+                    size = len(normalize_features)
+                    if size > 0:
+                        logger.info(
+                            f"Normalized {size} feature{"s" if size !=  1 else ""}: {", ".join(normalize_features)}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to normalize features: Feature list is empty!"
+                        )
                 case NormalisationMethod.NONE.name:
                     logger.info("Skipping normalisation")
-                # default
-                case _:
+                case _:  # default
                     logger.warning("Undefined normalisation method selected. Skipping")
         else:
             logger.info("Skipping data transformation")

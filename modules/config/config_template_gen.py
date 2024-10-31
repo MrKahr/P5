@@ -15,17 +15,21 @@ from modules.config.config_enums import (
 
 
 class ConfigTemplate(object):
-    """Singleton that defines  configuration template for the project.
-    Note: We added additional params/longer attribute accesses for clarity."""
+    """
+    Singleton that defines the structure/layout of our configuration file.
+    This layout is called a "template".
+    """
 
     _instance = None
 
+    # This is a singleton class since we only want 1 instance of a ConfigTemplate at all times
     def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._template = (
-                cls._createTemplate()
-            )  # Added field access for clariy - VS-code cares, Python doesn't
+
+            # We assign the template as an instance variable, however, seeing as the class is a singleton, it could've been a class variable as well.
+            # Assigning it as an instance variable makes VSCode not recognise it as defined, however it runs just fine.
+            cls._instance._template = cls._createTemplate()
         return cls._instance
 
     def getTemplate(self) -> dict:
@@ -36,7 +40,7 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
-                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": True,
                 "UseTransformer": True,
@@ -45,7 +49,7 @@ class ConfigTemplate(object):
             "DataPreprocessing": {
                 "Cleaning": {
                     "DeleteNanColumns": True,
-                    "DeleteNonfeatures": True,
+                    "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
                     "RemoveFeaturelessRows": True,
@@ -62,14 +66,15 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
+                    "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.KNN.name,
-                    "NearestNeighbors": 5,
+                    "ImputationMethod": ImputationMethod.MODE.name,
+                    "KNN_NearestNeighbors": 5,
                     "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "score_functions": [FeatureScoreFunc.CHI2.name],
+                    "score_functions": FeatureScoreFunc.CHI2.name,
                     "MutualInfoClassifArgs": {
                         "discrete_features": True,
                         "n_neighbors": 3,
@@ -78,7 +83,7 @@ class ConfigTemplate(object):
                     "GenericUnivariateSelect": True,
                     "GenericUnivariateSelectArgs": {
                         "mode": FeatureSelectionCriterion.PERCENTILE.name,
-                        "param": 5,  # type: int | float | str  # The parameter for the mode
+                        "param": 25,  # type: int | float | str  # The parameter for the mode
                     },
                     "ComputeFeatureCorrelation": True,
                     "VarianceThreshold": True,
@@ -124,7 +129,7 @@ class ConfigTemplate(object):
             },
             "ModelTraining": {
                 "training_method": TrainingMethod.FIT.name,
-                "score_functions": [ModelScoreFunc.THRESHOLD.name],
+                "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {"threshold": 20},
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
