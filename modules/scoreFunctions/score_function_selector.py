@@ -113,15 +113,16 @@ class ScoreFunctionSelector:
                     }
 
                 # Add explained variance score function
-                if score_func in [
-                    ModelScoreFunc.EXPLAINED_VARIANCE.name,
-                    ModelScoreFunc.ALL.name,
-                ]:
-                    selected_score_funcs |= {
-                        ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
-                            explained_variance_score
-                        )
-                    }
+                # REVIEW: Do we want regression score functions?
+                # if score_func in [
+                #     ModelScoreFunc.EXPLAINED_VARIANCE.name,
+                #     ModelScoreFunc.ALL.name,
+                # ]:
+                #     selected_score_funcs |= {
+                #         ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
+                #             explained_variance_score
+                #         )
+                #     }
 
                 # We didn't find any score functions to use. Thus, the config's value must be invalid
                 if not selected_score_funcs:
