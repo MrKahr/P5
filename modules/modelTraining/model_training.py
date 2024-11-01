@@ -184,7 +184,6 @@ class ModelTrainer:
         # Create array of zeros with shape equal to the amount of score functions selected
         # Each index "maps" to the equal index in the array of estimators
         test_score_counter = np.zeros(len(training_report["test_scores"].keys()))
-        print(test_score_counter)
         test_scores = training_report["test_scores"]  # type: dict[str, NDArray]
 
         for score_func_name, scores in test_scores.items():
@@ -193,7 +192,6 @@ class ModelTrainer:
             test_score_counter[scores.argmax()] += 1 * self._config.getValue(
                 score_func_name, parent_key="score_function_weights"
             )
-        print(test_score_counter)
         # Find the index of the estimator that maxmimises the greatest amount of score functions
         # using argmax and use this index to get the estimator from the estimator array
         estimator = training_report["estimators"][test_score_counter.argmax()]
