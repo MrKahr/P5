@@ -130,7 +130,15 @@ class ConfigTemplate(object):
             "ModelTraining": {
                 "training_method": TrainingMethod.FIT.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
-                "score_function_params": {"threshold": 20},
+                "score_function_params": {
+                    "threshold": 20,
+                },
+                "score_function_weights": {
+                    "threshold": 1,
+                    "distance": 0.9,
+                    "accuracy": 1.2,
+                    "balanced_accuracy": 0.8,
+                },
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
                     "random_state": 298,  # type: int | None

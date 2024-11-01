@@ -186,13 +186,14 @@ class ModelTrainer:
         test_score_counter = np.zeros(len(training_report["test_scores"].keys()))
         print(test_score_counter)
         test_scores = training_report["test_scores"]  # type: dict[str, NDArray]
+
         for score_func_name, scores in test_scores.items():
             # Find the estimator that maximises this score function using "argmax"
-            # and add 1 to its index mapping
-            test_score_counter[scores.argmax()] += 1
-
+            # and add a weighted sum to its index mapping
+            test_score_counter[scores.argmax()] += 1 * self._config.getValue(
+                score_func_name, parent_key="score_function_weights"
+            )
         print(test_score_counter)
-        # TODO: Implement tie breaker by weighting scorers (or just 1 to start with). If there's still a tie, select the estimator with the lowest index.
         # Find the index of the estimator that maxmimises the greatest amount of score functions
         # using argmax and use this index to get the estimator from the estimator array
         estimator = training_report["estimators"][test_score_counter.argmax()]
