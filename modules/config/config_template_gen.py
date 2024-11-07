@@ -52,9 +52,9 @@ class ConfigTemplate(object):
                     "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
-                    "RemoveFeaturelessRows": False,
+                    "RemoveFeaturelessRows": True,
                     "RemoveFeaturelessRowsArgs": 3,
-                    "FillNan": False,
+                    "FillNan": True,
                     "ShowNan": True,
                 },
                 "OutlierAnalysis": {
