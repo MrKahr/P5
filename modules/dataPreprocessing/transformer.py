@@ -130,17 +130,137 @@ class DataTransformer:
         int
             The distance from x to y measured by counting the number of different entries in the two arrays.
         """
-        dag_matrix = [[]]
-        niveau_sårvæv_matrix = [[]]
-        sårskorpe_matrix = [[]]
-        granulationsvæv_matrix = [[]]
-        epithelialisering_matrix = [[]]
-        kontraktion_matrix = [[]]
-        hyperæmi_matrix = [[]]
-        ødem_matrix = [[]]
-        eksudat_matrix = [[]]
-        eksudattype_matrix = [[]]
-        infektionsniveau_matrix = [[]]
+        # Define distance matrices. Formatting is turned off for this part so the matrices don't get made into wierd shapes
+        # fmt: off
+        dag_matrix = [[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],]
+        niveau_sårvæv_matrix = [
+            [0, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 0],
+        ]
+        sårskorpe_matrix = [[0, 1, 1],
+                            [1, 0, 1],
+                            [1, 1, 0]]
+        granulationsvæv_matrix = [[0, 1, 1],
+                                  [1, 0, 1],
+                                  [1, 1, 0]]
+        epithelialisering_matrix = [[0, 1, 1],
+                                    [1, 0, 1],
+                                    [1, 1, 0]]
+        kontraktion_matrix = [[0, 1, 1],
+                              [1, 0, 1],
+                              [1, 1, 0]]
+        hyperæmi_matrix = [
+            [0, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1],
+            [1, 1, 0, 1, 1],
+            [1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 0],
+        ]
+        ødem_matrix = [[0, 1, 1],
+                       [1, 0, 1],
+                       [1, 1, 0]]
+        eksudat_matrix = [[0, 1, 1],
+                          [1, 0, 1],
+                          [1, 1, 0]]
+        eksudattype_matrix = [
+            [0, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 0],
+        ]
+        infektionsniveau_matrix = [[0, 1, 1],
+                                   [1, 0, 1],
+                                   [1, 1, 0]]
+        # fmt: on
+
+        # this is a list of the features represented by the two arrays we got as arguments
+        labels = self.df.columns.values
+
+        distance = 0
+        for index, x_value in enumerate(x):  # NOTE enumerate makes the index available
+            y_value = y[index]
+            if (
+                x_value == missing_values | y_value == missing_values
+            ):  # skip distance calculation for a feature if a value is missing
+                continue
+            try:
+                # look up the distance from the x-value to the y-value in the distance matrix corresponding to the feature we're at
+                match labels[index]:
+                    case "Dag":
+                        distance += dag_matrix[x_value][y_value]
+                    case "Niveau sårvæv":
+                        distance += niveau_sårvæv_matrix[x_value][y_value]
+                    case "Sårskorpe":
+                        distance += sårskorpe_matrix[x_value][y_value]
+                    case "Granulationsvæv":
+                        distance += granulationsvæv_matrix[x_value][y_value]
+                    case "Epithelialisering":
+                        distance += epithelialisering_matrix[x_value][y_value]
+                    case "Kontraktion":
+                        distance += kontraktion_matrix[x_value][y_value]
+                    case "Hyperæmi":
+                        distance += hyperæmi_matrix[x_value][y_value]
+                    case "Ødem":
+                        distance += ødem_matrix[x_value][y_value]
+                    case "Eksudat":
+                        distance += eksudat_matrix[x_value][y_value]
+                    case "Eksudattype":
+                        distance += eksudattype_matrix[x_value][y_value]
+                    case "Infektionsniveau":
+                        distance += infektionsniveau_matrix[x_value][y_value]
+                    case _:  # default
+                        pass  # code to handle other labels goes here
+            except (
+                IndexError
+            ):  # if try to access an entry in a distance matrix that doesn't exist, we end up here
+                logger.warning(
+                    f"No entry in distance matrix for {labels[index]} at {x_value}, {y_value}. Skipping distance calculation for those values."
+                )
+        return distance
 
     def knnImputation(self, neighbors: int = 5) -> None:
         """
