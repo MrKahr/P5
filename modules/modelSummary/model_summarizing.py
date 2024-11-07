@@ -13,11 +13,14 @@ from modules.logging import logger
 import matplotlib.colors as mcolors
 
 
+# TODO: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html#sklearn.metrics.classification_report
+
+
 class ModelSummary:
 
     def __init__(self, model_report: dict):
         self._config = Config()
-        self._model_report = model_report # Values added in model_test run
+        self._model_report = model_report  # Values added in model_test run
 
     def _roundConvert(self, value: Any, digits: int = 3) -> str:
         if isinstance(value, int):
@@ -26,8 +29,10 @@ class ModelSummary:
             return f"{value:.{digits}f}"
         except TypeError as e:
             return f"{value}"
-        
-    def _computeAverages(self, y_onehot_test: np.ndarray, y_score: ArrayLike, n_classes: int) -> dict:
+
+    def _computeAverages(
+        self, y_onehot_test: np.ndarray, y_score: ArrayLike, n_classes: int
+    ) -> dict:
         """Compute the micro and macro average of Roc curves for plotRocCurve
 
         https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-micro-averaged-ovr
@@ -51,7 +56,9 @@ class ModelSummary:
         # fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
         fpr, tpr, roc_auc = dict(), dict(), dict()
         # Compute micro-average ROC curve and ROC area
-        fpr["micro"], tpr["micro"], pos_label = roc_curve(y_onehot_test.ravel(), y_score.ravel())
+        fpr["micro"], tpr["micro"], pos_label = roc_curve(
+            y_onehot_test.ravel(), y_score.ravel()
+        )
         roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
         for i in range(n_classes):
@@ -74,16 +81,15 @@ class ModelSummary:
         roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
 
         return fpr, tpr, roc_auc
-    
+
     def _printModelReport(self):
-        """print results for model evaluation from model_report
-        """
+        """print results for model evaluation from model_report"""
         formatted = ""
         for k, v in deepcopy(self._model_report).items():
             if k == "feature_importances":
                 continue
-            if k == "train_pred_y": 
-                break # Avoids printing extra stuff used in plotting
+            if k == "train_pred_y":
+                break  # Avoids printing extra stuff used in plotting
             if isinstance(v, dict):
                 for tk, tv in v.items():
                     v[tk] = self._roundConvert(tv)
@@ -110,7 +116,9 @@ class ModelSummary:
         # Load model results from model report
         train_true_y = self._model_report["train_true_y"]
         test_true_y = self._model_report["test_true_y"]
-        y_score = self._model_report["estimator"].predict_proba(self._model_report["test_x"])
+        y_score = self._model_report["estimator"].predict_proba(
+            self._model_report["test_x"]
+        )
 
         # Get the different days trained on
         target_names = np.unique(train_true_y)
@@ -145,7 +153,9 @@ class ModelSummary:
             linewidth=4,
         )
 
-        colors = cycle(mcolors.XKCD_COLORS) # Long list of colors from https://matplotlib.org/stable/gallery/color/named_colors.html
+        colors = cycle(
+            mcolors.XKCD_COLORS
+        )  # Long list of colors from https://matplotlib.org/stable/gallery/color/named_colors.html
         for class_id, color in zip(range(n_classes), colors):
             RocCurveDisplay.from_predictions(
                 y_onehot_test[:, class_id],
@@ -161,15 +171,15 @@ class ModelSummary:
             ylabel="True Positive Rate",
             title="Extension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
         )
-        
+
         plt.show()
 
     def plotConfusionMatrix(self) -> None:
-        """Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix
-        """
+        """Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix"""
 
-        disp = ConfusionMatrixDisplay(confusion_matrix=self._model_report["confusion_matrix"])
+        disp = ConfusionMatrixDisplay(
+            confusion_matrix=self._model_report["confusion_matrix"]
+        )
 
         disp.plot()
         plt.show()
-
