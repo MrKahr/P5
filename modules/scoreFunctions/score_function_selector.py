@@ -108,7 +108,7 @@ class ScoreFunctionSelector:
                 ]:
                     selected_score_funcs |= {
                         ModelScoreFunc.BALANCED_ACCURACY.name.lower(): make_scorer(
-                            balanced_accuracy_score
+                            balanced_accuracy_score, adjusted=True
                         )
                     }
 
