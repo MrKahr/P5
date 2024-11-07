@@ -22,6 +22,11 @@ class ImputationMethod(Enum):
     KNN = 2
 
 
+class DistanceMetric(Enum):
+    ZERO_ONE = 0
+    MATRIX = 1
+
+
 class NormalisationMethod(Enum):
     NONE = 0
     MIN_MAX = 1
