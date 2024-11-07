@@ -42,9 +42,9 @@ class ConfigTemplate(object):
                 "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
-                "UseFeatureSelector": True,
-                "UseTransformer": True,
-                "UseOutlierRemoval": True,
+                "UseFeatureSelector": False,
+                "UseTransformer": False,
+                "UseOutlierRemoval": False,
             },
             "DataPreprocessing": {
                 "Cleaning": {
@@ -52,9 +52,9 @@ class ConfigTemplate(object):
                     "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
                     "DeleteMissingValues": False,
                     "DeleteUndeterminedValue": False,
-                    "RemoveFeaturelessRows": True,
+                    "RemoveFeaturelessRows": False,
                     "RemoveFeaturelessRowsArgs": 3,
-                    "FillNan": True,
+                    "FillNan": False,
                     "ShowNan": True,
                 },
                 "OutlierAnalysis": {
@@ -68,9 +68,9 @@ class ConfigTemplate(object):
                 "Transformer": {
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.MODE.name,
+                    "ImputationMethod": ImputationMethod.NONE.name,
                     "KNN_NearestNeighbors": 5,
-                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
+                    "NormalisationMethod": NormalisationMethod.NONE.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
@@ -93,12 +93,12 @@ class ConfigTemplate(object):
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
-                    "criterion": "entropy",  # type: Literal["gini", "entropy", "log_loss"]
+                    "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": None,  # type: int | None
                     "min_samples_split": 2,
                     "min_samples_leaf": 1,
                     "min_weight_fraction_leaf": 0,  # type: int | float
-                    "max_features": None,  # type: int | None
+                    "max_features": "sqrt",  # type: Litteral["sqrt", "log2"] | int | float | None
                     "random_state": 42,  # type: int | None
                     "max_leaf_nodes": None,  # type: int | None
                     "min_impurity_decrease": 0.0,

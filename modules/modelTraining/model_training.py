@@ -69,7 +69,9 @@ class ModelTrainer:
         """Warn user if they select a training method incompatible with the feature selector"""
         key = "GenericUnivariateSelect"
         parent_key = "DataPreprocessing"
-        if self._config.getValue(key, parent_key=parent_key):
+        if self._config.getValue(
+            "UseFeatureSelector", parent_key="General"
+        ) and self._config.getValue(key, parent_key=parent_key):
             self._logger.warning(
                 f"Using a reduced feature set for hyperparameter tuning (this might harm model performance). "
                 + f"Please disable '{key}' (within '{parent_key}') in the config when tuning hyperparameters"
