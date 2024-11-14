@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
+import sklearn.model_selection as sk
 
 from modules.config.config import Config
 from modules.crossValidationSelection.cross_validation_selection import (
@@ -72,9 +73,12 @@ class Pipeline:
         self.df = OutlierProcessor(self.df).run()
         self.df = DataTransformer(self.df).run()
 
-        train_x, train_true_y, self.selected_features = FeatureSelector(
+        unsplit_x, unsplit_true_y, self.selected_features = FeatureSelector(
             self.getTrainX(), self.getTrueY()
         ).run()
+        train_x, test_x, train_true_y, test_true_y = sk.train_test_split(
+            unsplit_x, unsplit_true_y, train_size=0.80, random_state=111, shuffle=True
+        )
         fit_estimator, pipeline_report = ModelTrainer(
             estimator=ModelSelector.getModel(),
             cross_validator=CrossValidationSelector.getCrossValidator(),
@@ -92,8 +96,8 @@ class Pipeline:
             estimator=fit_estimator,
             train_x=train_x,
             train_true_y=train_true_y,
-            test_x=self.getTestX(),
-            test_true_y=self.getTrueY(),
+            test_x=test_x,
+            test_true_y=test_true_y,
             pipeline_report=pipeline_report,
         ).run()
         ModelSummary(pipeline_report).run()

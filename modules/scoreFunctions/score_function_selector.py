@@ -156,7 +156,7 @@ class ScoreFunctionSelector:
         """
         if cls._cache["feature_select"] is None:
             parent_key = "FeatureSelection"
-            score_func = cls._config.getValue("score_functions", parent_key)
+            score_func = cls._config.getValue("score_function", parent_key)
 
             # Chi-squared function
             if score_func == FeatureScoreFunc.CHI2.name:

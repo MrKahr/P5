@@ -74,7 +74,7 @@ class ConfigTemplate(object):
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "score_functions": FeatureScoreFunc.CHI2.name,
+                    "score_function": FeatureScoreFunc.CHI2.name,
                     "MutualInfoClassifArgs": {
                         "discrete_features": True,
                         "n_neighbors": 3,
