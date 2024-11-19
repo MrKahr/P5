@@ -12,7 +12,6 @@ class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 
-    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
         """
         One-hot encode one or more categorical attributes, selected by `labels`.
@@ -25,7 +24,7 @@ class DataTransformer:
             A list of the column labels to one-hot encode.
         """
         for variable in labels:
-            one_hot = pd.get_dummies(self.df[variable], prefix=variable)
+            one_hot = pd.get_dummies(self.df[variable], prefix=variable, dtype="int")
             self.df.drop(variable, inplace=True, axis=1)
             self.df = self.df.join(one_hot)
         size = len(labels)
