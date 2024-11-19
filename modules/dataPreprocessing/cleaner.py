@@ -147,7 +147,7 @@ class DataCleaner(object):
         if len(nan_df) == 0:
             logger.info("No NaN values to display")
         else:
-            logger.info(f"NaN values are \n{nan_df}")
+            logger.info(f"NaN values are:\n{nan_df}")
 
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
