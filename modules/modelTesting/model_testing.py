@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
-    ConfusionMatrixDisplay,
     precision_score,
     recall_score,
 )
@@ -102,9 +100,6 @@ class ModelTester:
         test_pred_y = self._estimator.predict(self._test_x)
         # FIXME: Make correct confusion matrix
         confusion_matrix_ = confusion_matrix(self._test_true_y, test_pred_y)
-        # disp = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix_)
-        # disp.plot()
-        # plt.show()
 
         # Get metrics to determine model accuracy for test set
         (

@@ -27,31 +27,35 @@ class ModelSummary:
             return f"{value}"
         try:
             return f"{value:.{digits}f}"
-        except TypeError as e:
+        except TypeError:
             return f"{value}"
 
     def _computeAverages(
         self, y_onehot_test: np.ndarray, y_score: ArrayLike, n_classes: int
     ) -> dict:
-        """Compute the micro and macro average of Roc curves for plotRocCurve
-
-        https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-micro-averaged-ovr
-
-        https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-the-ovr-macro-average
+        """
+        Compute the micro and macro average of Roc curves for plotRocCurve.
 
         Parameters
         ----------
         y_onehot_test : np.ndarray
-            Days from test dataset after one-hot-encoding
+            Days from test dataset after one-hot-encoding.
+
         y_score : np.ArrayLike
-            Probability estimates the used classifier on the test dataset
+            Probability estimates the used classifier on the test dataset.
+
         n_classes : int
-            Number of unique categories the classifier predicts for
+            Number of unique categories the classifier predicts for.
 
         Returns
         -------
         dict
             fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
+
+        Links
+        -----
+        - https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-micro-averaged-ovr
+        - https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#roc-curve-using-the-ovr-macro-average
         """
         # fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve)
         fpr, tpr, roc_auc = dict(), dict(), dict()
@@ -62,6 +66,7 @@ class ModelSummary:
         roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
         for i in range(n_classes):
+            # [:, i] = Numpy indexing for multi-dimensional arrays
             fpr[i], tpr[i], pos_label = roc_curve(y_onehot_test[:, i], y_score[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
 
@@ -70,6 +75,7 @@ class ModelSummary:
         # Interpolate all ROC curves at these points
         mean_tpr = np.zeros_like(fpr_grid)
 
+        # Compute macro tpr
         for i in range(n_classes):
             mean_tpr += np.interp(fpr_grid, fpr[i], tpr[i])  # linear interpolation
 
