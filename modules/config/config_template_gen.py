@@ -2,6 +2,7 @@ from typing import Self
 
 from modules.config.config_enums import (
     CrossValidator,
+    DistanceMetric,
     FeatureScoreFunc,
     FeatureSelectionCriterion,
     Model,
@@ -70,6 +71,7 @@ class ConfigTemplate(object):
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,
                     "KNN_NearestNeighbors": 5,
+                    "KNN_DistanceMetric": DistanceMetric.MATRIX.name,
                     "NormalisationMethod": NormalisationMethod.NONE.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
