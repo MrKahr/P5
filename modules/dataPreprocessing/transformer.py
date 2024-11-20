@@ -384,6 +384,83 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], feature] = value1
             i += 1
 
+    def discretize(
+        self, class_column: str = "Dag", value_column: str = "Sårrand (cm)"
+    ) -> list[float]:
+        """
+        An implementation of the ChiMerge algorithm that returns a list of interval's lower bounds given a dataframe,
+        a column of values to discretize, and a column to consider as classes(labels)
+
+        Parameters
+        ----------
+        class_column : str
+            The name of the dataframe column that the algorithm should consider as holding class labels
+        value_column : str
+            The name of the dataframe column that holds the values to discretize
+
+        Returns
+        -------
+        list[float]
+            A list of numbers that specify the lower bounds of non-overlapping intervals for the values to be categorized into
+        """
+        # get values to discretize given some column name
+
+        # sort values from smallest to biggest (Super important! Don't forget this!)
+
+        # copy list of values to get initial interval lower bounds
+
+        # find number of distinct classes given some column name ("Day", for example)
+
+        # find total number of values
+
+        # use two nested for-loops to calculate chi-square. And do it for all pairs of adjacent intervals
+        # store the output in an array that is 1 smaller than the array of interval bounds such that
+        # chi[i] holds the chi-square of the interval expressed by bound[i] and bound[i+1]
+
+        # while the minimum chi-square value is below some number, there is more than 1 interval, and the number of intervals is not the desired amount,
+        # do this:
+
+        # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
+
+        # recalculate chi-square values for all intervals
+        # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
+
+        # keep doing this until while loop's condition is not true, then return list of interval bounds
+
+    def assignIntervals(
+        self, lower_bounds: list[float], column_name: str = "Sårrand (cm)"
+    ) -> None:
+        """
+        Replaces values in a given column with numbers representing the interval they fit into
+
+        Parameters
+        ----------
+        lower_bounds : list[float]
+            A list of numbers where each number represents the lower bound of an interval.
+            Note that intervals expressed like this never overlap, and exclude their upper bound, which is the lower bound for the next interval.
+            The list should be sorted from smallest to biggest.
+        """
+        # for each value in the given column
+        for i in range(self.df[column_name].size):
+            value = self.df[column_name][i]
+            # quick sanity check to see if the value can be placed in an interval at all
+            if value < lower_bounds[0]:
+                self.df.at[i, column_name] = (
+                    100  # value is considered missing if there's no interval for it
+                )
+                logger.warning(
+                    f"Value of {value} in column {column_name} at row {i} does not fit in any interval. Lowest interval bound is {lower_bounds[0]}."
+                )
+                continue
+            # go backwards through lower_bounds and check if the value is larger than or equal to a given lower bound
+            # using alternative syntax for range to get it to count down instead of up. We stop at 0 just before we hit -1 and take steps of size -1.
+            for j in range(len(lower_bounds) - 1, -1, -1):
+                if value >= lower_bounds[j]:
+                    self.df.at[i, column_name] = (
+                        j  # replacing the value with the interval it is part of
+                    )
+                    break
+
     def run(self) -> pd.DataFrame:
         """
         Runs all applicable transformation methods.
