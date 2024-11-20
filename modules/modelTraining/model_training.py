@@ -240,9 +240,10 @@ class ModelTrainer:
         # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
 
         self._checkAllFeaturesPresent()
+
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
-            param_grid={},  # TODO: Implement
+            param_grid={}# TODO: implement keyword grid
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
@@ -278,7 +279,7 @@ class ModelTrainer:
         self._checkAllFeaturesPresent()
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
-            param_distributions={},  # TODO: Implement
+            param_distributions={},  # TODO: Implement param distributions in config
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,

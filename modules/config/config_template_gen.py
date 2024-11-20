@@ -159,6 +159,11 @@ class ConfigTemplate(object):
                     "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                 },
+                "ParamGridDecisionTree": {},
+                "ParamGridRandomForest": {},
+                "ParamGridGaussianNaiveBayes": {},
+                "ParamGridDecisionTree": {},
+                # TODO: Implement grid search types as option here! - We might not want to go through all of the grid every time - we just need to match model and gridsearch strategy
             },
             "ModelEvaluation": {
                 "print_model_report": True,
