@@ -93,6 +93,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelSelection": {
+                # TODO: Make it possible to train multiple models
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
@@ -114,6 +115,14 @@ class ConfigTemplate(object):
                     "max_samples": None,  # type: int | float | None
                 },
                 "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
+                "NeuralNetwork": {
+                    "hidden_layer_sizes": (20, 2),
+                    "activation": "logistic",
+                    "solver": "sgd",
+                    "alpha": 0.0001,
+                    "max_iter": 1000,
+                    "tol": 0.0001,
+                },
             },
             "CrossValidationSelection": {
                 "cross_validator": CrossValidator.STRATIFIED_KFOLD.name,  # type: CrossValidator | None
