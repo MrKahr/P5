@@ -43,9 +43,9 @@ class ConfigTemplate(object):
                 "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
-                "UseFeatureSelector": True,
-                "UseTransformer": True,
-                "UseOutlierRemoval": True,
+                "UseFeatureSelector": False,
+                "UseTransformer": False,
+                "UseOutlierRemoval": False,
             },
             "DataPreprocessing": {
                 "Cleaning": {
@@ -69,14 +69,14 @@ class ConfigTemplate(object):
                 "Transformer": {
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.MODE.name,
+                    "ImputationMethod": ImputationMethod.NONE.name,
                     "KNN_NearestNeighbors": 5,
                     "KNN_DistanceMetric": DistanceMetric.MATRIX.name,
-                    "NormalisationMethod": NormalisationMethod.MIN_MAX.name,
+                    "NormalisationMethod": NormalisationMethod.NONE.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
                 "FeatureSelection": {
-                    "score_functions": FeatureScoreFunc.CHI2.name,
+                    "score_function": FeatureScoreFunc.CHI2.name,
                     "MutualInfoClassifArgs": {
                         "discrete_features": True,
                         "n_neighbors": 3,
@@ -95,12 +95,12 @@ class ConfigTemplate(object):
             "ModelSelection": {
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
-                    "criterion": "entropy",  # type: Literal["gini", "entropy", "log_loss"]
+                    "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": None,  # type: int | None
                     "min_samples_split": 2,
                     "min_samples_leaf": 1,
                     "min_weight_fraction_leaf": 0,  # type: int | float
-                    "max_features": None,  # type: int | None
+                    "max_features": "sqrt",  # type: Litteral["sqrt", "log2"] | int | float | None
                     "random_state": 42,  # type: int | None
                     "max_leaf_nodes": None,  # type: int | None
                     "min_impurity_decrease": 0.0,
@@ -132,7 +132,15 @@ class ConfigTemplate(object):
             "ModelTraining": {
                 "training_method": TrainingMethod.FIT.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
-                "score_function_params": {"threshold": 20},
+                "score_function_params": {
+                    "threshold": 20,
+                },
+                "score_function_weights": {
+                    "threshold": 1,
+                    "distance": 0.9,
+                    "accuracy": 1.2,
+                    "balanced_accuracy": 0.8,
+                },
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
                     "random_state": 298,  # type: int | None

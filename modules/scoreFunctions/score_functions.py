@@ -39,9 +39,9 @@ class ModelScoreFunctions:
         if not isinstance(true_y, ndarray):
             true_y = true_y.to_numpy(copy=True)
         for i, prediction in enumerate(pred_y):
-            if true_y[i] >= threshold:
+            if true_y[i] >= threshold and prediction >= threshold:
                 score += 1
-            elif prediction < threshold:
+            elif true_y[i] < threshold and prediction < threshold:
                 score += 1
         return float(score / len(pred_y))
 

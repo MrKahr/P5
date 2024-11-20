@@ -108,20 +108,21 @@ class ScoreFunctionSelector:
                 ]:
                     selected_score_funcs |= {
                         ModelScoreFunc.BALANCED_ACCURACY.name.lower(): make_scorer(
-                            balanced_accuracy_score
+                            balanced_accuracy_score, adjusted=True
                         )
                     }
 
                 # Add explained variance score function
-                if score_func in [
-                    ModelScoreFunc.EXPLAINED_VARIANCE.name,
-                    ModelScoreFunc.ALL.name,
-                ]:
-                    selected_score_funcs |= {
-                        ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
-                            explained_variance_score
-                        )
-                    }
+                # REVIEW: Do we want regression score functions?
+                # if score_func in [
+                #     ModelScoreFunc.EXPLAINED_VARIANCE.name,
+                #     ModelScoreFunc.ALL.name,
+                # ]:
+                #     selected_score_funcs |= {
+                #         ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
+                #             explained_variance_score
+                #         )
+                #     }
 
                 # We didn't find any score functions to use. Thus, the config's value must be invalid
                 if not selected_score_funcs:
@@ -155,7 +156,7 @@ class ScoreFunctionSelector:
         """
         if cls._cache["feature_select"] is None:
             parent_key = "FeatureSelection"
-            score_func = cls._config.getValue("score_functions", parent_key)
+            score_func = cls._config.getValue("score_function", parent_key)
 
             # Chi-squared function
             if score_func == FeatureScoreFunc.CHI2.name:
