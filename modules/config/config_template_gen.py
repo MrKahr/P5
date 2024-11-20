@@ -2,6 +2,7 @@ from typing import Self
 
 from modules.config.config_enums import (
     CrossValidator,
+    DistanceMetric,
     FeatureScoreFunc,
     FeatureSelectionCriterion,
     Model,
@@ -70,6 +71,7 @@ class ConfigTemplate(object):
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,
                     "KNN_NearestNeighbors": 5,
+                    "KNN_DistanceMetric": DistanceMetric.MATRIX.name,
                     "NormalisationMethod": NormalisationMethod.NONE.name,
                     "NormaliseFeatures": [],  # type: list[str]
                 },
@@ -91,6 +93,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelSelection": {
+                # TODO: Make it possible to train multiple models
                 "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
@@ -112,6 +115,14 @@ class ConfigTemplate(object):
                     "max_samples": None,  # type: int | float | None
                 },
                 "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
+                "NeuralNetwork": {
+                    "hidden_layer_sizes": (20, 2),
+                    "activation": "logistic",
+                    "solver": "sgd",
+                    "alpha": 0.0001,
+                    "max_iter": 1000,
+                    "tol": 0.0001,
+                },
             },
             "CrossValidationSelection": {
                 "cross_validator": CrossValidator.STRATIFIED_KFOLD.name,  # type: CrossValidator | None
