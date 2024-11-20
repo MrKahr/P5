@@ -1,5 +1,6 @@
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 from modules.config.config import Config
@@ -26,8 +27,8 @@ class ModelSelector:
         return RandomForestClassifier(**kwargs)
 
     @classmethod
-    def _getNeuralNetwork(cls, **kwargs) -> None:
-        raise NotImplementedError()
+    def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier:
+        return MLPClassifier(**kwargs)
 
     @classmethod
     def _getNaiveBayes(cls, **kwargs) -> GaussianNB:
@@ -70,7 +71,9 @@ class ModelSelector:
                 **cls._config.getValue("GaussianNaiveBayes", parent_key)
             )
         elif selected_model == Model.NEURAL_NETWORK.name:
-            model = cls._getNeuralNetwork()
+            model = cls._getNeuralNetwork(
+                **cls._config.getValue("NeuralNetwork", parent_key)
+            )
         else:
             raise ValueError(
                 f"Invalid model '{selected_model}'. Expected one of {Model._member_names_}"

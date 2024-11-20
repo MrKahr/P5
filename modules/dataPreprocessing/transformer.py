@@ -1,9 +1,14 @@
+from typing import Callable
 import pandas as pd
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
 from modules.config.config import Config
-from modules.config.config_enums import ImputationMethod, NormalisationMethod
+from modules.config.config_enums import (
+    DistanceMetric,
+    ImputationMethod,
+    NormalisationMethod,
+)
 from modules.logging import logger
 
 
@@ -12,6 +17,95 @@ class DataTransformer:
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
 
+        # Define distance matrices. Formatting is turned off for this part so the matrices don't get made into wierd shapes
+        # fmt: off
+        self._dag_matrix = [[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],]
+        self._niveau_sårvæv_matrix = [
+            [0, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 0],
+        ]
+        self._sårskorpe_matrix = [[0, 1, 1],
+                            [1, 0, 1],
+                            [1, 1, 0]]
+        self._granulationsvæv_matrix = [[0, 1, 1],
+                                  [1, 0, 1],
+                                  [1, 1, 0]]
+        self._epithelialisering_matrix = [[0, 1, 1],
+                                    [1, 0, 1],
+                                    [1, 1, 0]]
+        self._kontraktion_matrix = [[0, 1, 1],
+                              [1, 0, 1],
+                              [1, 1, 0]]
+        self._hyperæmi_matrix = [
+            [0, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1],
+            [1, 1, 0, 1, 1],
+            [1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 0],
+        ]
+        self._ødem_matrix = [[0, 1, 1],
+                       [1, 0, 1],
+                       [1, 1, 0]]
+        self._eksudat_matrix = [[0, 1, 1],
+                          [1, 0, 1],
+                          [1, 1, 0]]
+        self._eksudattype_matrix = [
+            [0, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 0],
+        ]
+        self._infektionsniveau_matrix = [[0, 1, 1, 1],
+                                   [1, 0, 1, 1],
+                                   [1, 1, 0, 1],
+                                   [1, 1, 1, 0]]
+        # fmt: on
+
+    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
         """
         One-hot encode one or more categorical attributes, selected by `labels`.
@@ -129,19 +223,58 @@ class DataTransformer:
         int
             The distance from x to y measured by counting the number of different entries in the two arrays.
         """
-        dag_matrix = [[]]
-        niveau_sårvæv_matrix = [[]]
-        sårskorpe_matrix = [[]]
-        granulationsvæv_matrix = [[]]
-        epithelialisering_matrix = [[]]
-        kontraktion_matrix = [[]]
-        hyperæmi_matrix = [[]]
-        ødem_matrix = [[]]
-        eksudat_matrix = [[]]
-        eksudattype_matrix = [[]]
-        infektionsniveau_matrix = [[]]
 
-    def knnImputation(self, neighbors: int = 5) -> None:
+        # this is a list of the features represented by the two arrays we got as arguments
+        labels = self.df.columns.values
+
+        distance = 0
+        for index, entry in enumerate(x):  # NOTE enumerate makes the index available
+            x_value = int(entry)
+            y_value = int(y[index])
+            if (
+                x_value == missing_values or y_value == missing_values
+            ):  # skip distance calculation for a feature if a value is missing
+                continue
+            try:
+                # look up the distance from the x-value to the y-value in the distance matrix corresponding to the feature we're at
+                match labels[index]:
+                    case "Dag":
+                        distance += self._dag_matrix[x_value][y_value]
+                    case "Niveau sårvæv":
+                        distance += self._niveau_sårvæv_matrix[x_value][y_value]
+                    case "Sårskorpe":
+                        distance += self._sårskorpe_matrix[x_value][y_value]
+                    case "Granulationsvæv":
+                        distance += self._granulationsvæv_matrix[x_value][y_value]
+                    case "Epithelialisering":
+                        distance += self._epithelialisering_matrix[x_value][y_value]
+                    case "Kontraktion":
+                        distance += self._kontraktion_matrix[x_value][y_value]
+                    case "Hyperæmi":
+                        distance += self._hyperæmi_matrix[x_value][y_value]
+                    case "Ødem":
+                        distance += self._ødem_matrix[x_value][y_value]
+                    case "Eksudat":
+                        distance += self._eksudat_matrix[x_value][y_value]
+                    case "Eksudattype":
+                        distance += self._eksudattype_matrix[x_value][y_value]
+                    case "Infektionsniveau":
+                        distance += self._infektionsniveau_matrix[x_value][y_value]
+                    case _:  # default
+                        pass  # code to handle other labels goes here
+            except (
+                IndexError
+            ):  # if try to access an entry in a distance matrix that doesn't exist, we end up here
+                logger.warning(
+                    f"No entry in distance matrix for {labels[index]} at {x_value}, {y_value}. Skipping distance calculation for those values."
+                )
+        return distance
+
+    def knnImputation(
+        self,
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int],
+        neighbors: int = 5,
+    ) -> None:
         """
         Imputes missing values using Scikit's KNNImputer.
         Takes no arguments and modifies the dataframe on the class itself.
@@ -152,7 +285,7 @@ class DataTransformer:
             How many nearest neighbors should be considered.
         """
         logger.info(
-            f"Using imputation method: KNN. Args: nearest_neighbors={neighbors}"
+            f"Using imputation method: KNN. Args: distance_metric={distance_metric.__name__}, nearest_neighbors={neighbors}"
         )
         df = self.df
         self.logValues(df)
@@ -161,7 +294,7 @@ class DataTransformer:
             missing_values=100,
             n_neighbors=neighbors,
             weights="uniform",
-            metric=self.zeroOneDistance,
+            metric=distance_metric,
             copy=False,
         )
 
@@ -278,7 +411,15 @@ class DataTransformer:
                 elif imputation_method == ImputationMethod.MODE.name:
                     self.modeImputationByDay()
                 elif imputation_method == ImputationMethod.KNN.name:
-                    self.knnImputation(config.getValue("KNN_NearestNeighbors"))
+                    metric = None
+                    match config.getValue("KNN_DistanceMetric"):
+                        case DistanceMetric.ZERO_ONE.name:
+                            logger.info("Preparing zero-one distance metric")
+                            metric = self.zeroOneDistance
+                        case DistanceMetric.MATRIX.name:
+                            logger.info("Preparing matrix distance metric")
+                            metric = self.matrixDistance
+                    self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
                 else:
                     logger.warning(
                         f"Undefined imputation method '{imputation_method}'. Skipping"
