@@ -189,3 +189,6 @@ class ModelSummary:
 
         disp.plot()
         plt.show()
+        
+    def plotFeatureImportance(self) -> None:
+        
