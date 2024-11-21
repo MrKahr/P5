@@ -175,5 +175,6 @@ class ConfigTemplate(object):
                 "print_model_report": True,
                 "plot_confusion_matrix": False,
                 "plot_roc_curves": False,
+                "plot_feature_importance": False,
             },
         }

@@ -110,6 +110,8 @@ class ModelSummary:
             self.plotConfusionMatrix()
         if self._config.getValue("plot_roc_curves"):
             self.plotRocCurve()
+        if self._config.getValue("plot_feature_importance"):
+            self.plotFeatureImportance()
 
     def plotRocCurve(self) -> None:
         """Plot ROC (Receiver Operating Characteristic) Curve using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
@@ -192,3 +194,17 @@ class ModelSummary:
         
     def plotFeatureImportance(self) -> None:
         
+        result = self._model_report.get("feature_importances").get("threshold")
+        feature_names = self._model_report["feature_names_in"]
+        feature_importances = pd.Series(result.importances_mean,index=feature_names)
+        
+        fig, ax = plt.subplots(figsize=(10, 5))
+        feature_importances.sort_values().plot.barh(ax=ax, xerr=result.importances_std)
+        ax.set_xlabel("Mean Decrease of accuracy")
+        ax.set_ylabel("Features")
+        ax.set_title("Feature Importances with Standard Deviation")
+        fig.tight_layout
+        
+        plt.show()
+        
+            
