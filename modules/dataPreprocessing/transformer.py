@@ -443,7 +443,7 @@ class DataTransformer:
         # for each value in the given column
         for i in range(self.df[column_name].size):
             value = self.df[column_name][i]
-            # quick sanity check to see if the value can be placed in an interval at all
+            # do a quick sanity check to see if the value can be placed in an interval at all
             if value < lower_bounds[0]:
                 self.df.at[i, column_name] = (
                     100  # value is considered missing if there's no interval for it
