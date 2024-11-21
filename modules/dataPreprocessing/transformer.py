@@ -1,5 +1,7 @@
 from typing import Callable
+from numpy import ndarray
 import pandas as pd
+import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
@@ -385,7 +387,11 @@ class DataTransformer:
             i += 1
 
     def discretize(
-        self, class_column: str = "Dag", value_column: str = "Sårrand (cm)"
+        self,
+        class_column_name: str = "Dag",
+        value_column_name: str = "Sårrand (cm)",
+        merge_when_below: float = np.inf,
+        desired_intervals: int = -1,
     ) -> list[float]:
         """
         An implementation of the ChiMerge algorithm that returns a list of interval's lower bounds given a dataframe,
@@ -397,35 +403,81 @@ class DataTransformer:
             The name of the dataframe column that the algorithm should consider as holding class labels
         value_column : str
             The name of the dataframe column that holds the values to discretize
+        merge_when_below: float
+            Intervals will only be merged when their chi-square value is below this number
+        desired_intervals: int
+            When the number of intervals is equal to this, no more intervals will be merged
 
         Returns
         -------
         list[float]
             A list of numbers that specify the lower bounds of non-overlapping intervals for the values to be categorized into
         """
-        # get values to discretize given some column name
-
-        # sort values from smallest to biggest (Super important! Don't forget this!)
+        # get values to discretize given some column name and sort them from smallest to biggest
+        values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
+        values = values.sort()
 
         # copy list of values to get initial interval lower bounds
+        lower_bounds = values.copy()
 
-        # find number of distinct classes given some column name ("Day", for example)
+        # find distinct classes given some column name ("Dag", for example)
+        classes = self.df[class_column_name].dropna().unique()
 
-        # find total number of values
-
-        # use two nested for-loops to calculate chi-square. And do it for all pairs of adjacent intervals
-        # store the output in an array that is 1 smaller than the array of interval bounds such that
+        # NOTE - We use three nested for-loops to calculate chi-square for all pairs of adjacent intervals.
+        # The output is stored in an array that is 1 smaller than the array of interval bounds such that
         # chi[i] holds the chi-square of the interval expressed by bound[i] and bound[i+1]
+        chi_squares = [None] * lower_bounds.size - 1
 
-        # while the minimum chi-square value is below some number, there is more than 1 interval, and the number of intervals is not the desired amount,
-        # do this:
+        # initialise this to get the while loop going
+        minimum_chi_square = -np.inf
 
+        # while the minimum chi-square value is below some number, there is more than 1 interval, and the number of intervals is not the desired amount
         # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
+        # recalculate chi-square values for all intervals # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
 
-        # recalculate chi-square values for all intervals
-        # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
+        while (
+            lower_bounds.size > 1
+            and minimum_chi_square < merge_when_below
+            and lower_bounds.size != desired_intervals
+        ):
+            for index in range(
+                lower_bounds.size - 1
+            ):  # we're working with pairs of lower bounds, so we stop iterating before we hit the last index
 
-        # keep doing this until while loop's condition is not true, then return list of interval bounds
+                chi_square = 0
+                for i in range(2):
+                    # define the bounds of the current interval
+                    current_lower_bound = lower_bounds[index + i]
+                    # if the upper bound does not exist, it stays as infinity
+                    current_upper_bound = np.inf
+                    if index + i + 1 < lower_bounds.size:
+                        current_upper_bound = lower_bounds[index + i + 1]
+
+                    for j in classes:
+                        # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
+                        C_j = self.df.query("@class_column_name == @j").shape[0]
+                        # find the number of examples in the current interval
+                        R_i = self.df.query(
+                            "@value_column_name >= @current_lower_bound and @value_column_name < current_upper_bound"
+                        ).shape[0]
+                        # find the number of examples of class j in the current interval
+                        A_ij = self.df.query(
+                            "@value_column_name >= @current_lower_bound and @value_column_name < current_upper_bound and @class_column_name == @j"
+                        ).shape[0]
+                        # find the expected value of the number of examples of class j in the current interval
+                        E_ij = (R_i * C_j) / values.size
+                        chi_square += (A_ij - E_ij) ** 2 / E_ij
+
+                chi_squares[index] = chi_square
+
+            # we're done finding chi_squares. Now merge the two intervals with the smallest value
+            minimum_chi_square = min(chi_squares)
+            index = np.where(chi_squares, minimum_chi_square)[0]
+            # indeces can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
+            np.delete(lower_bounds, index + 1)
+
+        # when we're done mergin intervals, return the list of lower bounds
+        return lower_bounds
 
     def assignIntervals(
         self, lower_bounds: list[float], column_name: str = "Sårrand (cm)"
