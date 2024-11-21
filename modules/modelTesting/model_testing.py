@@ -68,7 +68,6 @@ class ModelTester:
 
         # Compute train stats
         train_pred_y = self._estimator.predict(self._train_x)
-        confusion_matrix_ = confusion_matrix(self._train_true_y, train_pred_y)
 
         # Compute model evaluation metrics for train set
         train_precision = precision_score(
