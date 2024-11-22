@@ -139,7 +139,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.FIT.name,
+                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -167,14 +167,43 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
-                    "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": False,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                 },
-                "ParamGridDecisionTree": {},
+                "ParamGridDecisionTree": {
+                    "criterion": [
+                        "gini",
+                        "log_loss",
+                    ],  # type: Literal["gini", "entropy", "log_loss"]
+                    "max_depth": {"start": 1, "stop": 5, "step": 1},
+                    "min_samples_split": {"start": 2, "stop": 10, "step": 1},
+                    "min_samples_leaf": {"start": 1, "stop": 5, "step": 1},
+                    "min_weight_fraction_leaf": {
+                        "start": 0.0,
+                        "stop": 0.5,
+                        "step": 0.1,
+                    },
+                    "max_features": [
+                        "sqrt",
+                        "log2",
+                    ],  # type: Litteral["sqrt", "log2"] | int | float | None
+                    "random_state": {
+                        "start": 42,
+                        "stop": 45,
+                        "step": 1,
+                    },  # type: int | None
+                    "max_leaf_nodes": {
+                        "start": 2,
+                        "stop": 10,
+                        "step": 1,
+                    },  # type: int | None
+                    "min_impurity_decrease": {"start": 0.0, "stop": 0.1, "step": 0.01},
+                    "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.01},
+                },
+                # TODO: rest of grid search params
                 "ParamGridRandomForest": {},
                 "ParamGridGaussianNaiveBayes": {},
-                "ParamGridDecisionTree": {},
-                # TODO: Implement grid search types as option here! - We might not want to go through all of the grid every time - we just need to match model and gridsearch strategy
+                "ParamGridNeuralNetwork": {},
             },
             "ModelEvaluation": {
                 "print_model_report": True,
