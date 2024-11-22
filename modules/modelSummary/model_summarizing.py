@@ -181,7 +181,9 @@ class ModelSummary:
         plt.show()
 
     def plotConfusionMatrix(self) -> None:
-        """Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix"""
+        """
+        Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix
+        """
 
         disp = ConfusionMatrixDisplay(
             confusion_matrix=self._model_report["confusion_matrix"]
