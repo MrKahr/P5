@@ -431,7 +431,7 @@ class DataTransformer:
         # initialise this to get the while loop going
         minimum_chi_square = -np.inf
 
-        # while the minimum chi-square value is below some number, there is more than 1 interval, and the number of intervals is not the desired amount
+        # while the minimum chi-square value is less than merge_when_below, there is more than 1 interval, and the number of intervals is not desired_intervals
         # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
         # recalculate chi-square values for all intervals # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
 
@@ -458,11 +458,11 @@ class DataTransformer:
                         C_j = self.df.query("@class_column_name == @j").shape[0]
                         # find the number of examples in the current interval
                         R_i = self.df.query(
-                            "@value_column_name >= @current_lower_bound and @value_column_name < current_upper_bound"
+                            "@value_column_name >= @current_lower_bound and @value_column_name < @current_upper_bound"
                         ).shape[0]
                         # find the number of examples of class j in the current interval
                         A_ij = self.df.query(
-                            "@value_column_name >= @current_lower_bound and @value_column_name < current_upper_bound and @class_column_name == @j"
+                            "@value_column_name >= @current_lower_bound and @value_column_name < @current_upper_bound and @class_column_name == @j"
                         ).shape[0]
                         # find the expected value of the number of examples of class j in the current interval
                         E_ij = (R_i * C_j) / values.size
@@ -473,7 +473,7 @@ class DataTransformer:
             # we're done finding chi_squares. Now merge the two intervals with the smallest value
             minimum_chi_square = min(chi_squares)
             index = np.where(chi_squares, minimum_chi_square)[0]
-            # indeces can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
+            # intervals can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
             np.delete(lower_bounds, index + 1)
 
         # when we're done mergin intervals, return the list of lower bounds
