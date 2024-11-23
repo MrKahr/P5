@@ -21,7 +21,6 @@ class Logger:
             cls._instance = super().__new__(cls)
             cls._instance._create_logger("DEBUG")
             cls._instance._create_logger_title()
-            cls._instance._writeHeaderToLog()
         return cls._instance
 
     def _current_datetime(self) -> str:
@@ -72,7 +71,8 @@ class Logger:
 
         return self.logger_title
 
-    def _writeHeaderToLog(self) -> None:
+    @classmethod
+    def writeHeaderToLog(cls) -> None:
         padding = 90
         header = (
             "┌"
@@ -87,7 +87,7 @@ class Logger:
             + "─" * padding
             + "┘"
         )
-        self.logger_title.info(f"\n{header}")
+        cls._instance.logger_title.info(f"\n{header}")
 
     def get_logger(self) -> logging.Logger:
         return self.logger
