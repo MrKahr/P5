@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Callable, Union
 import pandas as pd
 import numpy as np
 import math
@@ -204,7 +204,49 @@ class ModelTrainer:
         self._logger.info(f"Selected the best estimator among possible candidates")
         return estimator
 
-    def _fitGridSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
+    def _getParamGrid(self) -> dict:
+        # TODO: Implement more input validation
+        # Initialize model and grid
+        current_model = self._config.getValue("model", "ModelSelection")
+
+        # Ensure param grid matches model
+        match current_model:
+            case Model.DECISION_TREE.name:
+                parent_key = "ParamGridDecisionTree"
+            case Model.NAIVE_BAYES.name:
+                parent_key = "ParamGridNaiveBayes"
+            case Model.NEURAL_NETWORK.name:
+                parent_key = "ParamGridNeuralNetwork"
+            case Model.RANDOM_FOREST.name:
+                parent_key = "ParamGridRandomForest"
+
+        current_grid = self._config.getValue(parent_key)
+
+        # Update current config
+        for key, value in current_grid.items():
+            # We specified dict of steps in range
+            if isinstance(value, dict):
+                # Value is a dict containing keys
+                start, stop, step = value.values()
+
+                if type(start) is float or type(stop) is float or type(step) is float:
+                    # linspace requires number of steps and not stepsize
+                    value_range = list(
+                        np.linspace(start, stop, math.ceil(abs(stop - start) / step))
+                    )
+                else:
+                    value_range = list(range(start, stop, step))
+
+                self._config.setValue(key, value_range, parent_key)
+
+        # Param grid updated with ranges
+        current_grid = self._config.getValue(parent_key)
+
+        return current_grid
+
+    def _fitGridSearchWithCrossValidation(
+        self, refit: Union[bool, str, Callable], **kwargs
+    ) -> FittedEstimator:
         """
         GridSearchCV exhaustively generates candidates from a grid of parameter values.
 
@@ -213,6 +255,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -248,11 +294,16 @@ class ModelTrainer:
             param_grid=self._getParamGrid(),
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             **kwargs,
         ).fit(self._train_x, self._true_y)
         # Best estimator attribute is the best model found by gridsearch
         # Alternative predict method uses this attribute but obscures estimator usage
+
+        # TODO: Save relevant info
+        # print(gscv.cv_results_)
+
         return gscv.best_estimator_
 
     def _fitRandomSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
@@ -290,41 +341,6 @@ class ModelTrainer:
             **kwargs,
         )
         return rscv.best_estimator_
-
-    def _getParamGrid(self) -> dict:
-        # TODO: Implement more input validation
-        # Initialize model and grid
-        current_model = self._config.getValue("model", "ModelSelection")
-
-        # Ensure param grid matches model
-        match current_model:
-            case Model.DECISION_TREE.name:
-                parent_key = "ParamGridDecisionTree"
-            case Model.NAIVE_BAYES.name:
-                parent_key = "ParamGridNaiveBayes"
-            case Model.NEURAL_NETWORK.name:
-                parent_key = "ParamGridNeuralNetwork"
-            case Model.RANDOM_FOREST.name:
-                parent_key = "ParmGridRandomForest"
-
-        current_grid = self._config.getValue(parent_key)
-
-        # Update current config
-        for key, value in current_grid.items():
-            # We specified dict of steps in range
-            if isinstance(value, dict):
-                # Value is a dict containing keys
-                start, stop, step = value.values()
-                # linspace requires number of steps and not stepsize
-                value_range = list(
-                    np.linspace(start, stop, math.ceil(abs(stop - start) / step))
-                )
-                self._config.setValue(key, value_range, parent_key)
-
-        # Param grid updated with ranges
-        current_grid = self._config.getValue(parent_key)
-
-        return current_grid
 
     def _fitRFEWithCrossValidation(
         self,
@@ -499,11 +515,6 @@ class ModelTrainer:
                 random_args | grid_args
             )
         elif training_method == TrainingMethod.GRID_SEARCH_CV.name:
-            # TODO: REMOVE THIS DEBUGGING
-            currentGridSearchCV = self._config.getValue(
-                "GridSearchCV", self._parent_key
-            )
-            # logger.warning(self._config._config)
             fitted_estimator = self._fitGridSearchWithCrossValidation(
                 **self._config.getValue("GridSearchCV", self._parent_key)
             )
