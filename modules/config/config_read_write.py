@@ -294,10 +294,9 @@ def insertDictValue(
             if isinstance(traverse_value, dict):
                 parent_keys.append(traverse_key)
                 traverseDict(traverse_value, search_key, value, _parent_key)
+
             # The key is what we're looking for
-            elif traverse_key == search_key:
-                if parent_key == "ParamGridDecisionTree":
-                    logger.debug(f"'{traverse_key}'\n'{search_key}'\n")
+            if traverse_key == search_key:
                 # The key need a parent to be considered relevant
                 if parent_key:
                     # The key has the correct parent key
