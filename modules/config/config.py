@@ -71,32 +71,6 @@ class Config:
         """
         return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
 
-    def saveToConfig(
-        self, key: str, value: Any, parent_key: Optional[str] = None
-    ) -> None:
-        """
-        Inserts and saves value for key to disk
-
-         Parameters
-         ----------
-         key : str
-             The key which value should be updated.
-
-         value : Any
-             The value to insert.
-
-         Raises
-         ------
-         KeyError
-             If `key` was not found in the config.
-        """
-        try:
-            writeConfig(self._config, self._config_path)
-        except KeyError:
-            self._logger.error(
-                f"Failed to update config with '{value}' using key '{key}'."
-            )
-
     def setValue(self, key: str, value: Any, parent_key: Optional[str] = None) -> None:
         """
         Assign `value` to `key` in the config's underlying dict, overwriting any previous value.
@@ -117,7 +91,12 @@ class Config:
         try:
             insertDictValue(self._config, key, value, parent_key)
         except KeyError:
-            # self._logger.debug(f"Key: {key}\n Value:{value}\nParentkey{parent_key}\n\n {self._config}\n\n")
             self._logger.error(
-                f"Failed to update config with '{value}' using key '{key}'."
+                f"Failed to update config with '{value}' using key '{key}' {f"inside the scope of parent key '{parent_key}'" if parent_key is not None else ""}."
             )
+
+    def saveToConfig(self) -> None:
+        """
+        Saves the config's underlying dict to disk.
+        """
+        writeConfig(self._config, self._config_path)
