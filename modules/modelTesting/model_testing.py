@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
-    confusion_matrix,
     precision_score,
     recall_score,
 )
@@ -79,7 +78,6 @@ class ModelTester:
 
         # Compute testing stats
         test_pred_y = self._estimator.predict(self._test_x)
-        confusion_matrix_ = confusion_matrix(self._test_true_y, test_pred_y)
 
         # Compute model evaluation metrics for test set
         test_precision = precision_score(
@@ -93,7 +91,6 @@ class ModelTester:
         # Compute model accuracies on train and test using all selected scoring functions
         train_accuracies = {}
         test_accuracies = {}
-        # FIXME: Not ideal as predictions are computed multiple times.
         for func_name, func in ScoreFunctionSelector.getScoreFuncsModel().items():
             logger.info(f"Computing model accuracy using '{func_name}'")
             train_accuracies |= {
@@ -117,8 +114,6 @@ class ModelTester:
             "test_pred_y": test_pred_y,  # type: ndarray
             "test_x": self._test_x,  # type: pd.DataFrame
             "test_true_y": self._test_true_y,  # type: pd.Series
-            "confusion_matrix": confusion_matrix_,  # type: ndarray
             "estimator": self._estimator,  # type: FittedEstimator
         }
-
         return self._pipeline_report
