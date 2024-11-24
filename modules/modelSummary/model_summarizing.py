@@ -198,7 +198,7 @@ class ModelSummary:
         if self._write_fig:
             self._writeFigure("roc_auc")
         else:
-            plt.show(False)
+            plt.show(block=False)
 
     def _plotConfusionMatrix(self) -> None:
         """
@@ -213,7 +213,7 @@ class ModelSummary:
         if self._write_fig:
             self._writeFigure("confusion_matrix")
         else:
-            plt.show(False)
+            plt.show(block=False)
 
     def _plotTree(self) -> None:
         plt.figure(dpi=1200)
@@ -234,7 +234,7 @@ class ModelSummary:
         if self._write_fig:
             self._writeFigure("tree")
         else:
-            plt.show(False)
+            plt.show(block=False)
 
     def run(self) -> None:
         if self._config.getValue("print_model_report"):
@@ -247,4 +247,4 @@ class ModelSummary:
             self._plotTree()
 
         if not self._write_fig:
-            input("Press any key to close all figures...")
+            input("Press enter to close all figures...")
