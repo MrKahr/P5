@@ -185,9 +185,10 @@ class ModelTrainer:
         FittedEstimator
             The best model according to the performance metrics.
         """
-        # Create array of zeros with shape equal to the amount of score functions selected
+        # Create array of zeros with shape equal to the amount of estimators fitted
         # Each index "maps" to the equal index in the array of estimators
-        test_score_counter = np.zeros(len(training_report["test_scores"].keys()))
+        estimator_count = len(training_report["estimators"])
+        test_score_counter = np.zeros(estimator_count)
         test_scores = training_report["test_scores"]  # type: dict[str, NDArray]
 
         for score_func_name, scores in test_scores.items():
@@ -198,10 +199,13 @@ class ModelTrainer:
             )
         # Find the index of the estimator that maxmimises the greatest amount of score functions
         # using argmax and use this index to get the estimator from the estimator array
-        estimator = training_report["estimators"][test_score_counter.argmax()]
+        best_index = test_score_counter.argmax()
+        estimator = training_report["estimators"][best_index]
 
-        # TODO: Print which score functions the selected estimator is maximising
-        self._logger.info(f"Selected the best estimator among possible candidates")
+        # We add one to index when logging to match estimator_count (as 1-indexed)
+        self._logger.info(
+            f"Selected estimator {best_index + 1} among {estimator_count} possible candidates"
+        )
         return estimator
 
     def _getParamGrid(self) -> dict:
@@ -449,7 +453,9 @@ class ModelTrainer:
             n_jobs=self._n_jobs,
             return_estimator=True,
         )
-        print(cv_results)
+        self._logger.debug(
+            f"Cross-Validation results:\n\t{"\n\t".join([f"{k}: {v.__repr__()}" for k, v in cv_results.items()])}"
+        )
         training_report = {
             "estimators": cv_results["estimator"],
             "test_scores": {
