@@ -1,4 +1,3 @@
-from copy import deepcopy
 from datetime import datetime
 import os
 from pathlib import Path
@@ -7,7 +6,7 @@ from itertools import cycle
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-
+import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
 
@@ -25,12 +24,11 @@ from modules.logging import logger
 
 
 class ModelSummary:
-
-    def __init__(self, model_report: dict):
+    def __init__(self, pipeline_report: dict):
         self._config = Config()
-        self._model_report = model_report  # Values added in model_test run
         self._write_fig = self._config.getValue("write_figure_to_disk")
-        self._model_name = type(self._model_report["estimator"]).__name__
+        self._model_name = type(pipeline_report["estimator"]).__name__
+        self._pipeline_report = pipeline_report
 
     def _writeFigure(self, figure_name: str) -> None:
         figures = "figures"
@@ -43,27 +41,33 @@ class ModelSummary:
             )
         )
 
-    def _roundConvert(self, value: Any, digits: int = 3) -> str:
-        if isinstance(value, int):
-            return f"{value}"
-        try:
-            return f"{value:.{digits}f}"
-        except TypeError:
-            return f"{value}"
-
     def _printModelReport(self):
-        """print results for model evaluation from model_report"""
-        formatted = ""
-        for k, v in deepcopy(self._model_report).items():
-            if k == "feature_importances":
-                continue
-            if k == "train_pred_y":
-                break  # Avoids printing extra stuff used in plotting
-            if isinstance(v, dict):
-                for tk, tv in v.items():
-                    v[tk] = self._roundConvert(tv)
-            formatted += f"\t{k}: {self._roundConvert(v)}\n"
+        """Print results for model evaluation from pipe_line_report"""
 
+        def roundConvert(value: Any, digits: int = 3) -> str:
+            if isinstance(value, int):
+                return f"{value}"
+            try:
+                return f"{value:.{digits}f}"
+            except (ValueError, TypeError):
+                return f"{value}"
+
+        formatted = "{\n"
+        for k, v in self._pipeline_report.items():
+            if k in [
+                "feature_importances",
+                "train_pred_y",
+                "test_pred_y",
+            ] or isinstance(v, (pd.DataFrame, pd.Series)):
+                continue
+            elif isinstance(v, (list, np.ndarray)):
+                formatted += f"\t{k}: [\n\t    {"\n\t    ".join([f"'{roundConvert(item)}'," for item in v])}\n\t]\n"
+                continue
+            elif isinstance(v, dict):
+                for tk, tv in v.items():
+                    v[tk] = roundConvert(tv)
+            formatted += f"\t{k}: {roundConvert(v)}\n"
+        formatted += "}\n"
         logger.info(f"Showing model report:\n{formatted}")
 
     def _computeAverages(
@@ -138,10 +142,10 @@ class ModelSummary:
         """
 
         # Load model results from model report
-        train_true_y = self._model_report["train_true_y"]
-        test_true_y = self._model_report["test_true_y"]
-        y_score = self._model_report["estimator"].predict_proba(
-            self._model_report["test_x"]
+        train_true_y = self._pipeline_report["train_true_y"]
+        test_true_y = self._pipeline_report["test_true_y"]
+        y_score = self._pipeline_report["estimator"].predict_proba(
+            self._pipeline_report["test_x"]
         )
 
         # Get the different days trained on
@@ -206,9 +210,9 @@ class ModelSummary:
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
         """
         disp = ConfusionMatrixDisplay.from_estimator(
-            self._model_report["estimator"],
-            self._model_report["test_x"],
-            self._model_report["test_true_y"],
+            self._pipeline_report["estimator"],
+            self._pipeline_report["test_x"],
+            self._pipeline_report["test_true_y"],
         )
         disp.plot()
 
@@ -219,19 +223,19 @@ class ModelSummary:
 
     def _plotTree(self) -> None:
         plt.figure(dpi=1200)
-        tree = self._model_report["estimator"]
+        tree = self._pipeline_report["estimator"]
         try:
             plot_tree(
                 tree,
                 filled=True,
                 fontsize=1,
                 rounded=True,
-                feature_names=self._model_report["feature_names_in"],
+                feature_names=tree.feature_names_in_,
             )
         except InvalidParameterError:
             return
         plt.title(
-            f"{type(tree).__name__} trained on {self._model_report["feature_count"]} features"
+            f"{type(tree).__name__} trained on {self._pipeline_report["feature_count"]} features"
         )
         if self._write_fig:
             self._writeFigure("tree")
