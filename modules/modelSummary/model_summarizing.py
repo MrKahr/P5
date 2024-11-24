@@ -1,16 +1,24 @@
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-from numpy.typing import ArrayLike
-from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_auc_score, roc_curve
-from sklearn.metrics import RocCurveDisplay
 from copy import deepcopy
+from datetime import datetime
+import os
+from pathlib import Path
 from typing import Any
 from itertools import cycle
+
+import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
+
+from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_curve
+from sklearn.metrics import RocCurveDisplay
 from sklearn.naive_bayes import LabelBinarizer
+from sklearn.tree import plot_tree
+from sklearn.utils._param_validation import InvalidParameterError
+
 from modules.config.config import Config
 from modules.logging import logger
-import matplotlib.colors as mcolors
 
 
 # TODO: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html#sklearn.metrics.classification_report
@@ -21,6 +29,19 @@ class ModelSummary:
     def __init__(self, model_report: dict):
         self._config = Config()
         self._model_report = model_report  # Values added in model_test run
+        self._write_fig = self._config.getValue("write_figure_to_disk")
+        self._model_name = type(self._model_report["estimator"]).__name__
+
+    def _writeFigure(self, figure_name: str) -> None:
+        figures = "figures"
+        os.makedirs(figures, exist_ok=True)
+        plt.savefig(
+            Path(
+                Path.cwd(),
+                figures,
+                f"{figure_name}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d")}.png",
+            )
+        )
 
     def _roundConvert(self, value: Any, digits: int = 3) -> str:
         if isinstance(value, int):
@@ -30,15 +51,30 @@ class ModelSummary:
         except TypeError:
             return f"{value}"
 
+    def _printModelReport(self):
+        """print results for model evaluation from model_report"""
+        formatted = ""
+        for k, v in deepcopy(self._model_report).items():
+            if k == "feature_importances":
+                continue
+            if k == "train_pred_y":
+                break  # Avoids printing extra stuff used in plotting
+            if isinstance(v, dict):
+                for tk, tv in v.items():
+                    v[tk] = self._roundConvert(tv)
+            formatted += f"\t{k}: {self._roundConvert(v)}\n"
+
+        logger.info(f"Showing model report:\n{formatted}")
+
     def _computeAverages(
-        self, y_onehot_test: np.ndarray, y_score: ArrayLike, n_classes: int
+        self, y_onehot_test: NDArray, y_score: ArrayLike, n_classes: int
     ) -> dict:
         """
         Compute the micro and macro average of Roc curves for plotRocCurve.
 
         Parameters
         ----------
-        y_onehot_test : np.ndarray
+        y_onehot_test : NDArray
             Days from test dataset after one-hot-encoding.
 
         y_score : np.ArrayLike
@@ -88,35 +124,17 @@ class ModelSummary:
 
         return fpr, tpr, roc_auc
 
-    def _printModelReport(self):
-        """print results for model evaluation from model_report"""
-        formatted = ""
-        for k, v in deepcopy(self._model_report).items():
-            if k == "feature_importances":
-                continue
-            if k == "train_pred_y":
-                break  # Avoids printing extra stuff used in plotting
-            if isinstance(v, dict):
-                for tk, tv in v.items():
-                    v[tk] = self._roundConvert(tv)
-            formatted += f"\t{k}: {self._roundConvert(v)}\n"
+    def _plotRocCurve(self) -> None:
+        """
+        Plot ROC (Receiver Operating Characteristic) Curve using
+        https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
 
-        logger.info(f"Showing model report:\n{formatted}")
+        Adapted to work with multiple categories using OvR strategy based on
+        https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#one-vs-one-multiclass-roc
 
-    def run(self) -> None:
-        if self._config.getValue("print_model_report"):
-            self._printModelReport()
-        if self._config.getValue("plot_confusion_matrix"):
-            self.plotConfusionMatrix()
-        if self._config.getValue("plot_roc_curves"):
-            self.plotRocCurve()
-
-    def plotRocCurve(self) -> None:
-        """Plot ROC (Receiver Operating Characteristic) Curve using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.RocCurveDisplay.html
-
-        Adapted to work with multiple categories using OvR strategy based on https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#one-vs-one-multiclass-roc
-
-        `The One-vs-the-Rest (OvR) multiclass strategy, also known as one-vs-all, consists in computing a ROC curve per each of the n_classes. In each step, a given class is regarded as the positive class and the remaining classes are regarded as the negative class as a bulk.`
+        `The One-vs-the-Rest (OvR) multiclass strategy, also known as one-vs-all, consists in computing a
+        ROC curve per each of the n_classes. In each step, a given class is regarded as the positive class
+        and the remaining classes are regarded as the negative class as a bulk.`
         """
 
         # Load model results from model report
@@ -139,7 +157,7 @@ class ModelSummary:
         fpr, tpr, roc_auc = self._computeAverages(y_onehot_test, y_score, n_classes)
 
         # Plot every curve as subplots
-        figure, axes = plt.subplots(figsize=(6, 6))
+        figure, axes = plt.subplots(figsize=(10, 10))
 
         plt.plot(
             fpr["micro"],
@@ -175,17 +193,58 @@ class ModelSummary:
         axes.set(
             xlabel="False Positive Rate",
             ylabel="True Positive Rate",
-            title="Extension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
+            title=f"({self._model_name})\nExtension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
         )
+        if self._write_fig:
+            self._writeFigure("roc_auc")
+        else:
+            plt.show(False)
 
-        plt.show()
-
-    def plotConfusionMatrix(self) -> None:
-        """Plot Confusion Matrix using https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html#sklearn.metrics.confusion_matrix"""
-
+    def _plotConfusionMatrix(self) -> None:
+        """
+        Plot Confusion Matrix using
+        https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
+        """
         disp = ConfusionMatrixDisplay(
             confusion_matrix=self._model_report["confusion_matrix"]
         )
-
         disp.plot()
-        plt.show()
+
+        if self._write_fig:
+            self._writeFigure("confusion_matrix")
+        else:
+            plt.show(False)
+
+    def _plotTree(self) -> None:
+        plt.figure(dpi=1200)
+        tree = self._model_report["estimator"]
+        try:
+            plot_tree(
+                tree,
+                filled=True,
+                fontsize=1,
+                rounded=True,
+                feature_names=self._model_report["feature_names_in"],
+            )
+        except InvalidParameterError:
+            return
+        plt.title(
+            f"{type(tree).__name__} trained on {self._model_report["feature_count"]} features"
+        )
+        if self._write_fig:
+            self._writeFigure("tree")
+        else:
+            plt.show(False)
+
+    def run(self) -> None:
+        if self._config.getValue("print_model_report"):
+            self._printModelReport()
+        if self._config.getValue("plot_confusion_matrix"):
+            self._plotConfusionMatrix()
+        if self._config.getValue("plot_roc_curves"):
+            self._plotRocCurve()
+        if self._config.getValue("plot_tree"):
+            self._plotTree()
+
+        if not self._write_fig:
+            input("Press any key to close all figures...")
