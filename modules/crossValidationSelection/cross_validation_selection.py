@@ -46,7 +46,7 @@ class CrossValidationSelector:
         # Thus, we will disable cross-validation if an incompatible training method is selected in the config.
         cross_validator_not_applicable = cls._config.getValue(
             "training_method", "ModelTraining"
-        ) in [TrainingMethod.FIT.name, TrainingMethod.RFE.name]
+        ) in [TrainingMethod.FIT.name]
 
         # Find a cross-validator to use according to the config
         if selected_cross_validator == None or cross_validator_not_applicable:

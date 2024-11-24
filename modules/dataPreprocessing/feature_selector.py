@@ -203,7 +203,9 @@ class FeatureSelector:
                 f"Selected {size} feature{"s" if size != 1 else ""} as statistically important: {", ".join(self._selected_features)}"
             )
         else:
-            logger.info("Using all features")
             self._selected_features = self._train_x.columns
+            logger.info(
+                f"Skipping feature selection ({len(self._selected_features)} features present)"
+            )
 
         return self._train_x, self._true_y, self._selected_features

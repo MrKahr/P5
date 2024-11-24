@@ -217,7 +217,7 @@ def retrieveDictValue(
         return found_value
     # If we did not find a value, `found_value` is unbound (undefined)
     except UnboundLocalError as err:
-        err.add_note(f"Error: Key {key} does not exists")
+        err.add_note(f"Error: Key '{key}' does not exists")
         raise  # Re-raise the current exception (UnboundLocalError) to fail fast
 
 
