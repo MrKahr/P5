@@ -42,6 +42,7 @@ class ConfigTemplate(object):
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "write_figure_to_disk": True,
                 "UseCleaner": True,
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
@@ -117,11 +118,14 @@ class ConfigTemplate(object):
                 "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (20, 2),
-                    "activation": "logistic",
-                    "solver": "sgd",
+                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "solver": "sgd",  # type: Literal["lbfgs", "sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": 0.001,
                     "alpha": 0.0001,
                     "max_iter": 1000,
                     "tol": 0.0001,
+                    "random_state": 678,
                 },
             },
             "CrossValidationSelection": {
@@ -145,10 +149,10 @@ class ConfigTemplate(object):
                     "threshold": 20,
                 },
                 "score_function_weights": {
-                    "threshold": 1,
+                    "threshold": 0.8,
                     "distance": 0.9,
-                    "accuracy": 1.2,
-                    "balanced_accuracy": 0.8,
+                    "accuracy": 1,
+                    "balanced_accuracy": 1.1,
                 },
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
@@ -203,7 +207,8 @@ class ConfigTemplate(object):
             },
             "ModelEvaluation": {
                 "print_model_report": True,
-                "plot_confusion_matrix": False,
-                "plot_roc_curves": False,
+                "plot_confusion_matrix": True,
+                "plot_roc_curves": True,
+                "plot_tree": True,
             },
         }
