@@ -205,8 +205,10 @@ class ModelSummary:
         Plot Confusion Matrix using
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
         """
-        disp = ConfusionMatrixDisplay(
-            confusion_matrix=self._model_report["confusion_matrix"]
+        disp = ConfusionMatrixDisplay.from_estimator(
+            self._model_report["estimator"],
+            self._model_report["test_x"],
+            self._model_report["test_true_y"],
         )
         disp.plot()
 
