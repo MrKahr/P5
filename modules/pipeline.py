@@ -1,7 +1,6 @@
 import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
-from sklearn import model_selection
 
 from modules.config.config import Config
 from modules.crossValidationSelection.cross_validation_selection import (
@@ -70,27 +69,13 @@ class Pipeline:
             self.getTrainX(), self.getTrueY()
         ).run()
 
-        train_x, test_x, train_true_y, test_true_y = model_selection.train_test_split(
-            unsplit_x,
-            unsplit_true_y,
-            train_size=0.80,
-            random_state=111,
-            shuffle=True,
-            stratify=unsplit_true_y,
-        )
-
-        fit_estimator, pipeline_report = ModelTrainer(
+        pipeline_report = ModelTrainer(
             estimator=ModelSelector.getModel(),
             cross_validator=CrossValidationSelector.getCrossValidator(),
-            train_x=train_x,
-            true_y=train_true_y,
+            unsplit_x=unsplit_x,
+            unsplit_y=unsplit_true_y,
         ).run()
         pipeline_report = ModelTester(
-            estimator=fit_estimator,
-            train_x=train_x,
-            train_true_y=train_true_y,
-            test_x=test_x,
-            test_true_y=test_true_y,
             pipeline_report=pipeline_report,
         ).run()
         ModelSummary(pipeline_report).run()
