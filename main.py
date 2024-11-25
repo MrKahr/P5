@@ -15,5 +15,5 @@ Logger.writeHeaderToLog()  # Prevent multi-threading bug with startup header
 from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.pipeline import Pipeline
 
-pipeline = Pipeline(Dataset.REGS, Dataset.OLD)
+pipeline = Pipeline(Dataset.REGS)
 pipeline.run()
