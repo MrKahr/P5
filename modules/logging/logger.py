@@ -73,6 +73,7 @@ class Logger:
 
     @classmethod
     def writeHeaderToLog(cls) -> None:
+        """Write app header to terminal"""
         padding = 90
         header = (
             "┌"
