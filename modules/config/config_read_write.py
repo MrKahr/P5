@@ -294,8 +294,9 @@ def insertDictValue(
             if isinstance(traverse_value, dict):
                 parent_keys.append(traverse_key)
                 traverseDict(traverse_value, search_key, value, _parent_key)
+
             # The key is what we're looking for
-            elif traverse_key == search_key:
+            if traverse_key == search_key:
                 # The key need a parent to be considered relevant
                 if parent_key:
                     # The key has the correct parent key
@@ -305,7 +306,6 @@ def insertDictValue(
                 # The key does not need a parent
                 else:
                     _input[traverse_key] = value
-                    old_value.clear()
                     old_value.append(traverse_value)
                 break
 
