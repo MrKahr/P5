@@ -194,8 +194,11 @@ class ModelSummary:
         
     def plotFeatureImportance(self) -> None:
         
+        # Get the feature importances(importances_mean, importances_std, importances) and feature names from the model report
         result = self._model_report.get("feature_importances").get("threshold")
         feature_names = self._model_report["feature_names_in"]
+        
+        # Label the means with their feature name
         feature_importances = pd.Series(result.importances_mean,index=feature_names)
         
         fig, ax = plt.subplots(figsize=(10, 5))
