@@ -386,7 +386,7 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], feature] = value1
             i += 1
 
-    def discretize(
+    def discretizeWithChiMerge(
         self,
         class_column_name: str = "Dag",
         value_column_name: str = "Sårrand (cm)",
@@ -411,8 +411,12 @@ class DataTransformer:
         Returns
         -------
         list[float]
-            A list of numbers that specify the lower bounds of non-overlapping intervals for the values to be categorized into
+            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
         """
+        logger.info(
+            f'Preparing discretization of column "{value_column_name}" with class column "{value_column_name}"'
+        )
+
         # get values to discretize given some column name and sort them from smallest to biggest
         values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
         values = values.sort()
@@ -434,6 +438,8 @@ class DataTransformer:
         # while the minimum chi-square value is less than merge_when_below, there is more than 1 interval, and the number of intervals is not desired_intervals
         # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
         # recalculate chi-square values for all intervals # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
+
+        logger.info(f"Running ChiMerge with {len(values)} values and {len(classes)}")
 
         while (
             lower_bounds.size > 1
@@ -476,6 +482,9 @@ class DataTransformer:
             # intervals can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
             np.delete(lower_bounds, index + 1)
 
+        logger.info("Discretization complete. Interval bounds are ")
+        logger.info(f"{lower_bounds}")
+
         # when we're done mergin intervals, return the list of lower bounds
         return lower_bounds
 
@@ -492,6 +501,8 @@ class DataTransformer:
             Note that intervals expressed like this never overlap, and exclude their upper bound, which is the lower bound for the next interval.
             The list should be sorted from smallest to biggest.
         """
+        logger.info(f"Assigning intervals to values in {column_name}")
+
         # for each value in the given column
         for i in range(self.df[column_name].size):
             value = self.df[column_name][i]
@@ -513,6 +524,8 @@ class DataTransformer:
                     )
                     break
 
+        logger.info(f"Discretization of {column_name} complete")
+
     def run(self) -> pd.DataFrame:
         """
         Runs all applicable transformation methods.
@@ -524,6 +537,15 @@ class DataTransformer:
         """
         config = Config()
         if config.getValue("UseTransformer"):
+            # Discretization
+            if len(config.getValue("DiscretizeColumns")) > 0:
+                for column in config.getValue("DiscretizeColumns"):
+                    interval_bounds = self.discretizeWithChiMerge(
+                        value_column_name=column
+                    )
+                    self.assignIntervals(
+                        lower_bounds=interval_bounds, column_name=column
+                    )
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):

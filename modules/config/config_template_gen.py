@@ -68,7 +68,10 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
-                    "DiscretizeColumns": [],  # type: list[str] #TODO - Implement me!
+                    "DiscretizeColumns": [
+                        "Sårrand (cm)",
+                        "Midte (cm)",
+                    ],  # type: list[str] #TODO - Implement me!
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,
