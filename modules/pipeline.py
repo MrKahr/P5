@@ -80,7 +80,12 @@ class Pipeline:
 
         # TODO: We should use stratified splits as our dataset is not uniform
         train_x, test_x, train_true_y, test_true_y = model_selection.train_test_split(
-            unsplit_x, unsplit_true_y, train_size=0.80, random_state=111, shuffle=True
+            unsplit_x,
+            unsplit_true_y,
+            train_size=0.80,
+            random_state=111,
+            shuffle=True,
+            stratify=unsplit_true_y,
         )
 
         fit_estimator, pipeline_report = ModelTrainer(
@@ -89,13 +94,6 @@ class Pipeline:
             train_x=train_x,
             true_y=train_true_y,
         ).run()
-
-        print("")  # Visually separate train and test section in the terminal
-        self._logger.info("Beginning model testing")
-        self.df = DataCleaner(
-            self.loadDataset(self.test_dataset), self.test_dataset
-        ).run()
-        self.df = DataTransformer(self.df).run()
         pipeline_report = ModelTester(
             estimator=fit_estimator,
             train_x=train_x,

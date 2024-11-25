@@ -41,7 +41,7 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
-                "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "UseCleaner": True,
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
@@ -139,7 +139,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.FIT.name,
+                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -167,9 +167,39 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
-                    "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": False,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
+                    "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
+                "ParamGridDecisionTree": {
+                    "criterion": [
+                        "gini",
+                        "log_loss",
+                    ],  # type: Literal["gini", "entropy", "log_loss"]
+                    "max_depth": {"start": 1, "stop": 5, "step": 1},
+                    "min_samples_split": {"start": 2, "stop": 10, "step": 1},
+                    "min_samples_leaf": {"start": 1, "stop": 5, "step": 1},
+                    "min_weight_fraction_leaf": {
+                        "start": 0.0,
+                        "stop": 0.5,
+                        "step": 0.1,
+                    },
+                    "max_features": [
+                        "sqrt",
+                        "log2",
+                    ],  # type: Litteral["sqrt", "log2"] | int | float | None
+                    "max_leaf_nodes": {
+                        "start": 2,
+                        "stop": 10,
+                        "step": 1,
+                    },  # type: int | None
+                    "min_impurity_decrease": {"start": 0.0, "stop": 0.1, "step": 0.01},
+                    "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.01},
+                },
+                # TODO: rest of grid search params
+                "ParamGridRandomForest": {},
+                "ParamGridGaussianNaiveBayes": {},
+                "ParamGridNeuralNetwork": {},
             },
             "ModelEvaluation": {
                 "print_model_report": True,

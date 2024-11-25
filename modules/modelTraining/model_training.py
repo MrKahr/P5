@@ -1,5 +1,7 @@
+from typing import Callable, Union
 import pandas as pd
 import numpy as np
+import math
 from numpy.typing import NDArray
 from time import time
 
@@ -9,7 +11,7 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_vali
 from sklearn.utils import Bunch
 
 from modules.config.config import Config
-from modules.config.config_enums import TrainingMethod
+from modules.config.config_enums import TrainingMethod, Model
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.types import (
@@ -202,7 +204,49 @@ class ModelTrainer:
         self._logger.info(f"Selected the best estimator among possible candidates")
         return estimator
 
-    def _fitGridSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
+    def _getParamGrid(self) -> dict:
+        # TODO: Implement more input validation
+        # Initialize model and grid
+        current_model = self._config.getValue("model", "ModelSelection")
+
+        # Ensure param grid matches model
+        match current_model:
+            case Model.DECISION_TREE.name:
+                parent_key = "ParamGridDecisionTree"
+            case Model.NAIVE_BAYES.name:
+                parent_key = "ParamGridNaiveBayes"
+            case Model.NEURAL_NETWORK.name:
+                parent_key = "ParamGridNeuralNetwork"
+            case Model.RANDOM_FOREST.name:
+                parent_key = "ParamGridRandomForest"
+
+        current_grid = self._config.getValue(parent_key)
+
+        # Update current config
+        for key, value in current_grid.items():
+            # We specified dict of steps in range
+            if isinstance(value, dict):
+                # Value is a dict containing keys
+                start, stop, step = value.values()
+
+                if type(start) is float or type(stop) is float or type(step) is float:
+                    # linspace requires number of steps and not stepsize
+                    value_range = list(
+                        np.linspace(start, stop, math.ceil(abs(stop - start) / step))
+                    )
+                else:
+                    value_range = list(range(start, stop, step))
+
+                self._config.setValue(key, value_range, parent_key)
+
+        # Param grid updated with ranges
+        current_grid = self._config.getValue(parent_key)
+
+        return current_grid
+
+    def _fitGridSearchWithCrossValidation(
+        self, refit: Union[bool, str, Callable], **kwargs
+    ) -> FittedEstimator:
         """
         GridSearchCV exhaustively generates candidates from a grid of parameter values.
 
@@ -211,6 +255,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -240,14 +288,22 @@ class ModelTrainer:
         # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
 
         self._checkAllFeaturesPresent()
+
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
-            param_grid={},  # TODO: Implement
+            param_grid=self._getParamGrid(),
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             **kwargs,
-        )
+        ).fit(self._train_x, self._true_y)
+        # Best estimator attribute is the best model found by gridsearch
+        # Alternative predict method uses this attribute but obscures estimator usage
+
+        # TODO: Save relevant info
+        # print(gscv.cv_results_)
+
         return gscv.best_estimator_
 
     def _fitRandomSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
@@ -278,7 +334,7 @@ class ModelTrainer:
         self._checkAllFeaturesPresent()
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
-            param_distributions={},  # TODO: Implement
+            param_distributions={},  # TODO: Implement param distributions in config
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
@@ -460,7 +516,7 @@ class ModelTrainer:
             )
         elif training_method == TrainingMethod.GRID_SEARCH_CV.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
-                self._config.getValue("GridSearchCV", self._parent_key)
+                **self._config.getValue("GridSearchCV", self._parent_key)
             )
         else:
             raise ValueError(
