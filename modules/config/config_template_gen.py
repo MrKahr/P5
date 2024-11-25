@@ -214,8 +214,11 @@ class ConfigTemplate(object):
                 # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                 "ParamGridGaussianNaiveBayes": {},
                 "ParamGridNeuralNetwork": {
-                    # TODO: Find way to change number of layers
-                    "hidden_layer_sizes": (20, 2),
+                    # TODO: Test that grid search initializes correctly!
+                    "hidden_layer_sizes": {
+                        "layers": {"start": 2, "stop": 10, "step": 1},
+                        "layer_size": {"start": 2, "stop": 25, "step": 10},
+                    },
                     "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
                     "solver": [
                         "sgd",
