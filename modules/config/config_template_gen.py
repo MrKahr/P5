@@ -200,10 +200,35 @@ class ConfigTemplate(object):
                     "min_impurity_decrease": {"start": 0.0, "stop": 0.1, "step": 0.01},
                     "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.01},
                 },
-                # TODO: rest of grid search params
-                "ParamGridRandomForest": {},
+                "ParamGridRandomForest": {
+                    "n_estimators": {"start": 100, "stop": 1000, "step": 100},
+                    "bootstrap": [True, False],
+                    "oob_score": False,  # type: bool | Callable # TODO: Add score function
+                    "random_state": 53,  # type: int | None
+                    "max_samples": {
+                        "start": 10,
+                        "stop": 500,
+                        "step": 10,
+                    },  # type: int | float | None
+                },
+                # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                 "ParamGridGaussianNaiveBayes": {},
-                "ParamGridNeuralNetwork": {},
+                "ParamGridNeuralNetwork": {
+                    # TODO: Find way to change number of layers
+                    "hidden_layer_sizes": (20, 2),
+                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "solver": [
+                        "sgd",
+                        "lbfgs",
+                        "adam",
+                    ],  # type: Literal["lbfgs", "sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": 0.001,
+                    "alpha": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
+                    "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
+                    "tol": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
+                    "random_state": 678,
+                },
             },
             "ModelEvaluation": {
                 "print_model_report": True,
