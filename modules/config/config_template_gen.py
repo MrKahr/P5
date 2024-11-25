@@ -42,6 +42,7 @@ class ConfigTemplate(object):
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "UseContinuousFeatures": True,
                 "UseCleaner": True,
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
@@ -67,6 +68,7 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
+                    "DiscretizeColumns": [],  # type: list[str] #TODO - Implement me!
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,
