@@ -42,6 +42,7 @@ class ConfigTemplate(object):
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
                 "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "write_figure_to_disk": True,
                 "UseCleaner": True,
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
@@ -117,11 +118,14 @@ class ConfigTemplate(object):
                 "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (20, 2),
-                    "activation": "logistic",
-                    "solver": "sgd",
+                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "solver": "sgd",  # type: Literal["lbfgs", "sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": 0.001,
                     "alpha": 0.0001,
                     "max_iter": 1000,
                     "tol": 0.0001,
+                    "random_state": 678,
                 },
             },
             "CrossValidationSelection": {
@@ -145,17 +149,17 @@ class ConfigTemplate(object):
                     "threshold": 20,
                 },
                 "score_function_weights": {
-                    "threshold": 1,
+                    "threshold": 0.8,
                     "distance": 0.9,
-                    "accuracy": 1.2,
-                    "balanced_accuracy": 0.8,
+                    "accuracy": 1,
+                    "balanced_accuracy": 1.1,
                 },
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
                     "random_state": 298,  # type: int | None
                 },
                 "RFE": {
-                    "n_features_to_select": None,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
+                    "n_features_to_select": 0.50,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
                     "step": 1,  # type: float | int  # NOTE: If greater than or equal to 1, then step corresponds to the (integer) number of features to remove at each iteration. If within (0.0, 1.0), then step corresponds to the percentage (rounded down) of features to remove at each iteration.
                 },
                 "RFECV": {
@@ -206,5 +210,6 @@ class ConfigTemplate(object):
                 "plot_confusion_matrix": False,
                 "plot_roc_curves": False,
                 "plot_feature_importance": False,
+                "plot_tree": True,
             },
         }

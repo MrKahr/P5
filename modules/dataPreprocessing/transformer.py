@@ -284,12 +284,8 @@ class DataTransformer:
         neighbors : int
             How many nearest neighbors should be considered.
         """
-        logger.info(
-            f"Using imputation method: KNN. Args: distance_metric={distance_metric.__name__}, nearest_neighbors={neighbors}"
-        )
         df = self.df
-        self.logValues(df)
-        logger.info("Starting KNN-Imputation.")
+        initial_count = self.countValues(df)
         imputer = KNNImputer(
             missing_values=100,
             n_neighbors=neighbors,
@@ -310,15 +306,15 @@ class DataTransformer:
         for column in working_df.columns:
             df[column] = working_df[column]
 
+        replaced_count = initial_count - self.countValues(df)
         logger.info(
-            "Imputation done."
-        )  # TODO: Consider logging here how many rows where imputed or similar
-        self.logValues(df)  # TODO: Consider removing or logging in a quieter way
+            f"KNN Imputation replaced {replaced_count} missing value{"s" if replaced_count != 1 else ""}"
+        )
         self.df = df
 
-    def logValues(self, df: pd.DataFrame, value: int = 100) -> None:
+    def countValues(self, df: pd.DataFrame, value: int = 100) -> None:
         """
-        Finds and logs a specified value in a dataframe for every ocurrence.
+        Count every ocurrence of `value` in `df`.
 
         Parameters
         ----------
@@ -326,10 +322,9 @@ class DataTransformer:
             The DataFrame to search.
 
         value : int
-            The value to find and log using the logger.
+            The value search for.
             Default is `100` to help find missing values.
         """
-        # logger.info(f"Checking for {value}...")
         count = 0
         last_index = -1
         rows = 0
@@ -343,9 +338,7 @@ class DataTransformer:
                     if index != last_index:
                         rows += 1
                         last_index = index
-        logger.info(
-            f"Counted {count} occurences of {value} in {rows} rows out of {len(df.index)}."
-        )
+        return count
 
     def minMaxNormalization(self, feature: str) -> None:
         """
@@ -414,10 +407,10 @@ class DataTransformer:
                     metric = None
                     match config.getValue("KNN_DistanceMetric"):
                         case DistanceMetric.ZERO_ONE.name:
-                            logger.info("Preparing zero-one distance metric")
+                            # logger.info("Preparing zero-one distance metric")
                             metric = self.zeroOneDistance
                         case DistanceMetric.MATRIX.name:
-                            logger.info("Preparing matrix distance metric")
+                            # logger.info("Preparing matrix distance metric")
                             metric = self.matrixDistance
                     self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
                 else:
