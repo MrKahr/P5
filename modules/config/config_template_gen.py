@@ -47,6 +47,7 @@ class ConfigTemplate(object):
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
                 "UseOutlierRemoval": False,
+                "UseContinuousFeatures": True,
             },
             "DataPreprocessing": {
                 "Cleaning": {
