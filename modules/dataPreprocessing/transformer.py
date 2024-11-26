@@ -533,7 +533,6 @@ class DataTransformer:
             A list of numbers that may or may not occur in the column and shouldn't be replaced
         """
         logger.info(f"Assigning intervals to values in {column_name}")
-        print(self.df)
 
         def intervalify(
             x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
@@ -554,9 +553,9 @@ class DataTransformer:
                 The index of the interval that x fits into, or x, if x is in the blacklist
             """
             for i in range(len(lower_bounds)):
-                upper_bound = np.inf
                 if x in replace_blacklist:
                     return x
+                upper_bound = np.inf
                 if (i + 1) < len(lower_bounds):
                     upper_bound = lower_bounds[i + 1]
                 if lower_bounds[i] <= x < upper_bound:
