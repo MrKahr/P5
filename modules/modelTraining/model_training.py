@@ -23,7 +23,8 @@ from modules.config.config import Config
 from modules.config.config_enums import TrainingMethod, Model, VariableDistribution
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
-from modules.types import (
+from modules.tools.random import RNG
+from modules.tools.types import (
     FittedEstimator,
     UnfittedEstimator,
     CrossValidator,
@@ -282,7 +283,7 @@ class ModelTrainer:
             case Model.DECISION_TREE.name:
                 grid_key = "ParamGridDecisionTree"
             case Model.NAIVE_BAYES.name:
-                grid_key = "ParamGridNaiveBayes"
+                grid_key = "RandomParamGridGaussianNaiveBayes"
             case Model.NEURAL_NETWORK.name:
                 grid_key = "ParamGridNeuralNetwork"
             case Model.RANDOM_FOREST.name:
@@ -309,7 +310,7 @@ class ModelTrainer:
             case Model.DECISION_TREE.name:
                 grid_key = "RandomParamGridDecisionTree"
             case Model.NAIVE_BAYES.name:
-                grid_key = "RandomParamGridNaiveBayes"
+                grid_key = "RandomParamGridGaussianNaiveBayes"
             case Model.NEURAL_NETWORK.name:
                 grid_key = "RandomParamGridNeuralNetwork"
             case Model.RANDOM_FOREST.name:
@@ -407,6 +408,7 @@ class ModelTrainer:
         self,
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
+        random_state: int,
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -440,6 +442,7 @@ class ModelTrainer:
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
+            random_state=RNG(random_state),
             **kwargs,
         ).fit(x, y)
         return rscv.best_estimator_
