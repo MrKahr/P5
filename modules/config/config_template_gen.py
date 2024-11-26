@@ -41,8 +41,8 @@ class ConfigTemplate(object):
         return {
             "General": {
                 "loglevel": LogLevel.DEBUG.name,
-                "n_jobs": 1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
-                "UseContinuousFeatures": True,
+                "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
+                "write_figure_to_disk": True,
                 "UseCleaner": True,
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
@@ -122,11 +122,14 @@ class ConfigTemplate(object):
                 "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (20, 2),
-                    "activation": "logistic",
-                    "solver": "sgd",
+                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "solver": "sgd",  # type: Literal["lbfgs", "sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": 0.001,
                     "alpha": 0.0001,
                     "max_iter": 1000,
                     "tol": 0.0001,
+                    "random_state": 678,
                 },
             },
             "CrossValidationSelection": {
@@ -144,23 +147,23 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.FIT.name,
+                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
                 },
                 "score_function_weights": {
-                    "threshold": 1,
+                    "threshold": 0.8,
                     "distance": 0.9,
-                    "accuracy": 1.2,
-                    "balanced_accuracy": 0.8,
+                    "accuracy": 1,
+                    "balanced_accuracy": 1.1,
                 },
                 "PermutationFeatureImportance": {
                     "n_repeats": 10,
                     "random_state": 298,  # type: int | None
                 },
                 "RFE": {
-                    "n_features_to_select": None,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
+                    "n_features_to_select": 0.50,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
                     "step": 1,  # type: float | int  # NOTE: If greater than or equal to 1, then step corresponds to the (integer) number of features to remove at each iteration. If within (0.0, 1.0), then step corresponds to the percentage (rounded down) of features to remove at each iteration.
                 },
                 "RFECV": {
@@ -172,13 +175,44 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
-                    "refit": True,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": False,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
+                    "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
+                "ParamGridDecisionTree": {
+                    "criterion": [
+                        "gini",
+                        "log_loss",
+                    ],  # type: Literal["gini", "entropy", "log_loss"]
+                    "max_depth": {"start": 1, "stop": 5, "step": 1},
+                    "min_samples_split": {"start": 2, "stop": 10, "step": 1},
+                    "min_samples_leaf": {"start": 1, "stop": 5, "step": 1},
+                    "min_weight_fraction_leaf": {
+                        "start": 0.0,
+                        "stop": 0.5,
+                        "step": 0.1,
+                    },
+                    "max_features": [
+                        "sqrt",
+                        "log2",
+                    ],  # type: Litteral["sqrt", "log2"] | int | float | None
+                    "max_leaf_nodes": {
+                        "start": 2,
+                        "stop": 10,
+                        "step": 1,
+                    },  # type: int | None
+                    "min_impurity_decrease": {"start": 0.0, "stop": 0.1, "step": 0.01},
+                    "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.01},
+                },
+                # TODO: rest of grid search params
+                "ParamGridRandomForest": {},
+                "ParamGridGaussianNaiveBayes": {},
+                "ParamGridNeuralNetwork": {},
             },
             "ModelEvaluation": {
                 "print_model_report": True,
-                "plot_confusion_matrix": False,
-                "plot_roc_curves": False,
+                "plot_confusion_matrix": True,
+                "plot_roc_curves": True,
+                "plot_tree": True,
             },
         }

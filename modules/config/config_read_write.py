@@ -217,7 +217,7 @@ def retrieveDictValue(
         return found_value
     # If we did not find a value, `found_value` is unbound (undefined)
     except UnboundLocalError as err:
-        err.add_note(f"Error: Key {key} does not exists")
+        err.add_note(f"Error: Key '{key}' does not exists")
         raise  # Re-raise the current exception (UnboundLocalError) to fail fast
 
 
@@ -294,8 +294,9 @@ def insertDictValue(
             if isinstance(traverse_value, dict):
                 parent_keys.append(traverse_key)
                 traverseDict(traverse_value, search_key, value, _parent_key)
+
             # The key is what we're looking for
-            elif traverse_key == search_key:
+            if traverse_key == search_key:
                 # The key need a parent to be considered relevant
                 if parent_key:
                     # The key has the correct parent key
@@ -305,7 +306,6 @@ def insertDictValue(
                 # The key does not need a parent
                 else:
                     _input[traverse_key] = value
-                    old_value.clear()
                     old_value.append(traverse_value)
                 break
 

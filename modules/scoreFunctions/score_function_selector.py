@@ -183,3 +183,24 @@ class ScoreFunctionSelector:
 
             cls._cache["feature_select"] = selected_score_func
         return cls._cache["feature_select"]
+
+    @classmethod
+    def getPriorityScoreFunc(self) -> ModelScoreCallable:
+        """
+        Get the score function with the heighest weight assigned to it, as defined in the config.
+        In case of equal weights for multiple score functions, the last defined is selected.
+
+        Returns
+        -------
+        ModelScoreCallable
+            The score function with the heighest weight.
+        """
+        score_func_weights = self._config.getValue(
+            "score_function_weights", "ModelTraining"
+        )
+
+        largest_weight = (None, 0)
+        for k, v in score_func_weights.items():
+            if v >= largest_weight[1]:
+                largest_weight = (k, v)
+        return self.getScoreFuncsModel()[largest_weight[0]]

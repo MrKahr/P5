@@ -1,15 +1,22 @@
+from typing import Callable, Union
 import pandas as pd
 import numpy as np
-from numpy.typing import NDArray
+import math
+from numpy.typing import NDArray, ArrayLike
 from time import time
 
-from sklearn.feature_selection import RFE, RFECV
+from sklearn import model_selection
+from sklearn.feature_selection import RFE, RFECV, SequentialFeatureSelector
 from sklearn.inspection import permutation_importance
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_validate
+from sklearn.model_selection import (
+    GridSearchCV,
+    RandomizedSearchCV,
+    cross_validate,
+)
 from sklearn.utils import Bunch
 
 from modules.config.config import Config
-from modules.config.config_enums import TrainingMethod
+from modules.config.config_enums import TrainingMethod, Model
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.types import (
@@ -27,8 +34,8 @@ class ModelTrainer:
         self,
         estimator: UnfittedEstimator,
         cross_validator: CrossValidator,
-        train_x: pd.DataFrame,
-        true_y: pd.Series,
+        unsplit_x: pd.DataFrame,
+        unsplit_y: pd.Series,
     ) -> None:
         """
         Fit an unfitted model and generate a model report of the training session.
@@ -44,26 +51,47 @@ class ModelTrainer:
         score_funcs : ModelScoreCallable
             A callable with signature `scorer(estimator, X, y)`.
 
-        train_x : NDArray
+        unsplit_x : NDArray
             Training feature(s).
 
-        true_y : NDArray
+        unsplit_y : NDArray
             Target feature, i.e., "Dag".
         """
         self._unfit_estimator = estimator
         self._cross_validator = cross_validator
         self._model_score_funcs = ScoreFunctionSelector.getScoreFuncsModel()
-        self._train_x = train_x
-        self._true_y = true_y
+        self._priority_score_func = (
+            ScoreFunctionSelector.getPriorityScoreFunc()
+        )  # Temporary
         self._parent_key = "ModelTraining"
         self._n_jobs = self._config.getValue("n_jobs", "General")
-        self._pipeline_report = {
-            # "training": {
-            "feature_importances": None,  # type: Bunch
-            "feature_names_in": None,  # type: NDArray
-            "feature_count": None,  # type: int
-            # }
-        }
+        self._training_method = None  # Created during training
+        self._pipeline_report = None  # Created during training
+
+        # *_x == pd.DataFrame, *_y == pd.Series
+        self._train_x, self._test_x, self._train_true_y, self._test_true_y = (
+            model_selection.train_test_split(
+                unsplit_x,
+                unsplit_y,
+                train_size=0.90,
+                random_state=111,
+                shuffle=True,
+                stratify=unsplit_y,
+            )
+        )
+
+    def _reduceFeatures(self, selected_feature_names: list[str]) -> None:
+        """
+        Removes features determined by feature selection carried out during model training.
+        This is applied to the instance variables `train_x` and `test_x`.
+
+        Parameters
+        ----------
+        selected_feature_names : list[str]
+            Features to keep.
+        """
+        self._train_x = self._train_x[selected_feature_names]
+        self._test_x = self._test_x[selected_feature_names]
 
     def _checkAllFeaturesPresent(self) -> None:
         """Warn user if they select a training method incompatible with the feature selector"""
@@ -74,28 +102,47 @@ class ModelTrainer:
         ) and self._config.getValue(key, parent_key=parent_key):
             self._logger.warning(
                 f"Using a reduced feature set for hyperparameter tuning (this might harm model performance). "
-                + f"Please disable '{key}' (within '{parent_key}') in the config when tuning hyperparameters"
+                + f"Please disable feature selection when tuning hyperparameters"
             )
+
+    def _checkModelCompatibility(self) -> FittedEstimator | None:
+        model_type = self._config.getValue("model", "ModelSelection")
+
+        if model_type == Model.NAIVE_BAYES.name and self._training_method in [
+            TrainingMethod.RFE.name,
+            TrainingMethod.RFECV.name,
+        ]:
+            self._logger.warning(
+                f"Model {type(self._unfit_estimator).__name__} does not support RFE-based training. Switching to SFS"
+            )
+            return self._fitSFS(self._train_x, self._train_true_y)
 
     def _compileModelReport(self, estimator: FittedEstimator) -> None:
         """
-        Compute and add training results to the model report (a subset of the pipeline report).
+        Compute and add training results to the pipeline report.
 
         Parameters
         ----------
         estimator : FittedEstimator
             The trained model.
         """
-        self._pipeline_report["feature_importances"] = (
-            self._permutationFeatureImportance(
-                estimator,
-                **self._config.getValue(
-                    "PermutationFeatureImportance", parent_key=self._parent_key
-                ),
-            )
-        )
-        self._pipeline_report["feature_names_in"] = estimator.feature_names_in_
-        self._pipeline_report["feature_count"] = estimator.n_features_in_
+        self._pipeline_report = {
+            "estimator": estimator,
+            "feature_importances": (
+                self._permutationFeatureImportance(
+                    estimator,
+                    **self._config.getValue(
+                        "PermutationFeatureImportance", parent_key=self._parent_key
+                    ),
+                )
+            ),
+            "feature_names_in": estimator.feature_names_in_,
+            "feature_count": estimator.n_features_in_,
+            "train_x": self._train_x,  # type: pd.DataFrame
+            "train_true_y": self._train_true_y,  # type: pd.Series
+            "test_x": self._test_x,  # type: pd.DataFrame
+            "test_true_y": self._test_true_y,  # type: pd.Series
+        }
 
     def _permutationFeatureImportance(
         self,
@@ -152,7 +199,7 @@ class ModelTrainer:
         result = permutation_importance(
             estimator,
             self._train_x,
-            self._true_y,
+            self._train_true_y,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             **kwargs,
@@ -176,16 +223,20 @@ class ModelTrainer:
 
                 test_scores : dict[str, NDArray]
                     A dict containing test scores for each estimator
-                    and performance metric (e.g. score function).
+                    for each score function in use.
+
+                    This dict has the following keys:
+                        <score_func_name>
 
         Returns
         -------
         FittedEstimator
             The best model according to the performance metrics.
         """
-        # Create array of zeros with shape equal to the amount of score functions selected
+        # Create array of zeros with shape equal to the amount of estimators fitted
         # Each index "maps" to the equal index in the array of estimators
-        test_score_counter = np.zeros(len(training_report["test_scores"].keys()))
+        estimator_count = len(training_report["estimators"])
+        test_score_counter = np.zeros(estimator_count)
         test_scores = training_report["test_scores"]  # type: dict[str, NDArray]
 
         for score_func_name, scores in test_scores.items():
@@ -196,13 +247,62 @@ class ModelTrainer:
             )
         # Find the index of the estimator that maxmimises the greatest amount of score functions
         # using argmax and use this index to get the estimator from the estimator array
-        estimator = training_report["estimators"][test_score_counter.argmax()]
+        best_index = test_score_counter.argmax()
+        estimator = training_report["estimators"][best_index]
 
-        # TODO: Print which score functions the selected estimator is maximising
-        self._logger.info(f"Selected the best estimator among possible candidates")
+        # We add one to index when logging to match estimator_count (as 1-indexed)
+        self._logger.debug(
+            f"Selected estimator {best_index + 1} among {estimator_count} possible candidates"
+        )
         return estimator
 
-    def _fitGridSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
+    def _getParamGrid(self) -> dict:
+        # TODO: Implement more input validation
+        # Initialize model and grid
+        current_model = self._config.getValue("model", "ModelSelection")
+
+        # Ensure param grid matches model
+        match current_model:
+            case Model.DECISION_TREE.name:
+                parent_key = "ParamGridDecisionTree"
+            case Model.NAIVE_BAYES.name:
+                parent_key = "ParamGridNaiveBayes"
+            case Model.NEURAL_NETWORK.name:
+                parent_key = "ParamGridNeuralNetwork"
+            case Model.RANDOM_FOREST.name:
+                parent_key = "ParamGridRandomForest"
+
+        current_grid = self._config.getValue(parent_key)
+
+        # Update current config
+        for key, value in current_grid.items():
+            # We specified dict of steps in range
+            if isinstance(value, dict):
+                # Value is a dict containing keys
+                start, stop, step = value.values()
+
+                if type(start) is float or type(stop) is float or type(step) is float:
+                    # linspace requires number of steps and not stepsize
+                    value_range = list(
+                        np.linspace(start, stop, math.ceil(abs(stop - start) / step))
+                    )
+                else:
+                    value_range = list(range(start, stop, step))
+
+                self._config.setValue(key, value_range, parent_key)
+
+        # Param grid updated with ranges
+        current_grid = self._config.getValue(parent_key)
+
+        return current_grid
+
+    def _fitGridSearchWithCrossValidation(
+        self,
+        x: Union[pd.DataFrame, ArrayLike],
+        y: Union[pd.Series, ArrayLike],
+        refit: Union[bool, str, Callable],
+        **kwargs,
+    ) -> FittedEstimator:
         """
         GridSearchCV exhaustively generates candidates from a grid of parameter values.
 
@@ -211,6 +311,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -224,11 +328,8 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
         - https://scikit-learn.org/stable/modules/grid_search.html#exhaustive-grid-search
         """
-
         # TODO: Get model report out of the search
-
         # SECTION
-        # GRID SEARCH (hyperparameter tuning) {On any hyperparamter}
 
         # Custom refit strategy of a grid search with cross-validation
         # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html
@@ -240,17 +341,30 @@ class ModelTrainer:
         # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
 
         self._checkAllFeaturesPresent()
+
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
-            param_grid={},  # TODO: Implement
+            param_grid=self._getParamGrid(),
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             **kwargs,
-        )
+        ).fit(x, y)
+        # Best estimator attribute is the best model found by gridsearch
+        # Alternative predict method uses this attribute but obscures estimator usage
+
+        # TODO: Save relevant info
+        # print(gscv.cv_results_)
+
         return gscv.best_estimator_
 
-    def _fitRandomSearchWithCrossValidation(self, **kwargs) -> FittedEstimator:
+    def _fitRandomSearchWithCrossValidation(
+        self,
+        x: Union[pd.DataFrame, ArrayLike],
+        y: Union[pd.Series, ArrayLike],
+        **kwargs,
+    ) -> FittedEstimator:
         """
         RandomizedSearchCV implements a randomized search over parameters,
         where each setting is sampled from a distribution over possible parameter values.
@@ -278,16 +392,53 @@ class ModelTrainer:
         self._checkAllFeaturesPresent()
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
-            param_distributions={},  # TODO: Implement
+            param_distributions={},  # TODO: Implement param distributions in config
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
             **kwargs,
-        )
+        ).fit(x, y)
         return rscv.best_estimator_
+
+    def _fitSFS(
+        self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
+    ) -> FittedEstimator:
+        """
+        The Sequential Feature Selector adds (forward selection) or
+        removes (backward selection) features to form a feature subset in a greedy fashion.
+        At each stage, this estimator chooses the best feature to add or remove based on the
+        cross-validation score of an estimator.
+
+        NOTE
+        ----
+        - Do not call this directly in run()!
+        - This method is meant as a substitute for models incompatible with RFE-based training.
+
+        Returns
+        -------
+        FittedEstimator
+            The fitted estimator.
+
+        Links
+        -----
+        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html
+        """
+        sfs = SequentialFeatureSelector(
+            self._unfit_estimator,
+            n_features_to_select="auto",  # Feature selection depends on `tol`
+            tol=0.02,  # Tolerance for score improvement that removing a feature must satisfy
+            direction="backward",  # Start with all features
+            scoring=self._priority_score_func,
+            cv=self._cross_validator,
+            n_jobs=self._n_jobs,
+        ).fit(x, y)
+        self._reduceFeatures(sfs.get_feature_names_out())
+        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
 
     def _fitRFEWithCrossValidation(
         self,
+        x: Union[pd.DataFrame, ArrayLike],
+        y: Union[pd.Series, ArrayLike],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -314,28 +465,59 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html
         - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html
         """
+        # If the estimator was fitted with another training method
+        # because the estimator was incompatible with RFE-based training,
+        # then return that estimator.
+        estimator = self._checkModelCompatibility()
+        if estimator is not None:
+            return estimator
 
-        # NOTE: Some models do not support this (e.g. GaussianNB)!
-        # TODO: Adjust for multiple scoring functions
         self._checkAllFeaturesPresent()
-        if len(self._model_score_funcs.keys()) > 1:
-            raise ValueError(
-                f"Selected model 'RFECV' does not support multiple score functions. Got {self._model_score_funcs.keys()}"
-            )
+        # Train an estimator with RFECV for each score function,
+        # then select the estimator that maximises the highest weighted score function.
+        # An additional step is taken to preserve feature names, as that is missing with the default
+        # RFECV implementation.
+        training_report = {"estimators": [], "test_scores": {}, "feature_names_out": []}
+        for func_name, score_func in self._model_score_funcs.items():
+            self._logger.info(f"Running RFECV with score function '{func_name}'")
+            rfecv = RFECV(
+                self._unfit_estimator,
+                cv=self._cross_validator,
+                scoring=score_func,
+                n_jobs=self._n_jobs,
+                **kwargs,
+            ).fit(x, y)
 
-        rfecv = RFECV(
-            self._unfit_estimator,
-            cv=self._cross_validator,
-            scoring=next(iter(self._model_score_funcs.values())),
-            n_jobs=self._n_jobs,
-            **kwargs,
-        ).fit(self._train_x, self._true_y)
-        return rfecv.estimator_
+            # Create the model report for each score function
+            mean_test_score = rfecv.cv_results_["mean_test_score"]
+            training_report["estimators"].append(rfecv.estimator_)
+            training_report["test_scores"] |= {
+                func_name: mean_test_score[np.argmax(mean_test_score)]
+            }
+            training_report["feature_names_out"].append(rfecv.get_feature_names_out())
 
-    def _fitRFE(self, **kwargs) -> FittedEstimator:
+        # Get index of the best estimator from the training report
+        index = training_report["estimators"].index(
+            self._selectEstimatorFromReport(training_report)
+        )
+        # Use index to get the selected features from the best model
+        selected_features = training_report["feature_names_out"][index]
+        self._reduceFeatures(selected_features)
+
+        # Fit new model with the selected features AND feature names
+        self._logger.info("Training model with optimal feature count")
+        return self._fitWithCrossValidation(self._train_x, y)
+
+    def _fitRFE(
+        self,
+        x: Union[pd.DataFrame, ArrayLike],
+        y: Union[pd.Series, ArrayLike],
+        **kwargs,
+    ) -> FittedEstimator:
         """
         A Recursive Feature Elimination (RFE) with automatic
         tuning of the number of features selected.
+
         Parameters
         ----------
         **kwargs : dict
@@ -350,14 +532,20 @@ class ModelTrainer:
         -----
         - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
         """
-        # NOTE: Some models do not support this (e.g. GaussianNB)!
-        # TODO: Adjust for multiple scoring functions
+        # If the estimator was fitted with another training method
+        # because the estimator was incompatible with RFE-based training,
+        # then return that estimator.
+        estimator = self._checkModelCompatibility()
+        if estimator is not None:
+            return estimator
+
         self._checkAllFeaturesPresent()
-        rfe = RFE(self._unfit_estimator, **kwargs).fit(self._train_x, self._true_y)
-        return rfe.estimator_
+        rfe = RFE(self._unfit_estimator, **kwargs).fit(x, y)
+        self._reduceFeatures(rfe.get_feature_names_out())
+        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
 
     def _fitWithCrossValidation(
-        self,
+        self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
     ) -> FittedEstimator:
         """
         Train a set of models using cross-validation.
@@ -386,14 +574,16 @@ class ModelTrainer:
         """
         cv_results = cross_validate(
             estimator=self._unfit_estimator,
-            X=self._train_x,
-            y=self._true_y,
+            X=x,
+            y=y,
             scoring=self._model_score_funcs,
             cv=self._cross_validator,
             n_jobs=self._n_jobs,
             return_estimator=True,
         )
-        print(cv_results)
+        self._logger.debug(
+            f"Cross-Validation results:\n\t{"\n\t".join([f"{k}: {v.__repr__()}" for k, v in cv_results.items()])}"
+        )
         training_report = {
             "estimators": cv_results["estimator"],
             "test_scores": {
@@ -403,16 +593,26 @@ class ModelTrainer:
         }
         return self._selectEstimatorFromReport(training_report)
 
-    def _fit(self) -> FittedEstimator:
+    def _fit(
+        self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
+    ) -> FittedEstimator:
         """
         Train a single model directly on the training data.
+
+        Parameters
+        ----------
+        x : pd.DataFrame | ArrayLike
+            Training data with features.
+
+        y : pd.Series | ArrayLike
+            Target label.
 
         Returns
         -------
         FittedEstimator
             The trained model
         """
-        return self._unfit_estimator.fit(self._train_x, self._true_y)
+        return self._unfit_estimator.fit(x, y)
 
     def run(
         self,
@@ -433,43 +633,51 @@ class ModelTrainer:
             If the selected training method is invalid.
         """
 
-        training_method = self._config.getValue(
+        self._training_method = self._config.getValue(
             "training_method", parent_key=self._parent_key
         )
 
         self._logger.info(f"Training model...")
         start_time = time()
 
-        if training_method == TrainingMethod.FIT.name:
-            fitted_estimator = self._fit()
-        elif training_method == TrainingMethod.CROSS_VALIDATION.name:
-            fitted_estimator = self._fitWithCrossValidation()
-        elif training_method == TrainingMethod.RFE.name:
-            fitted_estimator = self._fitRFE(
-                **self._config.getValue("RFE", self._parent_key)
+        if self._training_method == TrainingMethod.FIT.name:
+            fitted_estimator = self._fit(self._train_x, self._train_true_y)
+        elif self._training_method == TrainingMethod.CROSS_VALIDATION.name:
+            fitted_estimator = self._fitWithCrossValidation(
+                self._train_x, self._train_true_y
             )
-        elif training_method == TrainingMethod.RFECV.name:
+        elif self._training_method == TrainingMethod.RFE.name:
+            fitted_estimator = self._fitRFE(
+                self._train_x,
+                self._train_true_y,
+                **self._config.getValue("RFE", self._parent_key),
+            )
+        elif self._training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFEWithCrossValidation(
+                self._train_x,
+                self._train_true_y,
                 **self._config.getValue("RFECV", self._parent_key),
             )
-        elif training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
             random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
             grid_args = self._config.getValue("GridSearchCV", self._parent_key)
             fitted_estimator = self._fitRandomSearchWithCrossValidation(
-                random_args | grid_args
+                self._train_x, self._train_true_y, random_args | grid_args
             )
-        elif training_method == TrainingMethod.GRID_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.GRID_SEARCH_CV.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
-                self._config.getValue("GridSearchCV", self._parent_key)
+                self._train_x,
+                self._train_true_y,
+                **self._config.getValue("GridSearchCV", self._parent_key),
             )
         else:
             raise ValueError(
-                f"Invalid training method '{training_method}'. Expected one of {TrainingMethod._member_names_}"
+                f"Invalid training method '{self._training_method}'. Expected one of {TrainingMethod._member_names_}"
             )
 
         self._logger.info(f"Model training took {time()-start_time:.3f} s")
         self._compileModelReport(fitted_estimator)
         self._logger.info(
-            f"Model training complete! Total training time: {time()-start_time:.3f} s"
+            f"Model training complete! Total running time: {time()-start_time:.3f} s"
         )
-        return fitted_estimator, self._pipeline_report
+        return self._pipeline_report

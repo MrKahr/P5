@@ -1,24 +1,16 @@
 import numpy as np
-import pandas as pd
 from sklearn.metrics import (
-    confusion_matrix,
     precision_score,
     recall_score,
 )
 from modules.config.config import Config
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
-from modules.types import FittedEstimator
 from modules.logging import logger
 
 
 class ModelTester:
     def __init__(
         self,
-        estimator: FittedEstimator,
-        train_x: pd.DataFrame,
-        train_true_y: pd.Series,
-        test_x: pd.DataFrame,
-        test_true_y: pd.Series,
         pipeline_report: dict,
     ):
         """
@@ -27,31 +19,16 @@ class ModelTester:
 
         Parameters
         ----------
-        estimator : FittedEstimator
-            A fitted estimator which to evaluate.
-
-        train_x : pd.DataFrame
-            Training feature(s).
-
-        train_true_y : pd.Series
-            Target training feature, i.e., "Dag".
-
-        test_x : pd.DataFrame
-            Testing feature(s).
-
-        test_true_y : pd.Series
-            Target test feature, i.e., "Dag".
-
         pipeline_report : dict
             The pipeline report containing relevant results for the entire pipeline.
         """
         self._config = Config()
-        self._estimator = estimator
-        self._train_x = train_x
-        self._train_true_y = train_true_y
-        self._test_x = test_x
-        self._test_true_y = test_true_y
         self._pipeline_report = pipeline_report
+        self._estimator = pipeline_report["estimator"]
+        self._train_x = pipeline_report["train_x"]
+        self._train_true_y = pipeline_report["train_true_y"]
+        self._test_x = pipeline_report["test_x"]
+        self._test_true_y = pipeline_report["test_true_y"]
 
     def run(self) -> dict:
         """
@@ -63,7 +40,7 @@ class ModelTester:
         dict
             The pipeline report with evaluation results added.
         """
-        logger.info(f"Testing {type(self._estimator).__name__} model")
+        logger.info(f"Testing model: {type(self._estimator).__name__}")
         _avg = "weighted"
 
         # Compute train stats
@@ -79,7 +56,6 @@ class ModelTester:
 
         # Compute testing stats
         test_pred_y = self._estimator.predict(self._test_x)
-        confusion_matrix_ = confusion_matrix(self._test_true_y, test_pred_y)
 
         # Compute model evaluation metrics for test set
         test_precision = precision_score(
@@ -93,7 +69,6 @@ class ModelTester:
         # Compute model accuracies on train and test using all selected scoring functions
         train_accuracies = {}
         test_accuracies = {}
-        # FIXME: Not ideal as predictions are computed multiple times.
         for func_name, func in ScoreFunctionSelector.getScoreFuncsModel().items():
             logger.info(f"Computing model accuracy using '{func_name}'")
             train_accuracies |= {
@@ -112,13 +87,6 @@ class ModelTester:
             "test_precision": test_precision,  # type: float
             "test_recall": test_recall,  # type: float
             "train_pred_y": train_pred_y,  # type: ndarray
-            "train_x": self._train_x,  # type: pd.DataFrame
-            "train_true_y": self._train_true_y,  # type: pd.Series
             "test_pred_y": test_pred_y,  # type: ndarray
-            "test_x": self._test_x,  # type: pd.DataFrame
-            "test_true_y": self._test_true_y,  # type: pd.Series
-            "confusion_matrix": confusion_matrix_,  # type: ndarray
-            "estimator": self._estimator,  # type: FittedEstimator
         }
-
         return self._pipeline_report
