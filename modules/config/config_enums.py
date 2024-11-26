@@ -73,13 +73,19 @@ class TrainingMethod(Enum):
 
 class VariableDistribution(Enum):
     # TODO: Consider implementing support for multivariate distributions
-    BERNOULLI = 0
-    BINOM = 1
-    GEOM = 2
-    HYPERGEOM = 3
-    POISSON = 4
-    RANDINT = 5  # Uniform distribution
-    ZIPF = 6
+
+    # Continous distributions
+    UNIFORM = 1
+
+    # Discrete distributions
+    BERNOULLI = 100
+    BINOM = 101
+    GEOM = 103
+    HYPERGEOM = 104
+    POISSON = 105
+    RANDINT = 106  # Uniform distribution
+    RANDFLOAT = 107
+    ZIPF = 108
 
 
 # SECTION Model Testing

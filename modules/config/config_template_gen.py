@@ -145,7 +145,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
+                "training_method": TrainingMethod.RANDOM_SEARCH_CV.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -254,19 +254,19 @@ class ConfigTemplate(object):
                     ],  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 1, "high": 50, "size": 1000},
+                        "dist_params": {"low": 1, "high": 25, "size": 100},
                     },
                     "min_samples_split": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 1, "high": 20, "size": 1000},
+                        "dist_params": {"low": 1, "high": 10, "size": 100},
                     },
                     "min_samples_leaf": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 1, "high": 20, "size": 1000},
+                        "dist_params": {"low": 1, "high": 10, "size": 100},
                     },
                     "min_weight_fraction_leaf": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 0.1, "high": 1, "size": 100},
+                        "dist_params": {"low": 0, "high": 1, "size": 10},
                     },
                     "max_features": [
                         "sqrt",
@@ -274,15 +274,15 @@ class ConfigTemplate(object):
                     ],  # type: Litteral["sqrt", "log2"] | int | float | None
                     "max_leaf_nodes": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 2, "high": 10, "size": 100},
+                        "dist_params": {"low": 2, "high": 10, "size": 10},
                     },  # type: int | None
                     "min_impurity_decrease": {
-                        "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 0.0, "high": 0.1, "size": 1000},
+                        "dist": VariableDistribution.RANDFLOAT.name,
+                        "dist_params": {"low": 0.0, "high": 0.1, "size": 100},
                     },
                     "ccp_alpha": {
-                        "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 0.0, "high": 0.5, "size": 0.01},
+                        "dist": VariableDistribution.RANDFLOAT.name,
+                        "dist_params": {"low": 0.0, "high": 0.5, "size": 10},
                     },
                 },
                 "RandomParamGridRandomForest": {
@@ -291,7 +291,7 @@ class ConfigTemplate(object):
                         "dist": VariableDistribution.RANDINT.name,
                         "dist_params": {"low": 100, "high": 1000, "size": 100},
                     },
-                    "bootstrap": [True, False],  # REVIEW: Does this make sense?
+                    "bootstrap": [True, False],
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
                     "max_samples": {
                         "dist": VariableDistribution.RANDINT.name,
@@ -330,15 +330,15 @@ class ConfigTemplate(object):
                     "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
                     "learning_rate_init": 0.001,
                     "alpha": {
-                        "dist": VariableDistribution.RANDINT.name,
+                        "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
                     },
                     "max_iter": {
-                        "dist": VariableDistribution.RANDINT.name,
+                        "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
                     },
                     "tol": {
-                        "dist": VariableDistribution.RANDINT.name,
+                        "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
                     },
                 },  # type: any discrete dist from https://docs.scipy.org/doc/scipy/reference/stats.html

@@ -2,8 +2,8 @@ from typing import Callable, Union
 import pandas as pd
 import numpy as np
 import math
-import scipy as sp
-import scipy.stats as stats
+from scipy.stats._discrete_distns import randint
+from scipy.stats._continuous_distns import uniform_gen
 
 from numpy.typing import NDArray, ArrayLike
 
@@ -320,12 +320,25 @@ class ModelTrainer:
         for k, v in random_grid.items():
             if isinstance(v, dict):
                 distribution_type = v["dist"]
+                params = v["dist_params"]  # type: dict
+                print(f"key: {k} | params: {params}")
                 if distribution_type == VariableDistribution.RANDINT.name:
-                    distribution = list(stats.randint_gen().rvs(**v["dist_params"]))
+                    # args = [params.pop("low"), params.pop("high")]
+                    distribution = randint.rvs(**v["dist_params"]).astype(dtype="int32")
+                elif distribution_type == VariableDistribution.RANDFLOAT.name:
+                    distribution = (
+                        uniform_gen(
+                            a=params.pop("low"), b=params.pop("high"), name="uniform2"
+                        )
+                        .rvs(**params)
+                        .astype(dtype="int32")
+                    )
 
                 self._config.setValue(k, distribution, grid_key)
 
-        return self._config.getValue(grid_key, parent_key)
+        g = self._config.getValue(grid_key, parent_key)
+        print(g)
+        return g
 
     def _fitGridSearchWithCrossValidation(
         self,
@@ -693,7 +706,7 @@ class ModelTrainer:
             random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
             grid_args = self._config.getValue("GridSearchCV", self._parent_key)
             fitted_estimator = self._fitRandomSearchWithCrossValidation(
-                self._train_x, self._train_true_y, random_args | grid_args
+                self._train_x, self._train_true_y, **random_args | grid_args
             )
         elif self._training_method == TrainingMethod.GRID_SEARCH_CV.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
