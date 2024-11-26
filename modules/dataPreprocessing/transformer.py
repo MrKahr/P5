@@ -527,30 +527,45 @@ class DataTransformer:
             A list of numbers where each number represents the lower bound of an interval.
             Note that intervals expressed like this never overlap, and exclude their upper bound, which is the lower bound for the next interval.
             The list should be sorted from smallest to biggest.
+        column_name: str
+            The name of the column whose values should be replaced
+        replace_blacklist: list[float]
+            A list of numbers that may or may not occur in the column and shouldn't be replaced
         """
         logger.info(f"Assigning intervals to values in {column_name}")
         print(self.df)
-        values = self.df[column_name].to_numpy()
-        # for each value in the given column
-        for i in range(values.size):
-            value = values[i]
-            # do a quick sanity check to see if the value can be placed in an interval at all
-            if value < lower_bounds[0]:
-                self.df.at[i, column_name] = (
-                    100  # value is considered missing if there's no interval for it
-                )
-                logger.warning(
-                    f"Value of {value} in column {column_name} at row {i} does not fit in any interval. Lowest interval bound is {lower_bounds[0]}."
-                )
-                continue
-            # go backwards through lower_bounds and check if the value is larger than or equal to a given lower bound
-            # using alternative syntax for range to get it to count down instead of up. We stop at 0 just before we hit -1 and take steps of size -1.
-            for j in range(len(lower_bounds) - 1, -1, -1):
-                if value >= lower_bounds[j]:
-                    self.df.at[i, column_name] = (
-                        j  # replacing the value with the interval it is part of
-                    )
-                    break
+
+        def intervalify(
+            x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
+        ) -> int or float:  # type: ignore
+            """Helper function for assignIntervals that maps a value to its interval
+
+            Parameters
+            ----------
+            x : float
+                The value to map
+            lower_bounds : list[float]
+                A list of non-overlapping intervals' lower bounds
+            replace_blacklist : list[float]
+                A list of values that should not be replaced
+            Returns
+            -------
+            int or float
+                The index of the interval that x fits into, or x, if x is in the blacklist
+            """
+            for i in range(len(lower_bounds)):
+                upper_bound = np.inf
+                if x in replace_blacklist:
+                    return x
+                if (i + 1) < len(lower_bounds):
+                    upper_bound = lower_bounds[i + 1]
+                if lower_bounds[i] <= x < upper_bound:
+                    return i
+
+        series_to_modify = self.df[column_name]
+        self.df[column_name] = series_to_modify.apply(
+            intervalify, lower_bounds=lower_bounds
+        )
 
         logger.info(f"Discretization of {column_name} complete")
 
