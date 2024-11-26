@@ -414,15 +414,18 @@ class DataTransformer:
             A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
         """
         logger.info(
-            f'Preparing discretization of column "{value_column_name}" with class column "{value_column_name}"'
+            f'Preparing discretization of column "{value_column_name}" with class column "{class_column_name}"'
         )
 
         # get values to discretize given some column name and sort them from smallest to biggest
         values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
-        values = values.sort()
+        values.sort()
+
+        logger.debug(f"Values in {value_column_name} are {values}")
 
         # copy list of values to get initial interval lower bounds
-        lower_bounds = values.copy()
+        # NOTE we take a shortcut here by getting only the unique values. This saves a lot of iterations, as ChiMerge will always merge identical intervals
+        lower_bounds = np.unique(values)
 
         # find distinct classes given some column name ("Dag", for example)
         classes = self.df[class_column_name].dropna().unique()
@@ -430,7 +433,7 @@ class DataTransformer:
         # NOTE - We use three nested for-loops to calculate chi-square for all pairs of adjacent intervals.
         # The output is stored in an array that is 1 smaller than the array of interval bounds such that
         # chi[i] holds the chi-square of the interval expressed by bound[i] and bound[i+1]
-        chi_squares = [None] * lower_bounds.size - 1
+        chi_squares = np.empty(lower_bounds.size - 1)
 
         # initialise this to get the while loop going
         minimum_chi_square = -np.inf
@@ -439,7 +442,9 @@ class DataTransformer:
         # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
         # recalculate chi-square values for all intervals # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
 
-        logger.info(f"Running ChiMerge with {len(values)} values and {len(classes)}")
+        logger.info(
+            f"Running ChiMerge with {len(values)} values and {len(classes)} classes"
+        )
 
         while (
             lower_bounds.size > 1
@@ -461,15 +466,35 @@ class DataTransformer:
 
                     for j in classes:
                         # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
-                        C_j = self.df.query("@class_column_name == @j").shape[0]
+                        C_j = self.df[self.df[class_column_name] == j].shape[0]
+                        if C_j == 0:
+                            logger.warning(f"C_j is {C_j}! Division by 0 imminent!")
                         # find the number of examples in the current interval
-                        R_i = self.df.query(
-                            "@value_column_name >= @current_lower_bound and @value_column_name < @current_upper_bound"
-                        ).shape[0]
+                        R_i = (
+                            self.df[value_column_name]
+                            .between(
+                                current_lower_bound,
+                                current_upper_bound,
+                                inclusive="left",
+                            )
+                            .sum()
+                        )
+                        if R_i == 0:
+                            logger.warning(f"R_i is {R_i}! Division by 0 imminent!")
+
+                        # explanation for the assignment to R_i: between() returns a series of booleans, in which we count the how many Trues there are with sum()
                         # find the number of examples of class j in the current interval
-                        A_ij = self.df.query(
-                            "@value_column_name >= @current_lower_bound and @value_column_name < @current_upper_bound and @class_column_name == @j"
-                        ).shape[0]
+                        A_ij = (
+                            (self.df[self.df[class_column_name] == j])[
+                                value_column_name
+                            ]
+                            .between(
+                                current_lower_bound,
+                                current_upper_bound,
+                                inclusive="left",
+                            )
+                            .sum()
+                        )
                         # find the expected value of the number of examples of class j in the current interval
                         E_ij = (R_i * C_j) / values.size
                         chi_square += (A_ij - E_ij) ** 2 / E_ij
@@ -478,14 +503,16 @@ class DataTransformer:
 
             # we're done finding chi_squares. Now merge the two intervals with the smallest value
             minimum_chi_square = min(chi_squares)
-            index = np.where(chi_squares, minimum_chi_square)[0]
+            index = np.where(chi_squares == minimum_chi_square)[0][0]
             # intervals can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
-            np.delete(lower_bounds, index + 1)
+            chi_squares = np.delete(chi_squares, index)
+            lower_bounds = np.delete(lower_bounds, index + 1)
 
-        logger.info("Discretization complete. Interval bounds are ")
-        logger.info(f"{lower_bounds}")
+        logger.info(
+            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds}'
+        )
 
-        # when we're done mergin intervals, return the list of lower bounds
+        # when we're done merging intervals, return the list of lower bounds
         return lower_bounds
 
     def assignIntervals(
@@ -502,10 +529,11 @@ class DataTransformer:
             The list should be sorted from smallest to biggest.
         """
         logger.info(f"Assigning intervals to values in {column_name}")
-
+        print(self.df)
+        values = self.df[column_name].to_numpy()
         # for each value in the given column
-        for i in range(self.df[column_name].size):
-            value = self.df[column_name][i]
+        for i in range(values.size):
+            value = values[i]
             # do a quick sanity check to see if the value can be placed in an interval at all
             if value < lower_bounds[0]:
                 self.df.at[i, column_name] = (

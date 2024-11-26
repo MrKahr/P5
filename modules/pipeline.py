@@ -63,7 +63,9 @@ class Pipeline:
         # remove the columns we'll never use
         logger.info(f"Dropping unused rows from {Dataset.MÅL.name} dataset")
         mål.drop(
-            labels=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"], axis=1
+            labels=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
+            axis=1,
+            inplace=True,
         )
         logger.info(
             f'Joining {Dataset.MÅL.name} with current dataset on "Gris ID", "Sår ID", "Dag"'
@@ -72,7 +74,6 @@ class Pipeline:
         mål.set_index(["Gris ID", "Sår ID", "Dag"], inplace=True)
         # with the multi-index on Mål, we can join on multiple things at once
         self.df = self.df.join(mål, how="left", on=["Gris ID", "Sår ID", "Dag"])
-        print(self.df)
 
     def getTrainX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
@@ -92,7 +93,7 @@ class Pipeline:
         self.df = self.loadDataset(self.train_dataset)
 
         # join dataset with MÅL if we want to use that
-        if Config.getValue("UseContinuousFeatures"):
+        if Config().getValue("UseContinuousFeatures"):
             self.addMål()
 
         # run the rest of the pipeline
