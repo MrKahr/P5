@@ -2,7 +2,11 @@ from typing import Callable, Union
 import pandas as pd
 import numpy as np
 import math
+import scipy as sp
+import scipy.stats as stats
+
 from numpy.typing import NDArray, ArrayLike
+
 from time import time
 
 from sklearn import model_selection
@@ -16,7 +20,7 @@ from sklearn.model_selection import (
 from sklearn.utils import Bunch
 
 from modules.config.config import Config
-from modules.config.config_enums import TrainingMethod, Model
+from modules.config.config_enums import TrainingMethod, Model, VariableDistribution
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.types import (
@@ -256,6 +260,18 @@ class ModelTrainer:
         )
         return estimator
 
+    def _getRange(
+        self, start: int | float, stop: int | float, step: int | float
+    ) -> list[range]:
+        if type(start) is float or type(stop) is float or type(step) is float:
+            # linspace requires number of steps and not stepsize
+            value_range = list(
+                np.linspace(start, stop, math.ceil(abs(stop - start) / step))
+            )
+        else:
+            value_range = list(range(start, stop, step))
+        return value_range
+
     def _getParamGrid(self) -> dict:
         # TODO: Implement more input validation
         # Initialize model and grid
@@ -264,37 +280,52 @@ class ModelTrainer:
         # Ensure param grid matches model
         match current_model:
             case Model.DECISION_TREE.name:
-                parent_key = "ParamGridDecisionTree"
+                grid_key = "ParamGridDecisionTree"
             case Model.NAIVE_BAYES.name:
-                parent_key = "ParamGridNaiveBayes"
+                grid_key = "ParamGridNaiveBayes"
             case Model.NEURAL_NETWORK.name:
-                parent_key = "ParamGridNeuralNetwork"
+                grid_key = "ParamGridNeuralNetwork"
             case Model.RANDOM_FOREST.name:
-                parent_key = "ParamGridRandomForest"
+                grid_key = "ParamGridRandomForest"
 
-        current_grid = self._config.getValue(parent_key)
+        current_grid = self._config.getValue(grid_key)
 
         # Update current config
-        for key, value in current_grid.items():
-            # We specified dict of steps in range
-            if isinstance(value, dict):
-                # Value is a dict containing keys
-                start, stop, step = value.values()
-
-                if type(start) is float or type(stop) is float or type(step) is float:
-                    # linspace requires number of steps and not stepsize
-                    value_range = list(
-                        np.linspace(start, stop, math.ceil(abs(stop - start) / step))
-                    )
-                else:
-                    value_range = list(range(start, stop, step))
-
-                self._config.setValue(key, value_range, parent_key)
+        for k, v in current_grid.items():
+            if isinstance(v, dict):
+                self._config.setValue(k, self._getRange(**v), grid_key)
 
         # Param grid updated with ranges
-        current_grid = self._config.getValue(parent_key)
-
+        current_grid = self._config.getValue(grid_key)
         return current_grid
+
+    def _getRandomParamGrid(self) -> dict:
+        # Initialize model and grid
+        parent_key = "RandomParamGrid"
+        current_model = self._config.getValue("model", "ModelSelection")
+
+        # Ensure param grid matches model
+        match current_model:
+            case Model.DECISION_TREE.name:
+                grid_key = "RandomParamGridDecisionTree"
+            case Model.NAIVE_BAYES.name:
+                grid_key = "RandomParamGridNaiveBayes"
+            case Model.NEURAL_NETWORK.name:
+                grid_key = "RandomParamGridNeuralNetwork"
+            case Model.RANDOM_FOREST.name:
+                grid_key = "RandomParamGridRandomForest"
+
+        random_grid = self._config.getValue(grid_key, parent_key)
+
+        for k, v in random_grid.items():
+            if isinstance(v, dict):
+                distribution_type = v["dist"]
+                if distribution_type == VariableDistribution.RANDINT.name:
+                    distribution = list(stats.randint_gen().rvs(**v["dist_params"]))
+
+                self._config.setValue(k, distribution, grid_key)
+
+        return self._config.getValue(grid_key, parent_key)
 
     def _fitGridSearchWithCrossValidation(
         self,
@@ -392,7 +423,7 @@ class ModelTrainer:
         self._checkAllFeaturesPresent()
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
-            param_distributions={},  # TODO: Implement param distributions in config
+            param_distributions=self._getRandomParamGrid(),
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,

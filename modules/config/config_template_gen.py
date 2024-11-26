@@ -1,5 +1,6 @@
 from typing import Self
 
+
 from modules.config.config_enums import (
     CrossValidator,
     DistanceMetric,
@@ -12,23 +13,24 @@ from modules.config.config_enums import (
     OutlierRemovalMethod,
     ModelScoreFunc,
     TrainingMethod,
+    VariableDistribution,
 )
 
 
 class ConfigTemplate(object):
     """
     Singleton that defines the structure/layout of our configuration file.
-    This layout is called a "template".
+    This layout is called low "template".
     """
 
     _instance = None
 
-    # This is a singleton class since we only want 1 instance of a ConfigTemplate at all times
+    # This is low singleton class since we only want 1 instance of low ConfigTemplate at all times
     def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
 
-            # We assign the template as an instance variable, however, seeing as the class is a singleton, it could've been a class variable as well.
+            # We assign the template as an instance variable, however, seeing as the class is low singleton, it could've been low class variable as well.
             # Assigning it as an instance variable makes VSCode not recognise it as defined, however it runs just fine.
             cls._instance._template = cls._createTemplate()
         return cls._instance
@@ -171,7 +173,7 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {  # NOTE: GridSearch arguments are also used for RandomSearch
-                    "refit": False,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": False,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be low str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                     "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
@@ -202,7 +204,7 @@ class ConfigTemplate(object):
                 },
                 "ParamGridRandomForest": {
                     "n_estimators": {"start": 100, "stop": 1000, "step": 100},
-                    "bootstrap": [True, False],
+                    "bootstrap": [True, False],  # REVIEW: Does this make sense?
                     "oob_score": False,  # type: bool | Callable # TODO: Add score function
                     "random_state": 53,  # type: int | None
                     "max_samples": {
@@ -218,8 +220,18 @@ class ConfigTemplate(object):
                     "hidden_layer_sizes": {
                         "layers": {"start": 2, "stop": 10, "step": 1},
                         "layer_size": {"start": 2, "stop": 25, "step": 10},
+                        # "input_layer": DEFINE AT RUNTIME
+                        "output_layer": {
+                            "start": 2,
+                            "stop": 2,
+                            "step": 1,
+                        },  # 2 for binary classification
                     },
-                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "activation": [
+                        "logistic",
+                        "relu",
+                        "tanh",
+                    ],  # type: Literal["identity", "logistic", "tanh", "relu"]
                     "solver": [
                         "sgd",
                         "lbfgs",
@@ -232,6 +244,104 @@ class ConfigTemplate(object):
                     "tol": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
                     "random_state": 678,
                 },
+            },
+            "RandomParamGrid": {
+                "rng_seed": 503,
+                "RandomParamGridDecisionTree": {
+                    "criterion": [
+                        "gini",
+                        "log_loss",
+                    ],  # type: Literal["gini", "entropy", "log_loss"]
+                    "max_depth": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 1, "high": 50, "size": 1000},
+                    },
+                    "min_samples_split": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 1, "high": 20, "size": 1000},
+                    },
+                    "min_samples_leaf": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 1, "high": 20, "size": 1000},
+                    },
+                    "min_weight_fraction_leaf": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.1, "high": 1, "size": 100},
+                    },
+                    "max_features": [
+                        "sqrt",
+                        "log2",
+                    ],  # type: Litteral["sqrt", "log2"] | int | float | None
+                    "max_leaf_nodes": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 2, "high": 10, "size": 100},
+                    },  # type: int | None
+                    "min_impurity_decrease": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.0, "high": 0.1, "size": 1000},
+                    },
+                    "ccp_alpha": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.0, "high": 0.5, "size": 0.01},
+                    },
+                },
+                "RandomParamGridRandomForest": {
+                    "rng_seed": 503,
+                    "n_estimators": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 100, "high": 1000, "size": 100},
+                    },
+                    "bootstrap": [True, False],  # REVIEW: Does this make sense?
+                    "oob_score": False,  # type: bool | Callable # TODO: Add score function
+                    "max_samples": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 10, "high": 500, "size": 10},
+                    },
+                },
+                # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
+                "RandomParamGridGaussianNaiveBayes": {},
+                "RandomParamGridNeuralNetwork": {
+                    "rng_seed": 503,
+                    "hidden_layer_sizes": {
+                        "layers": {
+                            "dist": VariableDistribution.RANDINT.name,
+                            "dist_params": {"low": 2, "high": 10, "size": 100},
+                        },
+                        "layer_size": {
+                            "dist": VariableDistribution.RANDINT.name,
+                            "dist_params": {"low": 2, "high": 25, "size": 10},
+                        },
+                        # "input_layer": DEFINE AT RUNTIME
+                        "output_layer": {
+                            "dist": VariableDistribution.RANDINT.name,
+                            "dist_params": {"low": 2, "high": 2, "size": 1},
+                        },  # 2 for binary classification
+                    },
+                    "activation": [
+                        "logistic",
+                        "relu",
+                        "tanh",
+                    ],  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "solver": [
+                        "sgd",
+                        "lbfgs",
+                        "adam",
+                    ],  # type: Literal["lbfgs", "sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": 0.001,
+                    "alpha": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
+                    },
+                    "max_iter": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
+                    },
+                    "tol": {
+                        "dist": VariableDistribution.RANDINT.name,
+                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
+                    },
+                },  # type: any discrete dist from https://docs.scipy.org/doc/scipy/reference/stats.html
             },
             "ModelEvaluation": {
                 "print_model_report": True,
