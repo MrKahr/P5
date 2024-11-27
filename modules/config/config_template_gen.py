@@ -76,7 +76,7 @@ class ConfigTemplate(object):
                         "Sårrand (cm)",
                         "Midte (cm)",
                     ],  # type: list[str] #TODO - Implement me!
-                    "DiscretizeMethod": DiscretizeMethod.CHIMERGE.name,
+                    "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
                     "ChiMergeMaximumMergeThreshold": {
                         "Sårrand (cm)": np.inf,
                         "Midte (cm)": np.inf,

@@ -414,6 +414,8 @@ class DataTransformer:
         # get values to discretize given some column name and sort them from smallest to biggest
         values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
         values.sort()
+        # values of 100 are undefined, so we remove those before moving on
+        values = values[values != 100]
 
         logger.debug(f"Values in {value_column_name} are {values}")
 
@@ -509,6 +511,56 @@ class DataTransformer:
         # when we're done merging intervals, return the list of lower bounds
         return lower_bounds
 
+    def discretizeNaively(
+        self,
+        column_name: str = "Sårrand (cm)",
+        desired_intervals: int = 1,
+    ) -> list[float]:
+        """
+        A naive discretization method that splits the values in the given column into a number of intervals
+        where each interval has the same length.
+
+        Parameters
+        ----------
+        column_name : str
+            The name of the dataframe column that holds the values to discretize
+        desired_intervals : int
+            The number of intervals to generate
+
+        Returns
+        -------
+        list[float]
+            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
+
+        Raises
+        ------
+        ValueError
+            If the number of desired intervals is 0 or less, no intervals can be generated
+        """
+        logger.info(f'Preparing discretization of column "{column_name}"')
+
+        values = self.df[column_name].to_numpy()
+        # if desired intervals is 0 or less, we can't split the column into any intervals!
+        if desired_intervals < 1:
+            raise ValueError("Desired intervals must be 1 or more")
+
+        # values of 100 are undefined, so we remove those before moving on
+        values = values[values != 100]
+
+        logger.info(f"Running naitve discretization with {len(values)} values")
+
+        # find out how big each step is when we need desired_intervals intervals
+        step = (values.max() - values.min()) / desired_intervals
+        lower_bounds = np.empty(desired_intervals)
+        for i in range(desired_intervals):
+            lower_bounds[i] = values.min() + (step * i)
+
+        logger.info(
+            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds}'
+        )
+
+        return lower_bounds
+
     def assignIntervals(
         self, lower_bounds: list[float], column_name: str = "Sårrand (cm)"
     ) -> None:
@@ -594,10 +646,11 @@ class DataTransformer:
                         config.getValue("DiscretizeMethod")
                         == DiscretizeMethod.NAIVE.name
                     ):
-                        interval_bounds = (
-                            self.discretizeNaively(  # TODO - implement me!
-                                value_column_name=column
-                            )
+                        interval_bounds = self.discretizeNaively(
+                            column_name=column,
+                            desired_intervals=config.getValue(
+                                "DiscretizeDesiredIntervals"
+                            ).get(column),
                         )
                     else:
                         logger.warning("Undefined discretization method! Skipping")
