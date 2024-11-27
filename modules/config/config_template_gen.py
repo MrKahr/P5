@@ -97,7 +97,7 @@ class ConfigTemplate(object):
             },
             "ModelSelection": {
                 # TODO: Make it possible to train multiple models
-                "model": Model.DECISION_TREE.name,
+                "model": Model.NEURAL_NETWORK.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": None,  # type: int | None
@@ -246,7 +246,6 @@ class ConfigTemplate(object):
                 },
             },
             "RandomParamGrid": {
-                "rng_seed": 503,
                 "RandomParamGridDecisionTree": {
                     "criterion": [
                         "gini",
@@ -286,7 +285,6 @@ class ConfigTemplate(object):
                     },
                 },
                 "RandomParamGridRandomForest": {
-                    "rng_seed": 503,
                     "n_estimators": {
                         "dist": VariableDistribution.RANDINT.name,
                         "dist_params": {"low": 100, "high": 1000, "size": 100},
@@ -301,20 +299,14 @@ class ConfigTemplate(object):
                 # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                 "RandomParamGridGaussianNaiveBayes": {},
                 "RandomParamGridNeuralNetwork": {
-                    "rng_seed": 503,
                     "hidden_layer_sizes": {
-                        "layers": {
-                            "dist": VariableDistribution.RANDINT.name,
-                            "dist_params": {"low": 2, "high": 10, "size": 100},
-                        },
-                        "layer_size": {
-                            "dist": VariableDistribution.RANDINT.name,
-                            "dist_params": {"low": 2, "high": 25, "size": 10},
-                        },
+                        "layers": {"start": 1, "stop": 10, "step": 1},
+                        "layer_size": {"start": 2, "stop": 10, "step": 1},
                         # "input_layer": DEFINE AT RUNTIME
                         "output_layer": {
-                            "dist": VariableDistribution.RANDINT.name,
-                            "dist_params": {"low": 2, "high": 2, "size": 1},
+                            "start": 2,
+                            "stop": 2,
+                            "step": 1,
                         },  # 2 for binary classification
                     },
                     "activation": [
@@ -328,7 +320,7 @@ class ConfigTemplate(object):
                         "adam",
                     ],  # type: Literal["lbfgs", "sgd", "adam"]
                     "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
-                    "learning_rate_init": 0.001,
+                    "learning_rate_init": [0.001],
                     "alpha": {
                         "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
