@@ -306,7 +306,7 @@ class ModelTrainer:
 
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
-            param_grid=self._getParamGrid(),
+            param_grid=ParamGridGenerator(len(self._train_x.columns)).getParamGrid(),
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             refit=refit.lower() if isinstance(refit, str) else refit,
