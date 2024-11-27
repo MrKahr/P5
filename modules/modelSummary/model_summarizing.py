@@ -2,7 +2,6 @@ from copy import deepcopy
 from datetime import datetime
 import os
 from pathlib import Path
-import statistics
 from typing import Any
 from itertools import cycle
 
