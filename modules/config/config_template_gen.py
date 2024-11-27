@@ -1,7 +1,10 @@
 from typing import Self
 
+import numpy as np
+
 from modules.config.config_enums import (
     CrossValidator,
+    DiscretizeMethod,
     DistanceMetric,
     FeatureScoreFunc,
     FeatureSelectionCriterion,
@@ -73,6 +76,15 @@ class ConfigTemplate(object):
                         "Sårrand (cm)",
                         "Midte (cm)",
                     ],  # type: list[str] #TODO - Implement me!
+                    "DiscretizeMethod": DiscretizeMethod.CHIMERGE.name,
+                    "ChiMergeMaximumMergeThreshold": {
+                        "Sårrand (cm)": np.inf,
+                        "Midte (cm)": np.inf,
+                    },
+                    "DiscretizeDesiredIntervals": {
+                        "Sårrand (cm)": -1,
+                        "Midte (cm)": -1,
+                    },
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,

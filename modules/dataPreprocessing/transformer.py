@@ -7,6 +7,7 @@ from numpy.typing import ArrayLike
 
 from modules.config.config import Config
 from modules.config.config_enums import (
+    DiscretizeMethod,
     DistanceMetric,
     ImputationMethod,
     NormalisationMethod,
@@ -575,9 +576,31 @@ class DataTransformer:
             # Discretization
             if len(config.getValue("DiscretizeColumns")) > 0:
                 for column in config.getValue("DiscretizeColumns"):
-                    interval_bounds = self.discretizeWithChiMerge(
-                        value_column_name=column
-                    )
+                    interval_bounds = None
+                    if (
+                        config.getValue("DiscretizeMethod")
+                        == DiscretizeMethod.CHIMERGE.name
+                    ):
+                        interval_bounds = self.discretizeWithChiMerge(
+                            value_column_name=column,
+                            merge_when_below=config.getValue(
+                                "ChiMergeMaximumMergeThreshold"
+                            ).get(column),
+                            desired_intervals=config.getValue(
+                                "DiscretizeDesiredIntervals"
+                            ).get(column),
+                        )
+                    elif (
+                        config.getValue("DiscretizeMethod")
+                        == DiscretizeMethod.NAIVE.name
+                    ):
+                        interval_bounds = (
+                            self.discretizeNaively(  # TODO - implement me!
+                                value_column_name=column
+                            )
+                        )
+                    else:
+                        logger.warning("Undefined discretization method! Skipping")
                     self.assignIntervals(
                         lower_bounds=interval_bounds, column_name=column
                     )
