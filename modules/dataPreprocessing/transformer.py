@@ -417,8 +417,6 @@ class DataTransformer:
         # values of 100 are undefined, so we remove those before moving on
         values = values[values != 100]
 
-        logger.debug(f"Values in {value_column_name} are {values}")
-
         # copy list of values to get initial interval lower bounds
         # NOTE we take a shortcut here by getting only the unique values. This saves a lot of iterations, as ChiMerge will always merge identical intervals
         lower_bounds = np.unique(values)
