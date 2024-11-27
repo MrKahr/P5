@@ -1,6 +1,8 @@
+from copy import deepcopy
 from datetime import datetime
 import os
 from pathlib import Path
+import statistics
 from typing import Any
 from itertools import cycle
 
@@ -53,9 +55,9 @@ class ModelSummary:
                 return f"{value}"
 
         formatted = "{\n"
-        for k, v in self._pipeline_report.items():
+        for k, v in deepcopy(self._pipeline_report).items():
             if k in [
-                "feature_importances",
+                # "feature_importances",
                 "train_pred_y",
                 "test_pred_y",
             ] or isinstance(v, (pd.DataFrame, pd.Series)):
@@ -241,25 +243,83 @@ class ModelSummary:
             self._writeFigure("tree")
         else:
             plt.show(block=False)
-    
+
     def plotFeatureImportance(self) -> None:
-        
-        # Get the feature importances(importances_mean, importances_std, importances) and feature names from the model report
-        result = self._model_report["feature_importances"].get("threshold")
-        feature_names = self._model_report["feature_names_in"]
-        print(result)
-        
-        # Label the means with their feature name
-        feature_importances = pd.Series(result.importances_mean,index=feature_names)
-        
-        fig, ax = plt.subplots(figsize=(10, 5))
-        feature_importances.sort_values().plot.barh(ax=ax, xerr=result.importances_std)
-        ax.set_xlabel("Mean Decrease of accuracy")
+        """
+        Feature importance group(threshold,distance,accuracy,balanced_accuracy) plotted
+        https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+        https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+        """
+        # Get the feature importances(importances_mean, importances_std, importances), feature names and model names from the model report
+        result = self._pipeline_report["feature_importances"]
+        feature_names = self._pipeline_report["feature_names_in"]
+        model = str(self._pipeline_report["estimator"])
+        feature_groups = {f"group{name}": [] for name in feature_names}
+        overall_means = (
+            []
+        )  # list used for calculating sum of the grouped means for a feature
+        group_order = (
+            []
+        )  # list used for getting the sorted groups(sorted after value) to order the plotting of groups
+
+        # Variables/measurements to make groupings (importances_mean, importances_std, importances)
+        positions = np.arange(len(feature_names)) * 10
+        width = 2
+        multiplier = 0
+
+        fig, ax = plt.subplots(figsize=(20, 10), layout="constrained")
+
+        for i, x in enumerate(result):
+            all_feature_values = self._pipeline_report["feature_importances"].get(x)
+            labeled_feature_values = pd.Series(
+                all_feature_values.importances_mean, index=feature_names
+            )  # Label the means with their feature name
+
+            for j, feature in enumerate(labeled_feature_values):
+                group_name = list(feature_groups.keys())[j]
+                feature_groups[group_name].append(feature)
+
+                if i == (len(result) - 1):
+                    # if you want to get the mean of means then change sum() to mean()
+                    overall_means.append(
+                        [sum(feature_groups[group_name]), feature_names[j]]
+                    )
+                    sorted_overall_means = sorted(
+                        overall_means, key=lambda x: x[0], reverse=True
+                    )
+                    group_order = [n[1] for n in sorted_overall_means]
+
+        for y in result:
+            offset = width * multiplier
+            feature_importance = self._pipeline_report["feature_importances"].get(y)
+            feature_importances = pd.Series(
+                feature_importance.importances_mean, index=feature_names
+            )
+            sorted_feature_importances = feature_importances[group_order]
+
+            feature_plot = ax.barh(
+                positions + offset,
+                sorted_feature_importances,
+                width,
+                xerr=feature_importance.importances_std,
+                label=y,
+            )
+            ax.bar_label(feature_plot, padding=1)
+            multiplier += 1
+
+        ax.set_xlabel("Mean accuracy")
         ax.set_ylabel("Features")
-        ax.set_title("Feature Importances with Standard Deviation")
-        fig.tight_layout
-        
-        plt.show()
+        ax.set_title(
+            f"Feature Importances with Standard Deviation for {model.split("(")[0]}"
+        )
+        ax.legend(loc="best")
+        ax.set_yticks(positions + (width * (len(result) - 1) / 2))
+        ax.set_yticklabels(group_order)
+
+        if self._write_fig:
+            self._writeFigure("feature importance")
+        else:
+            plt.show(block=False)
 
     def run(self) -> None:
         if self._config.getValue("print_model_report"):
@@ -270,10 +330,8 @@ class ModelSummary:
             self._plotRocCurve()
         if self._config.getValue("plot_tree"):
             self._plotTree()
+        if self._config.getValue("plot_feature_importance"):
+            self.plotFeatureImportance()
 
         if not self._write_fig:
             input("Press enter to close all figures...")
-        
-    
-        
-            
