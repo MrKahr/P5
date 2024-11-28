@@ -254,14 +254,9 @@ class ModelSummary:
         feature_names = self._pipeline_report["feature_names_in"]
         model = str(self._pipeline_report["estimator"])
         feature_groups = {f"group{name}": [] for name in feature_names}
-        overall_means = (
-            []
-        )  # list used for calculating sum of the grouped means for a feature
-        group_order = (
-            []
-        )  # list used for getting the sorted groups(sorted after value) to order the plotting of groups
+        overall_means = [] # list used for calculating sum of the grouped means for a feature
+        sorted_group_order = [] # list used for getting the sorted groups(sorted after value) to order the plotting of groups
 
-        # Variables/measurements to make groupings (importances_mean, importances_std, importances)
         positions = np.arange(len(feature_names)) * 10
         width = 2
         multiplier = 0
@@ -270,50 +265,34 @@ class ModelSummary:
 
         for i, x in enumerate(result):
             all_feature_values = self._pipeline_report["feature_importances"].get(x)
-            labeled_feature_values = pd.Series(
-                all_feature_values.importances_mean, index=feature_names
-            )  # Label the means with their feature name
+            labeled_feature_values = pd.Series(all_feature_values.importances_mean, index=feature_names) # Label the means with their feature name
 
             for j, feature in enumerate(labeled_feature_values):
-                group_name = list(feature_groups.keys())[j]
-                feature_groups[group_name].append(feature)
+                group_name = f"group{labeled_feature_values.index[j]}" # Identify feature
+                feature_groups[group_name].append(feature) # Add the feature mean to corresponding feature group
 
-                if i == (len(result) - 1):
+                if i == (len(result) - 1): # Calculate sum of all feature groups and sort the groups
                     # if you want to get the mean of means then change sum() to mean()
-                    overall_means.append(
-                        [sum(feature_groups[group_name]), feature_names[j]]
-                    )
-                    sorted_overall_means = sorted(
-                        overall_means, key=lambda x: x[0], reverse=True
-                    )
-                    group_order = [n[1] for n in sorted_overall_means]
+                    overall_means.append([sum(feature_groups[group_name]), feature_names[j]])
+                    sorted_overall_means = sorted(overall_means, key=lambda x: x[0], reverse=True)
+                    sorted_group_order = [n[1] for n in sorted_overall_means] # Save the sorted group order
 
         for y in result:
             offset = width * multiplier
             feature_importance = self._pipeline_report["feature_importances"].get(y)
-            feature_importances = pd.Series(
-                feature_importance.importances_mean, index=feature_names
-            )
-            sorted_feature_importances = feature_importances[group_order]
+            feature_importances = pd.Series(feature_importance.importances_mean, index=feature_names)
+            sorted_feature_importances = feature_importances[sorted_group_order]
 
-            feature_plot = ax.barh(
-                positions + offset,
-                sorted_feature_importances,
-                width,
-                xerr=feature_importance.importances_std,
-                label=y,
-            )
+            feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=feature_importance.importances_std,label=y)
             ax.bar_label(feature_plot, padding=1)
             multiplier += 1
 
         ax.set_xlabel("Mean accuracy")
         ax.set_ylabel("Features")
-        ax.set_title(
-            f"Feature Importances with Standard Deviation for {model.split("(")[0]}"
-        )
+        ax.set_title(f"Feature Importances with Standard Deviation for {model.split("(")[0]}")
         ax.legend(loc="best")
         ax.set_yticks(positions + (width * (len(result) - 1) / 2))
-        ax.set_yticklabels(group_order)
+        ax.set_yticklabels(sorted_group_order)
 
         if self._write_fig:
             self._writeFigure("feature importance")
