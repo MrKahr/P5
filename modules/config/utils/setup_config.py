@@ -5,7 +5,9 @@ class SetupConfig:
     """This class contains values which are globally applicable across our entire codebase"""
 
     # General
-    app_name = "P5"
+    app_name = "P5 Project"
+    app_desc = "Student project about machine learning at AAU"
+    app_version = "0.0.1"
     is_release = False
     traceback_limit = 0 if is_release else None
     app_dir = Path.cwd()  # cwd must be set elsewhere. Preferably in the main '.py' file
@@ -25,3 +27,8 @@ class SetupConfig:
     config_dir = Path(app_dir, "config")
     app_config_path = Path(config_dir, config_file).resolve()
     grid_config_path = Path(config_dir, grid_config_file).resolve()
+
+    # Program arguments
+    arg_batch = False
+    arg_export = False
+    arg_export_path = Path(app_dir, "configExports")
