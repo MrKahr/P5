@@ -70,6 +70,9 @@ class BaseConfig:
         """
         return self._config
 
+    def getConfigPath(self) -> StrPath:
+        return self._config_path
+
     def getValue(self, key: str, parent_key: Optional[str] = None) -> Any:
         """
         Get a value from the config dict object.
@@ -119,7 +122,7 @@ class BaseConfig:
                 f"Failed to update config with '{value}' using key '{key}' {f"inside the scope of parent key '{parent_key}'" if parent_key is not None else ""}."
             )
 
-    def saveToConfig(self) -> None:
+    def writeToDisk(self) -> None:
         """
         Saves the config's underlying dict to disk.
         """
