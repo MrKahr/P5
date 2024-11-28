@@ -382,8 +382,8 @@ class DataTransformer:
 
     def discretizeWithChiMerge(
         self,
+        value_column_name: str,
         class_column_name: str = "Dag",
-        value_column_name: str = "Sårrand (cm)",
         merge_when_below: float = np.inf,
         desired_intervals: int = -1,
     ) -> list[float]:
@@ -393,9 +393,9 @@ class DataTransformer:
 
         Parameters
         ----------
-        class_column : str
+        class_column_name : str
             The name of the dataframe column that the algorithm should consider as holding class labels
-        value_column : str
+        value_column_name : str
             The name of the dataframe column that holds the values to discretize
         merge_when_below: float
             Intervals will only be merged when their chi-square value is below this number
@@ -411,30 +411,26 @@ class DataTransformer:
             f'Preparing discretization of column "{value_column_name}" with class column "{class_column_name}"'
         )
 
-        # get values to discretize given some column name and sort them from smallest to biggest
+        # get values to discretize given some column name and sort them from smallest to biggest. Also handle situation where cleaner has not been used
         values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
         values.sort()
         # values of 100 are undefined, so we remove those before moving on
         values = values[values != 100]
 
-        # copy list of values to get initial interval lower bounds
-        # NOTE we take a shortcut here by getting only the unique values. This saves a lot of iterations, as ChiMerge will always merge identical intervals
+        # get unique values for initial interval lower bounds. Using unique() instead of copy() saves a lot of iterations, as ChiMerge will always merge identical intervals
         lower_bounds = np.unique(values)
 
         # find distinct classes given some column name ("Dag", for example)
         classes = self.df[class_column_name].dropna().unique()
 
-        # NOTE - We use three nested for-loops to calculate chi-square for all pairs of adjacent intervals.
-        # The output is stored in an array that is 1 smaller than the array of interval bounds such that
-        # chi[i] holds the chi-square of the interval expressed by bound[i] and bound[i+1]
+        # chi_squares[i] holds the chi-square of the intervals with the lower bounds lower_bounds[i] and lower_bounds[i+1]
         chi_squares = np.empty(lower_bounds.size - 1)
 
         # initialise this to get the while loop going
         minimum_chi_square = -np.inf
 
-        # while the minimum chi-square value is less than merge_when_below, there is more than 1 interval, and the number of intervals is not desired_intervals
-        # merge the intervals i and i+1 where chi[i] is the smallest chi-square value by removing bound[i+1] from the list of lower bounds
-        # recalculate chi-square values for all intervals # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. bound[i-1] and bound[i], and bound[i] and bound[i+1])
+        # NOTE see section on ChiMerge for how this works
+        # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. lower_bounds[i-1] and lower_bounds[i], and lower_bounds[i] and lower_bounds[i+1])
 
         logger.info(
             f"Running ChiMerge with {len(values)} values and {len(classes)} classes"
@@ -445,6 +441,7 @@ class DataTransformer:
             and minimum_chi_square < merge_when_below
             and lower_bounds.size != desired_intervals
         ):
+            # calculate chi-square for all pairs of adjacent intervals.
             for index in range(
                 lower_bounds.size - 1
             ):  # we're working with pairs of lower bounds, so we stop iterating before we hit the last index
@@ -461,9 +458,8 @@ class DataTransformer:
                     for j in classes:
                         # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
                         C_j = self.df[self.df[class_column_name] == j].shape[0]
-                        if C_j == 0:
-                            logger.warning(f"C_j is {C_j}! Division by 0 imminent!")
-                        # find the number of examples in the current interval
+
+                        # find the number of examples in the current interval by counting the how many Trues there are in the series returned by between() with sum()
                         R_i = (
                             self.df[value_column_name]
                             .between(
@@ -473,10 +469,6 @@ class DataTransformer:
                             )
                             .sum()
                         )
-                        if R_i == 0:
-                            logger.warning(f"R_i is {R_i}! Division by 0 imminent!")
-
-                        # explanation for the assignment to R_i: between() returns a series of booleans, in which we count the how many Trues there are with sum()
                         # find the number of examples of class j in the current interval
                         A_ij = (
                             (self.df[self.df[class_column_name] == j])[
@@ -511,7 +503,7 @@ class DataTransformer:
 
     def discretizeNaively(
         self,
-        column_name: str = "Sårrand (cm)",
+        column_name: str,
         desired_intervals: int = 1,
     ) -> list[float]:
         """
@@ -560,7 +552,9 @@ class DataTransformer:
         return lower_bounds
 
     def assignIntervals(
-        self, lower_bounds: list[float], column_name: str = "Sårrand (cm)"
+        self,
+        column_name: str,
+        lower_bounds: list[float],
     ) -> None:
         """
         Replaces values in a given column with numbers representing the interval they fit into
@@ -590,7 +584,7 @@ class DataTransformer:
             lower_bounds : list[float]
                 A list of non-overlapping intervals' lower bounds
             replace_blacklist : list[float]
-                A list of values that should not be replaced
+                A list of values that should not be replaced. For example missing values.
             Returns
             -------
             int or float
@@ -632,7 +626,7 @@ class DataTransformer:
                         == DiscretizeMethod.CHIMERGE.name
                     ):
                         interval_bounds = self.discretizeWithChiMerge(
-                            value_column_name=column,
+                            column,
                             merge_when_below=config.getValue(
                                 "ChiMergeMaximumMergeThreshold"
                             ).get(column),
@@ -645,7 +639,7 @@ class DataTransformer:
                         == DiscretizeMethod.NAIVE.name
                     ):
                         interval_bounds = self.discretizeNaively(
-                            column_name=column,
+                            column,
                             desired_intervals=config.getValue(
                                 "DiscretizeDesiredIntervals"
                             ).get(column),
@@ -653,7 +647,8 @@ class DataTransformer:
                     else:
                         logger.warning("Undefined discretization method! Skipping")
                     self.assignIntervals(
-                        lower_bounds=interval_bounds, column_name=column
+                        column,
+                        lower_bounds=interval_bounds,
                     )
 
             # One-hot encoding
