@@ -1,7 +1,10 @@
 from typing import Self
 
+import numpy as np
+
 from modules.config.config_enums import (
     CrossValidator,
+    DiscretizeMethod,
     DistanceMetric,
     FeatureScoreFunc,
     FeatureSelectionCriterion,
@@ -47,6 +50,7 @@ class ConfigTemplate(object):
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
                 "UseOutlierRemoval": False,
+                "UseContinuousFeatures": True,
             },
             "DataPreprocessing": {
                 "Cleaning": {
@@ -68,6 +72,19 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
+                    "DiscretizeColumns": [
+                        "Sårrand (cm)",
+                        "Midte (cm)",
+                    ],  # type: list[str]
+                    "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
+                    "ChiMergeMaximumMergeThreshold": {
+                        "Sårrand (cm)": np.inf,
+                        "Midte (cm)": np.inf,
+                    },
+                    "DiscretizeDesiredIntervals": {
+                        "Sårrand (cm)": -1,
+                        "Midte (cm)": -1,
+                    },
                     "UseOneHotEncoding": False,
                     "OneHotEncodeLabels": [],  # type: list[str]
                     "ImputationMethod": ImputationMethod.NONE.name,
