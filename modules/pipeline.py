@@ -44,7 +44,7 @@ class Pipeline:
     @classmethod
     def loadDataset(cls, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("data", dataset.value).absolute()
+        path = Path("dataset", dataset.value).absolute()
         return pd.read_csv(path, sep=";", comment="#")
 
     def getTrainX(self) -> pd.DataFrame:
