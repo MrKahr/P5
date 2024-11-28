@@ -245,45 +245,65 @@ class ModelSummary:
 
     def plotFeatureImportance(self) -> None:
         """
-        Feature importance group(threshold,distance,accuracy,balanced_accuracy) plotted
-        https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-        https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+        Feature importance group(threshold,distance,accuracy,balanced_accuracy) sorted and plotted plotted by 
+        collecting threshold.importances_mean,distance.importances_mean,accuracy.importances_mean,balanced_accuracy.importances_mean
+        from corresponding feature into groups and summing up the values. The sums for each feature are then grouped and
+        sorted, the sorted features are then collected. The collection can then be used to give a order for the plotting
+        of the feature groupings.
+            
+        Variables:
+            - result = List with [threshold,distance,accuracy,balanced_accuracy]
+                Note: Getting permutation feature importances from model training containing threshold, distance, accuracy and
+                balanced_accuracy which all consist of importances_mean, importances_std and importances for each feature.
+            - feature_names = List with [names of features used,,...]. 
+                Note: we load is because result doesn't save feature names(only values)
+            - model = String being the model used.
+                Note: loaded because we want the plots show which model was used
+            - feature_groups = List with [groupFeaturen_name(threshold.importances_mean,distance.importances_mean,accuracy.importances_mean,balanced_accuracy.importances_mean),(),(),...]
+                Note: this list is used for calculating the sum of the means.
+            - overall_means = List of tuples [(sum of (threshold,distance,accuracy,balanced_accuracy), feature name),(,)(,)...].
+                Note: we have a tuple with sum and feature name for each feature_group which then is sorted where we want to obtain
+                the feature names to order the feature groups in the plot. (we use sum value to get the sorted order)  
+            - sorted_group_order = List with [feature name,,,...] Note: this list is needed for plotting the feature groups in the
+                sorted order.
+            
+            Links
+            -----
+            - https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+            - https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
         """
-        # Get the feature importances(importances_mean, importances_std, importances), feature names and model names from the model report
         result = self._pipeline_report["feature_importances"]
         feature_names = self._pipeline_report["feature_names_in"]
         model = str(self._pipeline_report["estimator"])
         feature_groups = {f"group{name}": [] for name in feature_names}
-        overall_means = [] # list used for calculating sum of the grouped means for a feature
-        sorted_group_order = [] # list used for getting the sorted groups(sorted after value) to order the plotting of groups
-
-        positions = np.arange(len(feature_names)) * 10
-        width = 2
-        multiplier = 0
-
-        fig, ax = plt.subplots(figsize=(20, 10), layout="constrained")
+        overall_means = []
+        sorted_group_order = []
 
         for i, x in enumerate(result):
-            all_feature_values = self._pipeline_report["feature_importances"].get(x)
-            labeled_feature_values = pd.Series(all_feature_values.importances_mean, index=feature_names) # Label the means with their feature name
+            labeled_feature_values = pd.Series(result[x].importances_mean, index=feature_names) # Label the means with their feature name
 
             for j, feature in enumerate(labeled_feature_values):
-                group_name = f"group{labeled_feature_values.index[j]}" # Identify feature
-                feature_groups[group_name].append(feature) # Add the feature mean to corresponding feature group
+                feature_groups[f"group{labeled_feature_values.index[j]}"].append(feature) # Add the feature mean to corresponding feature group
 
                 if i == (len(result) - 1): # Calculate sum of all feature groups and sort the groups
                     # if you want to get the mean of means then change sum() to mean()
-                    overall_means.append([sum(feature_groups[group_name]), feature_names[j]])
-                    sorted_overall_means = sorted(overall_means, key=lambda x: x[0], reverse=True)
-                    sorted_group_order = [n[1] for n in sorted_overall_means] # Save the sorted group order
+                    overall_means.append((sum(feature_groups[f"group{labeled_feature_values.index[j]}"]), feature_names[j]))
+                    overall_means.sort(key=lambda x: x[0], reverse=True) # Should only sort on sum values [0]
+                    sorted_group_order = [n[1] for n in overall_means] # Should only collect feature names [1]
 
+
+        fig, ax = plt.subplots(figsize=(20, 10), layout="constrained")
+        # Variables are used to position the feature groupings(threshold,distance,accuracy,balanced_accuracy) in the plot.
+        positions = np.arange(len(feature_names)) * 10
+        width = 2
+        multiplier = 0
+        
         for y in result:
             offset = width * multiplier
-            feature_importance = self._pipeline_report["feature_importances"].get(y)
-            feature_importances = pd.Series(feature_importance.importances_mean, index=feature_names)
+            feature_importances = pd.Series(result[y].importances_mean, index=feature_names)
             sorted_feature_importances = feature_importances[sorted_group_order]
 
-            feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=feature_importance.importances_std,label=y)
+            feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=result[y].importances_std,label=y)
             ax.bar_label(feature_plot, padding=1)
             multiplier += 1
 
