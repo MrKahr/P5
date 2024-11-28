@@ -4,7 +4,7 @@ from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
 from modules.config.config import Config
-from modules.config.config_enums import (
+from modules.config.utils.config_enums import (
     DistanceMetric,
     ImputationMethod,
     NormalisationMethod,

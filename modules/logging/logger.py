@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from typing import Self
 
-from modules.config.setup_config import SetupConfig
+from modules.config.utils.setup_config import SetupConfig
 from modules.logging.coloredformatter import ColoredFormatter
 from modules.logging.colorcodefilter import ColorCodeFilter
 

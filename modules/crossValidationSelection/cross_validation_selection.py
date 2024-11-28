@@ -1,7 +1,7 @@
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
 from modules.config.config import Config
-from modules.config.config_enums import CrossValidator, TrainingMethod
+from modules.config.utils.config_enums import CrossValidator, TrainingMethod
 from modules.logging import logger
 
 
@@ -14,12 +14,6 @@ class CrossValidationSelector:
     @classmethod
     def _getStratifiedKFold(cls, **kwargs) -> StratifiedKFold:
         return StratifiedKFold(**kwargs)
-
-    @classmethod
-    def _getTimeSeriesSplit(cls, **kwargs) -> TimeSeriesSplit:
-        return TimeSeriesSplit(**kwargs)
-
-    # TODO: Implement: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html#sklearn.model_selection.GroupKFold
 
     @classmethod
     def getCrossValidator(
@@ -54,10 +48,6 @@ class CrossValidationSelector:
         elif selected_cross_validator == CrossValidator.STRATIFIED_KFOLD.name:
             cross_validator = cls._getStratifiedKFold(
                 **cls._config.getValue("StratifiedKFold", parent_key)
-            )
-        elif selected_cross_validator == CrossValidator.TIMESERIES_SPLIT.name:
-            cross_validator = cls._getTimeSeriesSplit(
-                **cls._config.getValue("TimeSeriesSplit", parent_key)
             )
         else:
             raise ValueError(

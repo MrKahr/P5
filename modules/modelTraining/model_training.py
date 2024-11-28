@@ -16,7 +16,7 @@ from sklearn.model_selection import (
 from sklearn.utils import Bunch
 
 from modules.config.config import Config
-from modules.config.config_enums import TrainingMethod, Model
+from modules.config.utils.config_enums import TrainingMethod, Model
 from modules.logging import logger
 from modules.modelTraining.param_grids import ParamGridGenerator
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
