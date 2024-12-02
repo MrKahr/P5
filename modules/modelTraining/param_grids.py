@@ -12,12 +12,41 @@ class ParamGridGenerator:
     _logger = logger
 
     def __init__(self, feature_count: int) -> None:
+        """
+        Creates paramgrids for use in GridSearch/RandomSearch and friends.
+
+        Parameters
+        ----------
+        feature_count : int
+            Number of features seen during fit.
+            Used solely for determining the size of the input layer to a MLPClassifier.
+        """
         self._config = Config()
         self._feature_count = feature_count
 
     def _getRange(
         self, start: int | float, stop: int | float, step: int | float
     ) -> list[int | float]:
+        """
+        Create a range of discrete or continous values, depending on input type.
+
+        Parameters
+        ----------
+        start : int | float
+            Beginning of sample space.
+
+        stop : int | float
+            Ending of sample space.
+            NOTE: Stop is inclusive.
+
+        step : int | float
+            Samples generated in `step` steps.
+
+        Returns
+        -------
+        list[int | float]
+            If any parameter is a float, return a continous range. Otherwise, return discrete.
+        """
         if type(start) is float or type(stop) is float or type(step) is float:
             # linspace requires number of steps and not stepsize
             value_range = list(
@@ -30,10 +59,24 @@ class ParamGridGenerator:
 
         return value_range
 
-    def _createNNTuple(self, v: dict) -> list[tuple]:
+    def _createNNTuple(self, hidden_layer_sizes: dict) -> list[tuple]:
+        """
+        Create combinations of tuples defining Neural Network layers and neurons per layer.
+
+        Parameters
+        ----------
+        hidden_layer_sizes : dict
+            The key `hidden_layer_sizes` as defined in the config.
+
+        Returns
+        -------
+        list[tuple]
+            A list of tuples defining different combinations of
+            layers/neurons for training different sized Neural Networks in Grid-/Random Search.
+        """
         # How many hidden layers we want  to use for each model
-        layer_range = self._getRange(**v["layers"])
-        low, high, size = v["layer_size"].values()
+        layer_range = self._getRange(**hidden_layer_sizes["layers"])
+        low, high, size = hidden_layer_sizes["layer_size"].values()
 
         # Get the size of the input layer
         input_layer = self._getRange(
@@ -46,7 +89,7 @@ class ParamGridGenerator:
         ]  # type: list[np.ndarray]
 
         # Get the size of the output layer
-        output_layer = self._getRange(**v["output_layer"])
+        output_layer = self._getRange(**hidden_layer_sizes["output_layer"])
 
         # Combine lists in tuples for different Neural Network (NN) sizes since MLP-constructor requires tuple input
         # It is done in format (INPUT,a,b,...,OUTPUT) e.g. (10, 5, 8, 2)
@@ -68,6 +111,19 @@ class ParamGridGenerator:
         return layer_tuples
 
     def _createGenericDistribution(self, value: dict) -> np.ndarray | None:
+        """
+        Creates a generic grid for use with RandomSearch.
+
+        Parameters
+        ----------
+        value : dict
+            The grid as defined in the config.
+
+        Returns
+        -------
+        np.ndarray | None
+            The grid with distributions as required by Random Search.
+        """
         distribution = None
         if isinstance(value, dict) and "dist" in value:
             distribution_type = value["dist"]
@@ -84,21 +140,63 @@ class ParamGridGenerator:
         return distribution if distribution is not None else value
 
     def _createGenericGrid(self, grid: dict) -> dict:
+        """
+        Creates a generic grid for use with GridSearch.
+
+        Parameters
+        ----------
+        grid : dict
+            The grid as defined in the config.
+
+        Returns
+        -------
+        dict
+            The grid with ranges as required by GridSearch.
+        """
         new_grid = {}
         for k, v in grid.items():
-            if isinstance(v, dict):
+            if k == "hidden_layer_sizes":
+                new_grid |= {k: list(self._createGenericGrid(v).values())}
+            elif isinstance(v, dict):
                 new_grid |= {k: self._getRange(**v)}
             else:
                 new_grid |= {k: v}
         return new_grid
 
     def _createGenericRandomGrid(self, grid: dict) -> dict:
+        """
+        Creates a grid of parameter distributions for use with Random Search.
+
+        Parameters
+        ----------
+        grid : dict
+            The grid as defined in the config.
+
+        Returns
+        -------
+        dict
+            The grid with distributions as required by Random Search.
+        """
         distribution = {}
         for k, v in grid.items():
             distribution |= {k: self._createGenericDistribution(v)}
         return distribution
 
-    def _createNNGrid(self, grid: dict) -> dict:
+    def _createNNRandomGrid(self, grid: dict) -> dict:
+        """
+        Creates a grid of distributions for Neural Network parameters
+        for use with RandomSearch.
+
+        Parameters
+        ----------
+        grid : dict
+            The Neural Network grid as defined in the config.
+
+        Returns
+        -------
+        dict
+            The Neural Network grid with distributions as required by Random Search.
+        """
         # Hidden layer sizes must be handled seperately from other key value pairs because they are used to generate tuples
         distribution = {}
         for k, v in grid.items():
@@ -109,7 +207,14 @@ class ParamGridGenerator:
         return distribution
 
     def getParamGrid(self) -> dict:
-        # TODO: Implement more input validation
+        """
+        Create a parameter grid of values for use with GridSearchCV or similar.
+
+        Returns
+        -------
+        dict
+            The parameter grid as defined in the config.
+        """
         # Initialize model and grid
         current_model = self._config.getValue("model", "ModelSelection")
 
@@ -126,9 +231,9 @@ class ParamGridGenerator:
                 grid = self._createGenericGrid(self._config.getValue(grid_key))
             case Model.RANDOM_FOREST.name:
                 tree_key = "ParamGridDecisionTree"
-                forest_key = "ParamGridRandomForest"
+                grid_key = "ParamGridRandomForest"
                 grid = self._createGenericGrid(self._config.getValue(tree_key))
-                grid |= self._createGenericGrid(self._config.getValue(forest_key))
+                grid |= self._createGenericGrid(self._config.getValue(grid_key))
             case _:
                 self._logger.error(
                     f"Paramgrid not supported for model '{current_model}'. Expected one of '{Model._member_names_}'"
@@ -136,10 +241,17 @@ class ParamGridGenerator:
 
         # Param grid updated with ranges
         self._config.setValue(grid_key, grid, "ParamGrid")
-        print(grid)
         return grid
 
     def getRandomParamGrid(self) -> dict:
+        """
+        Create a parameter grid of distributions for use with RandomizedSearchCV or similar.
+
+        Returns
+        -------
+        dict
+            The parameter grid of distributions as defined in the config.
+        """
         # Initialize model and grid
         parent_key = "RandomParamGrid"
         current_model = self._config.getValue("model", "ModelSelection")
@@ -158,7 +270,9 @@ class ParamGridGenerator:
                 )
             case Model.NEURAL_NETWORK.name:
                 grid_key = "RandomParamGridNeuralNetwork"
-                grid = self._createNNGrid(self._config.getValue(grid_key, parent_key))
+                grid = self._createNNRandomGrid(
+                    self._config.getValue(grid_key, parent_key)
+                )
             case Model.RANDOM_FOREST.name:
                 # We need to combine keys since random forest uses decision tree params to get keys
                 tree_key = "RandomParamGridDecisionTree"
