@@ -41,6 +41,7 @@ class Pipeline:
         self.df = None  # type: pd.DataFrame
         self.selected_features = None  # type: NDArray
         self._data_folder = "dataset"
+        self._logger.setLevel(self._config.getValue("loglevel", "General"))
 
     def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
