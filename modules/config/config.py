@@ -21,7 +21,7 @@ class Config(BaseConfig):
         if not self._created:
             super().__init__(
                 config_name=SetupConfig.config_name,
-                config_path=SetupConfig.app_config_path,
+                config_path=SetupConfig.pipeline_config_path,
                 template=ConfigTemplate().getTemplate(),
             )
             self._setConfig(self._initConfig())
