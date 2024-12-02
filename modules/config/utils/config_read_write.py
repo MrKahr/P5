@@ -1,4 +1,3 @@
-import glob
 import json
 import os
 import traceback
@@ -446,28 +445,3 @@ def repairConfig(config: dict, template: dict) -> dict:
         else:
             repaired_config |= {template_key: value}
     return repaired_config
-
-
-def getBatchConfigs(folder: StrPath, extensions: list[str] = ["json"]) -> list[StrPath]:
-    """
-    Recursively find all files matching an extension in `extensions`.
-
-    Parameters
-    ----------
-    folder : StrPath
-        The di
-
-    extensions : list[str], optional
-        _description_, by default ["json"]
-
-    Returns
-    -------
-    list[StrPath]
-        _description_
-    """
-    files = []
-    files.extend(
-        [glob.glob(f"{folder}/**/*.{extension}", recursive=True)]
-        for extension in extensions
-    )
-    return sorted(files)
