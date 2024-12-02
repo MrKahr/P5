@@ -29,7 +29,25 @@ class ModelSelector:
 
     @classmethod
     def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier:
-        return MLPClassifierGPU(**kwargs)
+        is_verbose = 1 if Config().getValue("loglevel", "General") == "DEBUG" else 0
+
+        try:
+            import torch
+
+            use_cuda = torch.cuda.is_available()
+        except ImportError:
+            use_cuda = False
+
+        if use_cuda:
+            return MLPClassifierGPU(
+                optimizer=kwargs.pop("solver"),
+                epochs=kwargs.pop("max_iter"),
+                verbose=is_verbose,
+                **kwargs,
+            )
+        else:
+            logger.debug(f"CUDA not available. Switching to CPU")
+            return MLPClassifier(**kwargs)
 
     @classmethod
     def _getNaiveBayes(cls, **kwargs) -> GaussianNB:
