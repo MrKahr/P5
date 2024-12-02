@@ -8,7 +8,7 @@ from typing import Any, Literal, Optional
 from modules.config.setup_config import SetupConfig
 from modules.exceptions import MissingFieldError
 from modules.logging import logger
-from modules.types import StrPath
+from modules.tools.types import StrPath
 
 # REVIEW: why is this not wrapped in a class? - TODO:make class
 

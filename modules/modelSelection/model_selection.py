@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from modules.config.config import Config
 from modules.config.config_enums import Model
-from modules.types import UnfittedEstimator
+from modules.tools.types import UnfittedEstimator
 from modules.logging import logger
 
 

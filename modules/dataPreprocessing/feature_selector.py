@@ -8,7 +8,7 @@ from modules.config.config import Config
 from modules.config.config_enums import FeatureSelectionCriterion
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
-from modules.types import FeatureSelectScoreCallable
+from modules.tools.types import FeatureSelectScoreCallable
 
 # SECTION
 # https://scikit-learn.org/stable/modules/feature_selection.html

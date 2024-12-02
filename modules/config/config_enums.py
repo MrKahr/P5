@@ -37,6 +37,7 @@ class NormalisationMethod(Enum):
     MIN_MAX = 1
 
 
+# SECTION Feature selection
 class FeatureSelectionCriterion(Enum):
     PERCENTILE = 1
     K_BEST = 2
@@ -73,6 +74,16 @@ class TrainingMethod(Enum):
     RFECV = 3
     RANDOM_SEARCH_CV = 4
     GRID_SEARCH_CV = 5
+
+
+class VariableDistribution(Enum):
+    # TODO: Consider implementing support for multivariate distributions
+
+    # Continous distributions
+    RANDFLOAT = 1  # Uniform distribution
+
+    # Discrete distributions
+    RANDINT = 106
 
 
 # SECTION Model Testing
