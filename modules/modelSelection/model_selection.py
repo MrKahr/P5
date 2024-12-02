@@ -4,7 +4,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 from modules.config.config import Config
-from modules.config.config_enums import Model
+from modules.config.utils.config_enums import Model
 from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.tools.types import UnfittedEstimator
 from modules.logging import logger

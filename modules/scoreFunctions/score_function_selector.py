@@ -6,7 +6,7 @@ from sklearn.metrics import (
 )
 
 from modules.config.config import Config
-from modules.config.config_enums import FeatureScoreFunc, ModelScoreFunc
+from modules.config.utils.config_enums import FeatureScoreFunc, ModelScoreFunc
 from modules.logging import logger
 from modules.scoreFunctions.score_functions import (
     FeatureSelectScoreFunctions,

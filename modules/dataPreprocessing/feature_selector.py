@@ -5,7 +5,7 @@ from sklearn.feature_selection import GenericUnivariateSelect
 from numpy.typing import NDArray
 
 from modules.config.config import Config
-from modules.config.config_enums import FeatureSelectionCriterion
+from modules.config.utils.config_enums import FeatureSelectionCriterion
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.types import FeatureSelectScoreCallable

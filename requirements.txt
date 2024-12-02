@@ -3,4 +3,5 @@ numpy
 matplotlib
 scikit-learn
 colorama
+tqdm
 scikeras[tensorflow]

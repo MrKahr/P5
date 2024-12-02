@@ -63,7 +63,6 @@ class Model(Enum):
 # SECTION Cross-Validation Selection
 class CrossValidator(Enum):
     STRATIFIED_KFOLD = 0
-    TIMESERIES_SPLIT = 1
 
 
 # SECTION Model Training

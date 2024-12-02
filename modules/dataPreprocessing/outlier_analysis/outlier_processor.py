@@ -9,7 +9,7 @@ from modules.dataPreprocessing.outlier_analysis.KNN import KNNAnalysis
 from modules.dataPreprocessing.outlier_analysis.AVF import AVFAnalysis
 from modules.logging import logger
 from modules.config.config import Config
-from modules.config.config_enums import OutlierRemovalMethod
+from modules.config.utils.config_enums import OutlierRemovalMethod
 
 
 class OutlierProcessor:

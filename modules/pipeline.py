@@ -40,11 +40,11 @@ class Pipeline:
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
         self.selected_features = None  # type: NDArray
+        self._data_folder = "dataset"
 
-    @classmethod
-    def loadDataset(cls, dataset: Dataset) -> pd.DataFrame:
+    def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("data", dataset.value).absolute()
+        path = Path(self._data_folder, dataset.value).absolute()
         return pd.read_csv(path, sep=";", comment="#")
 
     def addMål(self) -> pd.DataFrame:
@@ -52,7 +52,7 @@ class Pipeline:
         Join MÅL with the current dataset using "Gris ID", "Sår ID", and "Dag" as index
         """
         logger.info(f"Loading {Dataset.MÅL.name} dataset")
-        path = Path("data", Dataset.MÅL.value).absolute()
+        path = Path(self._data_folder, Dataset.MÅL.value).absolute()
         mål = pd.read_csv(path, sep=";", comment="#")
         # remove the columns we'll never use
         logger.info(f"Dropping unused rows from {Dataset.MÅL.name} dataset")
