@@ -97,7 +97,7 @@ class ConfigTemplate(object):
             },
             "ModelSelection": {
                 # TODO: Make it possible to train multiple models
-                "model": Model.NEURAL_NETWORK.name,
+                "model": Model.RANDOM_FOREST.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": None,  # type: int | None
@@ -213,7 +213,6 @@ class ConfigTemplate(object):
                         "oob_score": [
                             False
                         ],  # type: bool | Callable # TODO: Add score function
-                        "random_state": 53,  # type: int | None
                         "max_samples": {
                             "start": 10,
                             "stop": 500,
