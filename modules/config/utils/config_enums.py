@@ -17,8 +17,9 @@ class OutlierRemovalMethod(Enum):
 
 
 class DiscretizeMethod(Enum):
-    CHIMERGE = 0
-    NAIVE = 1
+    NONE = 0
+    CHIMERGE = 1
+    NAIVE = 2
 
 
 class ImputationMethod(Enum):
@@ -97,9 +98,3 @@ class ModelScoreFunc(Enum):
     # Scoring functions for classifications
     ACCURACY = 100
     BALANCED_ACCURACY = 101
-
-    # Scoring functions for clustering
-    ADJUSTED_MUTUAL_INFO_SCORE = 200
-
-    # Scoring functions for regression
-    EXPLAINED_VARIANCE = 300
