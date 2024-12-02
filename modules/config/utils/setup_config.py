@@ -32,3 +32,4 @@ class SetupConfig:
     arg_batch = False
     arg_export = False
     arg_export_path = Path(app_dir, "configExports")
+    arg_batch_config_path = arg_export_path
