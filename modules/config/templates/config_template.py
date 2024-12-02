@@ -51,7 +51,7 @@ class ConfigTemplate(object):
                 "UseFeatureSelector": False,
                 "UseTransformer": False,
                 "UseOutlierRemoval": False,
-                "UseContinuousFeatures": True,
+                "UseContinuousFeatures": False,
             },
             "DataPreprocessing": {
                 "Cleaning": {
@@ -112,7 +112,6 @@ class ConfigTemplate(object):
                 },
             },
             "ModelSelection": {
-                # TODO: Make it possible to train multiple models
                 "model": Model.RANDOM_FOREST.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
