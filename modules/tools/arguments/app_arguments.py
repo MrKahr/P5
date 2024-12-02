@@ -72,23 +72,13 @@ class AppArguments:
         Namespace
             Verified arguments.
         """
-        # Verify config_path
         config_path = Path(args.config_path)
-        if not config_path.exists() or not config_path.resolve().exists():
-            self._logger.error(f"Config path '{args.config_path}' does not exist")
-            sys.exit()
-        elif config_path != SetupConfig.config_dir:
+        if config_path != SetupConfig.config_dir:
             # Save argument
             SetupConfig.config_dir = config_path.resolve()
 
-        # Verify export_path
         export_path = Path(args.export_path)
-        if not export_path.exists() or not export_path.resolve().exists():
-            self._logger.error(
-                f"Exported config path '{args.export_path}' does not exists"
-            )
-            sys.exit()
-        elif export_path != SetupConfig.arg_export_path:
+        if export_path != SetupConfig.arg_export_path:
             # Save argument
             SetupConfig.arg_export_path = export_path
 
