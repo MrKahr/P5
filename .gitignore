@@ -3,6 +3,7 @@ figures/
 dataset/
 logs/
 config/*
+configExports/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
