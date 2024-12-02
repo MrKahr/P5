@@ -38,10 +38,10 @@ class AppArguments:
             help="enable batch model training and evaluation using multiple configs",
         )
         parser.add_argument(
-            "--config_path",
+            "--batch_config_path",
             "-c",
-            default=SetupConfig.config_dir,
-            help="location of the config folder (default: '%(default)s')",
+            default=SetupConfig.arg_export_path,
+            help="location of the config folder for batch processing (default: '%(default)s')",
         )
         parser.add_argument(
             "--export",
@@ -72,10 +72,10 @@ class AppArguments:
         Namespace
             Verified arguments.
         """
-        config_path = Path(args.config_path)
-        if config_path != SetupConfig.config_dir:
+        config_path = Path(args.batch_config_path)
+        if config_path != SetupConfig.arg_batch_config_path:
             # Save argument
-            SetupConfig.config_dir = config_path.resolve()
+            SetupConfig.arg_batch_config_path = config_path.resolve()
 
         export_path = Path(args.export_path)
         if export_path != SetupConfig.arg_export_path:
