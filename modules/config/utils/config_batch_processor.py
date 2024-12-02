@@ -32,10 +32,8 @@ class ConfigBatchProcessor:
             A sorted list of files matching `extensions` found in `folder`.
         """
         files = []
-        files.extend(
-            [glob.glob(f"{folder}/**/*.{extension}", recursive=True)]
-            for extension in extensions
-        )
+        for extension in extensions:
+            files.extend(glob.glob(f"{folder}/**/*.{extension}", recursive=True))
         return sorted(files)
 
     @classmethod
