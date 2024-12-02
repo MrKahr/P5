@@ -98,6 +98,9 @@ class AppArguments:
         return args
 
     def executeArguments(self) -> None:
+        from modules.logging.logger import Logger
+
+        Logger.writeHeaderToLog()
         args = self._args
         if args.export:
             ConfigExporter().exportConfigs()

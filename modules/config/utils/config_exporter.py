@@ -7,6 +7,7 @@ from datetime import datetime
 
 from modules.config.config import Config
 from modules.config.grid_config import GridConfig
+from modules.config.utils.config_read_write import getBatchConfigs
 from modules.config.utils.setup_config import SetupConfig
 from modules.logging import logger
 from modules import tools
@@ -86,7 +87,7 @@ class ConfigExporter:
         config_paths = [Config()._config_path, GridConfig()._config_path]
         file_paths = [
             *config_paths,
-            *sorted(glob.glob(f"{SetupConfig.config_dir}/**/*.json", recursive=True)),
+            *getBatchConfigs(SetupConfig.config_dir),
         ]
         is_unique = self._compareFileHashes(file_paths)
 

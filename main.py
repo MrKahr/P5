@@ -1,17 +1,15 @@
 #####################
 ### Initial Setup ###
 #####################
-# Set initial CWD
 import os
 
+# Set initial CWD
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-
-from modules.logging.logger import Logger
 from modules.tools.arguments.app_arguments import AppArguments
 
+# Setup CLI
 arguments = AppArguments()
-Logger.writeHeaderToLog()  # Prevent multi-threading bug with startup header
 arguments.executeArguments()
 
 ######################
@@ -23,6 +21,7 @@ from modules.pipeline import Pipeline
 
 
 if SetupConfig.arg_batch:
+
     pass
 else:
     Pipeline(Dataset.REGS).run()
