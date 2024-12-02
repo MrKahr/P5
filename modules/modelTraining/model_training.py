@@ -138,8 +138,8 @@ class ModelTrainer:
                     ),
                 )
             ),
-            "feature_names_in": estimator.feature_names_in_,
-            "feature_count": estimator.n_features_in_,
+            "feature_names_in": self._train_x.columns.values,
+            "feature_count": len(self._train_x.columns.values),
             "train_x": self._train_x,  # type: pd.DataFrame
             "train_true_y": self._train_true_y,  # type: pd.Series
             "test_x": self._test_x,  # type: pd.DataFrame
