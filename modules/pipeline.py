@@ -40,12 +40,34 @@ class Pipeline:
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
         self.selected_features = None  # type: NDArray
+        self._data_folder = "dataset"
 
-    @classmethod
-    def loadDataset(cls, dataset: Dataset) -> pd.DataFrame:
+    def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("dataset", dataset.value).absolute()
+        path = Path(self._data_folder, dataset.value).absolute()
         return pd.read_csv(path, sep=";", comment="#")
+
+    def addMål(self) -> pd.DataFrame:
+        """
+        Join MÅL with the current dataset using "Gris ID", "Sår ID", and "Dag" as index
+        """
+        logger.info(f"Loading {Dataset.MÅL.name} dataset")
+        path = Path(self._data_folder, Dataset.MÅL.value).absolute()
+        mål = pd.read_csv(path, sep=";", comment="#")
+        # remove the columns we'll never use
+        logger.info(f"Dropping unused rows from {Dataset.MÅL.name} dataset")
+        mål.drop(
+            labels=["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"],
+            axis=1,
+            inplace=True,
+        )
+        logger.info(
+            f'Joining {Dataset.MÅL.name} with current dataset on "Gris ID", "Sår ID", "Dag"'
+        )
+        # set a multi-index on Mål
+        mål.set_index(["Gris ID", "Sår ID", "Dag"], inplace=True)
+        # with the multi-index on Mål, we can join on multiple things at once
+        self.df = self.df.join(mål, how="left", on=["Gris ID", "Sår ID", "Dag"])
 
     def getTrainX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
@@ -58,8 +80,17 @@ class Pipeline:
         self._logger.info(
             f"Initializing Pipeline: training dataset '{self.train_dataset.name}'"
         )
+        # load dataset
+        self.df = self.loadDataset(self.train_dataset)
+
+        # join dataset with MÅL if we want to use that
+        if Config().getValue("UseContinuousFeatures"):
+            self.addMål()
+
+        # run the rest of the pipeline
         self.df = DataCleaner(
-            self.loadDataset(self.train_dataset), self.train_dataset
+            self.df,
+            self.train_dataset,
         ).run()
         self.df = OutlierProcessor(self.df).run()
         self.df = DataTransformer(self.df).run()
