@@ -235,15 +235,15 @@ class ParamGridGenerator:
             case Model.RANDOM_FOREST.name:
                 tree_key = "ParamGridDecisionTree"
                 grid_key = "ParamGridRandomForest"
-                grid = self._createGenericGrid(self._config.getValue(tree_key))
-                grid |= self._createGenericGrid(self._config.getValue(grid_key))
+                grid = self._createGenericGrid(self._grid_config.getValue(tree_key))
+                grid |= self._createGenericGrid(self._grid_config.getValue(grid_key))
             case _:
                 self._logger.error(
                     f"Paramgrid not supported for model '{current_model}'. Expected one of '{Model._member_names_}'"
                 )
 
         # Param grid updated with ranges
-        self._config.setValue(grid_key, grid, "ParamGrid")
+        self._grid_config.setValue(grid_key, grid, "ParamGrid")
         return grid
 
     def getRandomParamGrid(self) -> dict:
@@ -272,7 +272,7 @@ class ParamGridGenerator:
                 )
             case Model.NEURAL_NETWORK.name:
                 grid_key = "RandomParamGridNeuralNetwork"
-                grid = self._createNNRandomGrid(self._config.getValue(grid_key))
+                grid = self._createNNRandomGrid(self._grid_config.getValue(grid_key))
             case Model.RANDOM_FOREST.name:
                 # We need to combine keys since random forest uses decision tree params to get keys
                 tree_key = "RandomParamGridDecisionTree"
