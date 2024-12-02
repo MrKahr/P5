@@ -1,10 +1,13 @@
 from typing import Callable
+from numpy import ndarray
 import pandas as pd
+import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
 from modules.config.config import Config
 from modules.config.utils.config_enums import (
+    DiscretizeMethod,
     DistanceMetric,
     ImputationMethod,
     NormalisationMethod,
@@ -377,6 +380,232 @@ class DataTransformer:
                 self.df.loc[self.df.index[i], feature] = value1
             i += 1
 
+    def discretizeWithChiMerge(
+        self,
+        value_column_name: str,
+        class_column_name: str = "Dag",
+        merge_when_below: float = np.inf,
+        desired_intervals: int = -1,
+    ) -> list[float]:
+        """
+        An implementation of the ChiMerge algorithm that returns a list of interval's lower bounds given a dataframe,
+        a column of values to discretize, and a column to consider as classes(labels)
+
+        Parameters
+        ----------
+        class_column_name : str
+            The name of the dataframe column that the algorithm should consider as holding class labels
+        value_column_name : str
+            The name of the dataframe column that holds the values to discretize
+        merge_when_below: float
+            Intervals will only be merged when their chi-square value is below this number
+        desired_intervals: int
+            When the number of intervals is equal to this, no more intervals will be merged
+
+        Returns
+        -------
+        list[float]
+            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
+        """
+        logger.info(
+            f'Preparing discretization of column "{value_column_name}" with class column "{class_column_name}"'
+        )
+
+        # get values to discretize given some column name and sort them from smallest to biggest. Also handle situation where cleaner has not been used
+        values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
+        values.sort()
+        # values of 100 are undefined, so we remove those before moving on
+        values = values[values != 100]
+
+        # get unique values for initial interval lower bounds. Using unique() instead of copy() saves a lot of iterations, as ChiMerge will always merge identical intervals
+        lower_bounds = np.unique(values)
+
+        # find distinct classes given some column name ("Dag", for example)
+        classes = self.df[class_column_name].dropna().unique()
+
+        # chi_squares[i] holds the chi-square of the intervals with the lower bounds lower_bounds[i] and lower_bounds[i+1]
+        chi_squares = np.empty(lower_bounds.size - 1)
+
+        # initialise this to get the while loop going
+        minimum_chi_square = -np.inf
+
+        # NOTE see section on ChiMerge for how this works
+        # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. lower_bounds[i-1] and lower_bounds[i], and lower_bounds[i] and lower_bounds[i+1])
+
+        logger.info(
+            f"Running ChiMerge with {len(values)} values and {len(classes)} classes"
+        )
+
+        while (
+            lower_bounds.size > 1
+            and minimum_chi_square < merge_when_below
+            and lower_bounds.size != desired_intervals
+        ):
+            # calculate chi-square for all pairs of adjacent intervals.
+            for index in range(
+                lower_bounds.size - 1
+            ):  # we're working with pairs of lower bounds, so we stop iterating before we hit the last index
+
+                chi_square = 0
+                for i in range(2):
+                    # define the bounds of the current interval
+                    current_lower_bound = lower_bounds[index + i]
+                    # if the upper bound does not exist, it stays as infinity
+                    current_upper_bound = np.inf
+                    if index + i + 1 < lower_bounds.size:
+                        current_upper_bound = lower_bounds[index + i + 1]
+
+                    for j in classes:
+                        # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
+                        C_j = self.df[self.df[class_column_name] == j].shape[0]
+
+                        # find the number of examples in the current interval by counting the how many Trues there are in the series returned by between() with sum()
+                        R_i = (
+                            self.df[value_column_name]
+                            .between(
+                                current_lower_bound,
+                                current_upper_bound,
+                                inclusive="left",
+                            )
+                            .sum()
+                        )
+                        # find the number of examples of class j in the current interval
+                        A_ij = (
+                            (self.df[self.df[class_column_name] == j])[
+                                value_column_name
+                            ]
+                            .between(
+                                current_lower_bound,
+                                current_upper_bound,
+                                inclusive="left",
+                            )
+                            .sum()
+                        )
+                        # find the expected value of the number of examples of class j in the current interval
+                        E_ij = (R_i * C_j) / values.size
+                        chi_square += (A_ij - E_ij) ** 2 / E_ij
+
+                chi_squares[index] = chi_square
+
+            # we're done finding chi_squares. Now merge the two intervals with the smallest value
+            minimum_chi_square = min(chi_squares)
+            index = np.where(chi_squares == minimum_chi_square)[0][0]
+            # intervals can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
+            chi_squares = np.delete(chi_squares, index)
+            lower_bounds = np.delete(lower_bounds, index + 1)
+
+        logger.info(
+            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds}'
+        )
+
+        # when we're done merging intervals, return the list of lower bounds
+        return lower_bounds
+
+    def discretizeNaively(
+        self,
+        column_name: str,
+        desired_intervals: int = 1,
+    ) -> list[float]:
+        """
+        A naive discretization method that splits the values in the given column into a number of intervals
+        where each interval has the same length.
+
+        Parameters
+        ----------
+        column_name : str
+            The name of the dataframe column that holds the values to discretize
+        desired_intervals : int
+            The number of intervals to generate
+
+        Returns
+        -------
+        list[float]
+            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
+
+        Raises
+        ------
+        ValueError
+            If the number of desired intervals is 0 or less, no intervals can be generated
+        """
+        logger.info(f'Preparing discretization of column "{column_name}"')
+
+        values = self.df[column_name].to_numpy()
+        # if desired intervals is 0 or less, we can't split the column into any intervals!
+        if desired_intervals < 1:
+            raise ValueError("Desired intervals must be 1 or more")
+
+        # values of 100 are undefined, so we remove those before moving on
+        values = values[values != 100]
+
+        logger.info(f"Running naitve discretization with {len(values)} values")
+
+        # find out how big each step is when we need desired_intervals intervals
+        step = (values.max() - values.min()) / desired_intervals
+        lower_bounds = np.empty(desired_intervals)
+        for i in range(desired_intervals):
+            lower_bounds[i] = values.min() + (step * i)
+
+        logger.info(
+            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds}'
+        )
+
+        return lower_bounds
+
+    def assignIntervals(
+        self,
+        column_name: str,
+        lower_bounds: list[float],
+    ) -> None:
+        """
+        Replaces values in a given column with numbers representing the interval they fit into
+
+        Parameters
+        ----------
+        lower_bounds : list[float]
+            A list of numbers where each number represents the lower bound of an interval.
+            Note that intervals expressed like this never overlap, and exclude their upper bound, which is the lower bound for the next interval.
+            The list should be sorted from smallest to biggest.
+        column_name: str
+            The name of the column whose values should be replaced
+        replace_blacklist: list[float]
+            A list of numbers that may or may not occur in the column and shouldn't be replaced
+        """
+        logger.info(f"Assigning intervals to values in {column_name}")
+
+        def intervalify(
+            x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
+        ) -> int or float:  # type: ignore
+            """Helper function for assignIntervals that maps a value to its interval
+
+            Parameters
+            ----------
+            x : float
+                The value to map
+            lower_bounds : list[float]
+                A list of non-overlapping intervals' lower bounds
+            replace_blacklist : list[float]
+                A list of values that should not be replaced. For example missing values.
+            Returns
+            -------
+            int or float
+                The index of the interval that x fits into, or x, if x is in the blacklist
+            """
+            for i in range(len(lower_bounds)):
+                if x in replace_blacklist:
+                    return x
+                upper_bound = np.inf
+                if (i + 1) < len(lower_bounds):
+                    upper_bound = lower_bounds[i + 1]
+                if lower_bounds[i] <= x < upper_bound:
+                    return i
+
+        series_to_modify = self.df[column_name]
+        self.df[column_name] = series_to_modify.apply(
+            intervalify, lower_bounds=lower_bounds
+        )
+
+        logger.info(f"Discretization of {column_name} complete")
+
     def run(self) -> pd.DataFrame:
         """
         Runs all applicable transformation methods.
@@ -388,6 +617,39 @@ class DataTransformer:
         """
         config = Config()
         if config.getValue("UseTransformer"):
+            # Discretization
+            if len(config.getValue("DiscretizeColumns")) > 0:
+                for column in config.getValue("DiscretizeColumns"):
+                    interval_bounds = None
+                    if (
+                        config.getValue("DiscretizeMethod")
+                        == DiscretizeMethod.CHIMERGE.name
+                    ):
+                        interval_bounds = self.discretizeWithChiMerge(
+                            column,
+                            merge_when_below=config.getValue(
+                                "ChiMergeMaximumMergeThreshold"
+                            ).get(column),
+                            desired_intervals=config.getValue(
+                                "DiscretizeDesiredIntervals"
+                            ).get(column),
+                        )
+                    elif (
+                        config.getValue("DiscretizeMethod")
+                        == DiscretizeMethod.NAIVE.name
+                    ):
+                        interval_bounds = self.discretizeNaively(
+                            column,
+                            desired_intervals=config.getValue(
+                                "DiscretizeDesiredIntervals"
+                            ).get(column),
+                        )
+                    else:
+                        logger.warning("Undefined discretization method! Skipping")
+                    self.assignIntervals(
+                        column,
+                        lower_bounds=interval_bounds,
+                    )
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):

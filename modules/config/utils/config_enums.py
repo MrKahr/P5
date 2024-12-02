@@ -16,6 +16,11 @@ class OutlierRemovalMethod(Enum):
     AVF = 1
 
 
+class DiscretizeMethod(Enum):
+    CHIMERGE = 0
+    NAIVE = 1
+
+
 class ImputationMethod(Enum):
     NONE = 0
     MODE = 1
@@ -74,17 +79,10 @@ class VariableDistribution(Enum):
     # TODO: Consider implementing support for multivariate distributions
 
     # Continous distributions
-    UNIFORM = 1
+    RANDFLOAT = 1  # Uniform distribution
 
     # Discrete distributions
-    BERNOULLI = 100
-    BINOM = 101
-    GEOM = 103
-    HYPERGEOM = 104
-    POISSON = 105
-    RANDINT = 106  # Uniform distribution
-    RANDFLOAT = 107
-    ZIPF = 108
+    RANDINT = 106
 
 
 # SECTION Model Testing
