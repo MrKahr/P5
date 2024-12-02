@@ -63,18 +63,17 @@ class GridTemplate(object):
                 "ParamGridRandomForest": {
                     "n_estimators": {"start": 100, "stop": 1000, "step": 100},
                     "bootstrap": [True],
-                    "oob_score": False,  # type: bool | Callable # TODO: Add score function
-                    "random_state": 53,  # type: int | None
+                    "oob_score": [
+                        False
+                    ],  # type: bool | Callable # TODO: Add score function
                     "max_samples": {
                         "start": 10,
                         "stop": 500,
                         "step": 10,
                     },  # type: int | float | None
                 },
-                # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
-                "ParamGridGaussianNaiveBayes": {},
+                "ParamGridGaussianNaiveBayes": {},  # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                 "ParamGridNeuralNetwork": {
-                    # TODO: Test that grid search initializes correctly!
                     "hidden_layer_sizes": {
                         "layers": {"start": 2, "stop": 10, "step": 1},
                         "layer_size": {"start": 2, "stop": 25, "step": 10},
@@ -95,12 +94,13 @@ class GridTemplate(object):
                         "lbfgs",
                         "adam",
                     ],  # type: Literal["lbfgs", "sgd", "adam"]
-                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
-                    "learning_rate_init": 0.001,
+                    "learning_rate": [
+                        "constant"
+                    ],  # type: Literal["constant", "invscaling", "adaptive"]
+                    "learning_rate_init": [0.001],
                     "alpha": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
                     "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
                     "tol": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
-                    "random_state": 678,
                 },
             },
             "RandomParamGrid": {
@@ -156,8 +156,7 @@ class GridTemplate(object):
                         "dist_params": {"low": 10, "high": 500, "size": 10},
                     },
                 },
-                # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
-                "RandomParamGridGaussianNaiveBayes": {},
+                "RandomParamGridGaussianNaiveBayes": {},  # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                 "RandomParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 1, "stop": 10, "step": 1},
