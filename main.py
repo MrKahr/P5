@@ -3,6 +3,7 @@
 #####################
 import os
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 # Set initial CWD
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -23,12 +24,25 @@ from modules.config.utils.config_batch_processor import ConfigBatchProcessor
 from modules.logging import logger
 
 if SetupConfig.arg_batch:
-    config_list = ConfigBatchProcessor.getConfigPairsFromBatch(
-        ConfigBatchProcessor.getBatchConfigs(SetupConfig.config_dir)
+    # Batch processing
+    config_list = list(
+        ConfigBatchProcessor.getConfigPairsFromBatch(
+            ConfigBatchProcessor.getBatchConfigs(SetupConfig.arg_batch_config_path)
+        )
     )
-    logger.info(f"Running in batch mode. Processing {len(config_list)} experiments")
-    for configs in tqdm(config_list):
-        ConfigBatchProcessor.applyConfigs(configs)
-        Pipeline(Dataset.REGS).run()
+
+    logger.info(f"Running in batch mode")
+    with logging_redirect_tqdm(loggers=[logger]):
+        for configs in tqdm(
+            config_list,
+            desc="Progress",
+            unit="model",
+            dynamic_ncols=True,
+            colour="green",
+            bar_format="{l_bar}{bar:15}{r_bar}",
+        ):
+            ConfigBatchProcessor.applyConfigs(configs)
+            Pipeline(Dataset.REGS).run()
 else:
+    # Single processing
     Pipeline(Dataset.REGS).run()
