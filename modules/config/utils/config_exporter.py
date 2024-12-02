@@ -94,7 +94,7 @@ class ConfigExporter:
             *config_paths,
             *ConfigBatchProcessor.getBatchConfigs(SetupConfig.arg_export_path),
         ]
-        is_unique = self._compareFileHashes(file_paths)
+        self._compareFileHashes(file_paths)
 
         # Export the current configs by creating a copy of each with a unique name
         # The system time is used as a unique ID for this collection of configs.
@@ -105,7 +105,4 @@ class ConfigExporter:
             file_name = f"exported.{file_name}.{time}{extension}"
             shutil.copyfile(config_path, Path(SetupConfig.arg_export_path, file_name))
 
-        if is_unique:
-            self._logger.info(f"All configs exported succesfully!")
-        else:
-            self._logger.warning(f"Config export completed with duplicate files")
+        self._logger.info(f"All configs exported succesfully!")
