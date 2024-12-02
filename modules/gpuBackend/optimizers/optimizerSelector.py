@@ -16,14 +16,17 @@ class OptimizerSelector:
 
     @classmethod
     def getOptimizer(
-        cls, optimizer_name: str, **kwargs
+        cls, optimizer: str | object, **kwargs
     ) -> Union[optimizers.Adam, optimizers.SGD]:
-        if optimizer_name == "adam":
+        if isinstance(optimizer, (optimizers.Adam, optimizers.SGD)):
+            return optimizer
+
+        if optimizer == "adam":
             optimizer = cls._getAdam(**kwargs)
-        elif optimizer_name == "sgd":
+        elif optimizer == "sgd":
             optimizer = cls._getSGD(**kwargs)
         else:
             raise ValueError(
-                f"Invalid solver '{optimizer_name}'. Expected one of [adam, sgd]"
+                f"Invalid solver '{optimizer}'. Expected one of [adam, sgd]"
             )
         return optimizer
