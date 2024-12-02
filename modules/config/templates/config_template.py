@@ -1,5 +1,7 @@
 from typing import Self
 
+import numpy as np
+
 
 from modules.config.utils.config_enums import (
     CrossValidator,
