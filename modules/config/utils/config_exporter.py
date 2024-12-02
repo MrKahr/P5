@@ -1,4 +1,3 @@
-import glob
 import hashlib
 import os
 import shutil
@@ -7,7 +6,7 @@ from datetime import datetime
 
 from modules.config.config import Config
 from modules.config.grid_config import GridConfig
-from modules.config.utils.config_read_write import getBatchConfigs
+from modules.config.utils.config_batch_processor import ConfigBatchProcessor
 from modules.config.utils.setup_config import SetupConfig
 from modules.logging import logger
 from modules import tools
@@ -84,19 +83,27 @@ class ConfigExporter:
 
     def exportConfigs(self) -> None:
         """Export the active configs to disk with a unique name and check for duplicate configs."""
+        # Create export directory
+        os.makedirs(SetupConfig.arg_export_path, exist_ok=True)
+
+        # The currently active configs
         config_paths = [Config()._config_path, GridConfig()._config_path]
+
+        # Check that the configs-to-be-exported are unique compared to existing configs on disk
         file_paths = [
             *config_paths,
-            *getBatchConfigs(SetupConfig.config_dir),
+            *ConfigBatchProcessor.getBatchConfigs(SetupConfig.arg_export_path),
         ]
         is_unique = self._compareFileHashes(file_paths)
 
         # Export the current configs by creating a copy of each with a unique name
+        # The system time is used as a unique ID for this collection of configs.
+        time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         for config_path in config_paths:
-            path_head, file = os.path.split(config_path)
+            file = os.path.split(config_path)[1]
             file_name, extension = os.path.splitext(file)
-            file_name = f"exported.{file_name}.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}{extension}"
-            shutil.copyfile(config_path, Path(path_head, file_name))
+            file_name = f"exported.{file_name}.{time}{extension}"
+            shutil.copyfile(config_path, Path(SetupConfig.arg_export_path, file_name))
 
         if is_unique:
             self._logger.info(f"All configs exported succesfully!")
