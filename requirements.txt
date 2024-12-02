@@ -3,3 +3,4 @@ numpy>=2.1.1
 matplotlib>=3.9.2
 scikit-learn>=1.5.2
 colorama>=0.4.6
+tqdm
