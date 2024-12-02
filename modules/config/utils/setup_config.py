@@ -14,7 +14,7 @@ class SetupConfig:
 
     # Files
     config_name = "Pipeline Config"
-    config_file = "pipeline_config.json"
+    pipeline_config_file = "pipeline_config.json"
     grid_config_name = "Grid Parameters"
     grid_config_file = "gridparams.json"
 
@@ -25,7 +25,7 @@ class SetupConfig:
 
     # Config paths
     config_dir = Path(app_dir, "config")
-    app_config_path = Path(config_dir, config_file).resolve()
+    pipeline_config_path = Path(config_dir, pipeline_config_file).resolve()
     grid_config_path = Path(config_dir, grid_config_file).resolve()
 
     # Program arguments
