@@ -4,4 +4,8 @@ matplotlib
 scikit-learn
 colorama
 tqdm
-scikeras[tensorflow]
+
+# For GPU-based models
+scikeras # Bridge between scikit-learn and Tensorflow / PyTorch
+--extra-index-url https://download.pytorch.org/whl/cu124 # Add CUDA support for PyTorch
+torch # PyTorch
