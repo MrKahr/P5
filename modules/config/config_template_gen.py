@@ -20,17 +20,17 @@ from modules.config.config_enums import (
 class ConfigTemplate(object):
     """
     Singleton that defines the structure/layout of our configuration file.
-    This layout is called low "template".
+    This layout is called a "template".
     """
 
     _instance = None
 
-    # This is low singleton class since we only want 1 instance of low ConfigTemplate at all times
+    # This is a singleton class since we only want 1 instance of a ConfigTemplate at all times
     def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
 
-            # We assign the template as an instance variable, however, seeing as the class is low singleton, it could've been low class variable as well.
+            # We assign the template as an instance variable, however, seeing as the class is a singleton, it could've been a class variable as well.
             # Assigning it as an instance variable makes VSCode not recognise it as defined, however it runs just fine.
             cls._instance._template = cls._createTemplate()
         return cls._instance
@@ -145,7 +145,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.RANDOM_SEARCH_CV.name,
+                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -173,7 +173,7 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {
-                    "refit": "accuracy",  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be low str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": "accuracy",  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                     "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
@@ -210,7 +210,9 @@ class ConfigTemplate(object):
                     "ParamGridRandomForest": {
                         "n_estimators": {"start": 100, "stop": 1000, "step": 100},
                         "bootstrap": [True],
-                        "oob_score": False,  # type: bool | Callable # TODO: Add score function
+                        "oob_score": [
+                            False
+                        ],  # type: bool | Callable # TODO: Add score function
                         "random_state": 53,  # type: int | None
                         "max_samples": {
                             "start": 10,
@@ -218,14 +220,11 @@ class ConfigTemplate(object):
                             "step": 10,
                         },  # type: int | float | None
                     },
-                    # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
-                    "ParamGridGaussianNaiveBayes": {},
+                    "ParamGridGaussianNaiveBayes": {},  # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
                     "ParamGridNeuralNetwork": {
-                        # TODO: Test that grid search initializes correctly!
                         "hidden_layer_sizes": {
                             "layers": {"start": 2, "stop": 10, "step": 1},
                             "layer_size": {"start": 2, "stop": 25, "step": 10},
-                            # "input_layer": DEFINE AT RUNTIME
                             "output_layer": {
                                 "start": 2,
                                 "stop": 2,
@@ -242,12 +241,13 @@ class ConfigTemplate(object):
                             "lbfgs",
                             "adam",
                         ],  # type: Literal["lbfgs", "sgd", "adam"]
-                        "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
-                        "learning_rate_init": 0.001,
+                        "learning_rate": [
+                            "constant"
+                        ],  # type: Literal["constant", "invscaling", "adaptive"]
+                        "learning_rate_init": [0.001],
                         "alpha": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
                         "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
                         "tol": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
-                        "random_state": 678,
                     },
                 },
             },
