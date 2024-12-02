@@ -14,9 +14,9 @@ from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_curve
 from sklearn.metrics import RocCurveDisplay
 from sklearn.naive_bayes import LabelBinarizer
 from sklearn.tree import plot_tree
-from sklearn.utils._param_validation import InvalidParameterError
 
 from modules.config.config import Config
+from modules.config.utils.config_enums import Model
 from modules.logging import logger
 
 
@@ -222,9 +222,10 @@ class ModelSummary:
             plt.show(block=False)
 
     def _plotTree(self) -> None:
-        plt.figure(dpi=1200)
-        tree = self._pipeline_report["estimator"]
-        try:
+        selected_model = self._config.getValue("model", "ModelSelection")
+        if selected_model in [Model.DECISION_TREE.name, Model.RANDOM_FOREST.name]:
+            plt.figure(dpi=1200)
+            tree = self._pipeline_report["estimator"]
             plot_tree(
                 tree,
                 filled=True,
@@ -232,15 +233,13 @@ class ModelSummary:
                 rounded=True,
                 feature_names=tree.feature_names_in_,
             )
-        except InvalidParameterError:
-            return
-        plt.title(
-            f"{type(tree).__name__} trained on {self._pipeline_report["feature_count"]} features"
-        )
-        if self._write_fig:
-            self._writeFigure("tree")
-        else:
-            plt.show(block=False)
+            plt.title(
+                f"{type(tree).__name__} trained on {self._pipeline_report["feature_count"]} features"
+            )
+            if self._write_fig:
+                self._writeFigure("tree")
+            else:
+                plt.show(block=False)
 
     def run(self) -> None:
         if self._config.getValue("print_model_report"):
