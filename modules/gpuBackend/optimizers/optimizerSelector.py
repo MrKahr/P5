@@ -1,14 +1,29 @@
+from typing import Union
 from keras import optimizers
 
 
 class OptimizerSelector:
-    def __init__(self) -> None:
-        pass
 
+    @classmethod
     def _getAdam(self, **kwargs) -> optimizers.Adam:
         # Values taken from scikit-learns default values of MLPClassifier
         return optimizers.Adam(epsilon=1e-08, **kwargs)
 
+    @classmethod
     def _getSGD(self, **kwargs) -> optimizers.SGD:
         # Values taken from scikit-learns default values of MLPClassifier
         return optimizers.SGD(nesterov=True, momentum=0.9, **kwargs)
+
+    @classmethod
+    def getOptimizer(
+        cls, optimizer_name: str, **kwargs
+    ) -> Union[optimizers.Adam, optimizers.SGD]:
+        if optimizer_name == "adam":
+            optimizer = cls._getAdam(**kwargs)
+        elif optimizer_name == "sgd":
+            optimizer = cls._getSGD(**kwargs)
+        else:
+            raise ValueError(
+                f"Invalid solver '{optimizer_name}'. Expected one of [adam, sgd]"
+            )
+        return optimizer

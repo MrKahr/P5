@@ -5,6 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from modules.config.config import Config
 from modules.config.config_enums import Model
+from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.tools.types import UnfittedEstimator
 from modules.logging import logger
 
@@ -28,7 +29,7 @@ class ModelSelector:
 
     @classmethod
     def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier:
-        return MLPClassifier(**kwargs)
+        return MLPClassifierGPU(**kwargs)
 
     @classmethod
     def _getNaiveBayes(cls, **kwargs) -> GaussianNB:

@@ -1,0 +1,165 @@
+{
+    "General": {
+        "loglevel": "DEBUG",
+        "n_jobs": -1,
+        "write_figure_to_disk": true,
+        "UseCleaner": true,
+        "UseFeatureSelector": false,
+        "UseTransformer": false,
+        "UseOutlierRemoval": false,
+        "UseContinuousFeatures": true
+    },
+    "DataPreprocessing": {
+        "Cleaning": {
+            "DeleteNanColumns": true,
+            "DeleteNonfeatures": true,
+            "DeleteMissingValues": false,
+            "DeleteUndeterminedValue": false,
+            "RemoveFeaturelessRows": true,
+            "RemoveFeaturelessRowsArgs": 3,
+            "FillNan": true,
+            "ShowNan": true
+        },
+        "OutlierAnalysis": {
+            "OutlierRemovalMethod": "ODIN",
+            "odinParams": {
+                "k": 30,
+                "T": 0
+            },
+            "avfParams": {
+                "k": 10
+            }
+        },
+        "Transformer": {
+            "DiscretizeColumns": [
+                "S\u00e5rrand (cm)",
+                "Midte (cm)"
+            ],
+            "DiscretizeMethod": "NAIVE",
+            "ChiMergeMaximumMergeThreshold": {
+                "S\u00e5rrand (cm)": Infinity,
+                "Midte (cm)": Infinity
+            },
+            "DiscretizeDesiredIntervals": {
+                "S\u00e5rrand (cm)": -1,
+                "Midte (cm)": -1
+            },
+            "UseOneHotEncoding": false,
+            "OneHotEncodeLabels": [],
+            "ImputationMethod": "NONE",
+            "KNN_NearestNeighbors": 5,
+            "KNN_DistanceMetric": "MATRIX",
+            "NormalisationMethod": "NONE",
+            "NormaliseFeatures": []
+        },
+        "FeatureSelection": {
+            "score_function": "CHI2",
+            "MutualInfoClassifArgs": {
+                "discrete_features": true,
+                "n_neighbors": 3,
+                "random_state": 12
+            },
+            "GenericUnivariateSelect": true,
+            "GenericUnivariateSelectArgs": {
+                "mode": "PERCENTILE",
+                "param": 25
+            },
+            "ComputeFeatureCorrelation": true,
+            "VarianceThreshold": true,
+            "checkOverfitting": true
+        }
+    },
+    "ModelSelection": {
+        "model": "RANDOM_FOREST",
+        "DecisionTree": {
+            "criterion": "gini",
+            "max_depth": null,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "min_weight_fraction_leaf": 0,
+            "max_features": "sqrt",
+            "random_state": 42,
+            "max_leaf_nodes": null,
+            "min_impurity_decrease": 0.0,
+            "ccp_alpha": 0.0
+        },
+        "RandomForest": {
+            "n_estimators": 100,
+            "bootstrap": true,
+            "oob_score": false,
+            "random_state": 53,
+            "max_samples": null
+        },
+        "GaussianNaiveBayes": {},
+        "NeuralNetwork": {
+            "hidden_layer_sizes": [
+                20,
+                2
+            ],
+            "activation": "logistic",
+            "solver": "sgd",
+            "learning_rate": "constant",
+            "learning_rate_init": 0.001,
+            "alpha": 0.0001,
+            "max_iter": 1000,
+            "tol": 0.0001,
+            "random_state": 678
+        }
+    },
+    "CrossValidationSelection": {
+        "cross_validator": "STRATIFIED_KFOLD",
+        "StratifiedKFold": {
+            "n_splits": 5,
+            "shuffle": true,
+            "random_state": 177
+        },
+        "TimeSeriesSplit": {
+            "n_splits": 5,
+            "max_train_size": null,
+            "test_size": null,
+            "gap": 0
+        }
+    },
+    "ModelTraining": {
+        "training_method": "CROSS_VALIDATION",
+        "score_functions": [
+            "ALL"
+        ],
+        "score_function_params": {
+            "threshold": 20
+        },
+        "score_function_weights": {
+            "threshold": 0.8,
+            "distance": 0.9,
+            "accuracy": 1,
+            "balanced_accuracy": 1.1
+        },
+        "PermutationFeatureImportance": {
+            "n_repeats": 10,
+            "random_state": 298
+        },
+        "RFE": {
+            "n_features_to_select": 0.5,
+            "step": 1
+        },
+        "RFECV": {
+            "min_features_to_select": 1,
+            "step": 1
+        },
+        "RandomizedSearchCV": {
+            "n_iter": 10,
+            "random_state": 378
+        },
+        "GridSearchCV": {
+            "refit": "accuracy",
+            "return_train_score": false,
+            "verbose": 1
+        }
+    },
+    "ModelEvaluation": {
+        "print_model_report": true,
+        "plot_confusion_matrix": true,
+        "plot_roc_curves": true,
+        "plot_tree": true
+    }
+}

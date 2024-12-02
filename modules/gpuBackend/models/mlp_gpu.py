@@ -3,6 +3,9 @@ import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
 
+from modules.gpuBackend.optimizers.optimizerSelector import OptimizerSelector
+from modules.logging import logger
+
 # SECTION - Intel Scikit-Learn Optimization
 # https://github.com/intel/scikit-learn-intelex
 # Supported models: https://intel.github.io/scikit-learn-intelex/latest/algorithms.html
@@ -31,7 +34,7 @@ class MLPClassifierGPU(KerasClassifier):
     def __init__(
         self,
         hidden_layer_sizes=(100,),
-        solver: str = "adam",  # "optimizer" in TensorFlow
+        solver: str = "adam",  # "solver" in scikit
         activation: str = "relu",
         loss: Union[str, Callable[..., Any], None] = None,
         learning_rate: str = "constant",
@@ -39,36 +42,59 @@ class MLPClassifierGPU(KerasClassifier):
         alpha: float = 0.0001,
         max_iter: int = 200,  # "epochs" in  TensorFlow
         tol: float = 0.0001,
+        scikit_compat: bool = True,
         random_state: Union[int, RandomState, None] = None,
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(
+            optimizer=OptimizerSelector.getOptimizer(
+                solver, learning_rate=learning_rate_init
+            ),
+            loss=loss,
+            random_state=random_state,
+            epochs=max_iter,
+            **kwargs,
+        )
         self.hidden_layer_sizes = hidden_layer_sizes
-        self.solver = solver
         self.activation = activation
-        self.loss = loss
-        self.epochs = max_iter
+        self.scikit_compat = scikit_compat
+
+        if learning_rate != "constant":
+            logger.warning(
+                f"Only 'constant' learning rate is supported, switching to 'constant'. Got '{learning_rate}'"
+            )
 
     def _keras_build_fn(self, compile_kwargs: dict[str, Any]):
         model = keras.Sequential()
+        # Input layer
         inp = keras.layers.Input(shape=(self.hidden_layer_sizes[0],))
         model.add(inp)
 
-        # Will fail if no hidden layer is present
-        for hidden_layer_size in self.hidden_layer_sizes[1:]:
-            layer = keras.layers.Dense(hidden_layer_size, activation=self.activation)
-            model.add(layer)
+        # Hidden layers
+        if len(self.hidden_layer_sizes) > 2:
+            for hidden_layer_size in self.hidden_layer_sizes[1:-2]:
+                layer = keras.layers.Dense(
+                    hidden_layer_size, activation=self.activation
+                )
+                model.add(layer)
 
-        if self.target_type_ == "binary":
-            n_output_units = 1
-            output_activation = "sigmoid"
-            loss = "binary_crossentropy"
-        elif self.target_type_ == "multiclass":
-            n_output_units = self.n_classes_
-            output_activation = "softmax"
-            loss = "sparse_categorical_crossentropy"
+        # Output layer
+        if self.scikit_compat:
+            output_activation = self.activation
+            n_output_units = self.hidden_layer_sizes[-1]
+            loss = compile_kwargs["loss"]
         else:
-            raise NotImplementedError(f"Unsupported task type: {self.target_type_}")
+            if self.target_type_ == "binary":
+                n_output_units = 1
+                output_activation = "sigmoid"
+                loss = "binary_crossentropy"  # Log-loss function
+            elif self.target_type_ == "multiclass":
+                n_output_units = self.n_classes_  # n_outputs_expected_
+                output_activation = "softmax"
+                loss = "categorical_crossentropy "  # Multiclass log-loss function
+            else:
+                raise NotImplementedError(f"Unsupported task type: {self.target_type_}")
+
         out = keras.layers.Dense(n_output_units, activation=output_activation)
         model.add(out)
         model.compile(loss=loss, optimizer=compile_kwargs["optimizer"])
