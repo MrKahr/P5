@@ -5,8 +5,8 @@ import os
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-# Set initial CWD
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
+os.environ["KERAS_BACKEND"] = "torch"
 
 from modules.tools.arguments.app_arguments import AppArguments
 
