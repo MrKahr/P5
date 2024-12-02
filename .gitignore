@@ -1,6 +1,7 @@
 # Project P5
 config/*
 figures/
+dataset/
 
 
 # Byte-compiled / optimized / DLL files
