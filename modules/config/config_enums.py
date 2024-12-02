@@ -16,6 +16,11 @@ class OutlierRemovalMethod(Enum):
     AVF = 1
 
 
+class DiscretizeMethod(Enum):
+    CHIMERGE = 0
+    NAIVE = 1
+
+
 class ImputationMethod(Enum):
     NONE = 0
     MODE = 1
