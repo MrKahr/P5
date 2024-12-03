@@ -5,6 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from modules.config.config import Config
 from modules.config.utils.config_enums import Model
+from modules.gpuBackend.compatibility.config_param_converter import ConfigParamConverter
 from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.tools.types import UnfittedEstimator
 from modules.logging import logger
@@ -40,10 +41,8 @@ class ModelSelector:
 
         if use_cuda:
             return MLPClassifierGPU(
-                optimizer=kwargs.pop("solver"),
-                epochs=kwargs.pop("max_iter"),
                 verbose=is_verbose,
-                **kwargs,
+                **ConfigParamConverter.convertToMLPClassifierGPU(kwargs),
             )
         else:
             logger.debug(f"CUDA not available. Switching to CPU")

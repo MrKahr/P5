@@ -17,6 +17,8 @@ from sklearn.utils import Bunch
 
 from modules.config.config import Config
 from modules.config.utils.config_enums import TrainingMethod, Model
+from modules.gpuBackend.compatibility.config_param_converter import ConfigParamConverter
+from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.logging import logger
 from modules.modelTraining.param_grids import ParamGridGenerator
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
@@ -304,9 +306,13 @@ class ModelTrainer:
 
         self._checkAllFeaturesPresent()
 
+        grid = ParamGridGenerator(len(self._train_x.columns)).getParamGrid()
+        if isinstance(self._unfit_estimator, MLPClassifierGPU):
+            grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
+
         gscv = GridSearchCV(
             estimator=self._unfit_estimator,
-            param_grid=ParamGridGenerator(len(self._train_x.columns)).getParamGrid(),
+            param_grid=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             refit=refit.lower() if isinstance(refit, str) else refit,
@@ -353,11 +359,14 @@ class ModelTrainer:
         """
         # TODO: Get model report out of the search
         self._checkAllFeaturesPresent()
+
+        grid = ParamGridGenerator(len(self._train_x.columns)).getRandomParamGrid()
+        if isinstance(self._unfit_estimator, MLPClassifierGPU):
+            grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
+
         rscv = RandomizedSearchCV(
             estimator=self._unfit_estimator,
-            param_distributions=ParamGridGenerator(
-                len(self._train_x.columns)
-            ).getRandomParamGrid(),
+            param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
