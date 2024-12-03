@@ -108,6 +108,26 @@ class DataTransformer:
                                    [1, 0, 1, 1],
                                    [1, 1, 0, 1],
                                    [1, 1, 1, 0]]
+        self._sårrand_matrix = [
+            [0, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 0],
+        ]
+        self._midte_matrix = [
+            [0, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 0],
+        ]
         # fmt: on
 
     # FIXME: float/int label issue when one-hot encoding
@@ -265,6 +285,10 @@ class DataTransformer:
                         distance += self._eksudattype_matrix[x_value][y_value]
                     case "Infektionsniveau":
                         distance += self._infektionsniveau_matrix[x_value][y_value]
+                    case "Sårrand (cm)":
+                        distance += self._sårrand_matrix[x_value][y_value]
+                    case "Midte (cm)":
+                        distance += self._midte_matrix[x_value][y_value]
                     case _:  # default
                         pass  # code to handle other labels goes here
             except (
