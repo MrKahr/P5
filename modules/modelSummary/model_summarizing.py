@@ -245,11 +245,8 @@ class ModelSummary:
 
     def plotFeatureImportance(self) -> None:
         """
-        Feature importance group(threshold,distance,accuracy,balanced_accuracy) sorted and plotted plotted by 
-        collecting threshold.importances_mean,distance.importances_mean,accuracy.importances_mean,balanced_accuracy.importances_mean
-        from corresponding feature into groups and summing up the values. The sums for each feature are then grouped and
-        sorted, the sorted features are then collected. The collection can then be used to give a order for the plotting
-        of the feature groupings.
+        Feature importance groups (threshold, distance, accuracy, balanced accuracy) are calculated by summing the importances_mean 
+        of each feature for these metrics. The features are then grouped, sorted by their sums, and plotted in the determined order.
             
         Variables:
             - result = List with [threshold,distance,accuracy,balanced_accuracy]
@@ -267,10 +264,10 @@ class ModelSummary:
             - sorted_group_order = List with [feature name,,,...] Note: this list is needed for plotting the feature groups in the
                 sorted order.
             
-            Links
-            -----
-            - https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-            - https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+        Links
+        -----
+        - https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+        - https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
         """
         result = self._pipeline_report["feature_importances"]
         feature_names = self._pipeline_report["feature_names_in"]
@@ -288,7 +285,7 @@ class ModelSummary:
                 if i == (len(result) - 1): # Calculate sum of all feature groups and sort the groups
                     # if you want to get the mean of means then change sum() to mean()
                     overall_means.append((sum(feature_groups[f"group{labeled_feature_values.index[j]}"]), feature_names[j]))
-                    overall_means.sort(key=lambda x: x[0], reverse=True) # Should only sort on sum values [0]
+                    overall_means.sort() # Should only sort on sum values [0]
                     sorted_group_order = [n[1] for n in overall_means] # Should only collect feature names [1]
 
 
