@@ -1,4 +1,4 @@
-from typing import Any, Callable, Literal, Union
+from typing import Any, Literal, Union
 import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
@@ -94,6 +94,10 @@ class MLPClassifierGPU(KerasClassifier):
         )
         self.hidden_layer_sizes = hidden_layer_sizes
         self.activation = activation
+        self.learning_rate = learning_rate
+        self.learning_rate_init = learning_rate_init
+        self.alpha = alpha  # Not implemented
+        self.tol = tol  # Not implemented
 
         if learning_rate != "constant":
             logger.warning(
