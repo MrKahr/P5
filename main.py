@@ -35,11 +35,12 @@ if SetupConfig.arg_batch:
     with logging_redirect_tqdm(loggers=[logger]):
         for configs in tqdm(
             config_list,
-            desc="Progress",
+            desc="Overall Progress ",
             unit="model",
             dynamic_ncols=True,
             colour="green",
-            bar_format="{l_bar}{bar:15}{r_bar}",
+            position=1,
+            bar_format="{l_bar}{bar:50}{r_bar}",
         ):
             ConfigBatchProcessor.applyConfigs(configs)
             Pipeline(Dataset.REGS).run()
