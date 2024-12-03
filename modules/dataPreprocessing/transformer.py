@@ -304,7 +304,9 @@ class DataTransformer:
                     case "Midte (cm)":
                         distance += self._midte_matrix[x_value][y_value]
                     case _:  # default
-                        pass  # code to handle other labels goes here
+                        # handling unspecified labels with zero-one distance
+                        # a boolean true is equal to 1, false is equal to 0
+                        distance += x_value != y_value
             except (
                 IndexError
             ):  # if try to access an entry in a distance matrix that doesn't exist, we end up here
