@@ -12,7 +12,7 @@ from modules.scoreFunctions.score_functions import (
     FeatureSelectScoreFunctions,
     ModelScoreFunctions,
 )
-from modules.types import (
+from modules.tools.types import (
     ModelScoreCallable,
     FeatureSelectScoreCallable,
 )
