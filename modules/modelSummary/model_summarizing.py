@@ -298,7 +298,7 @@ class ModelSummary:
         for y in result:
             offset = width * multiplier
             feature_importances = pd.Series(result[y].importances_mean, index=feature_names)
-            sorted_feature_importances = feature_importances[sorted_group_order]
+            sorted_feature_importances = feature_importances[sorted_group_order] # To not sort change sorted_group_order to feature_names
 
             feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=result[y].importances_std,label=y)
             ax.bar_label(feature_plot, padding=1)
@@ -309,7 +309,7 @@ class ModelSummary:
         ax.set_title(f"Feature Importances with Standard Deviation for {model.split("(")[0]}")
         ax.legend(loc="best")
         ax.set_yticks(positions + (width * (len(result) - 1) / 2))
-        ax.set_yticklabels(sorted_group_order)
+        ax.set_yticklabels(sorted_group_order) # To not sort change sorted_group_order to feature_names
 
         if self._write_fig:
             self._writeFigure("feature importance")
