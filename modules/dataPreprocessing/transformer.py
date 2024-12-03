@@ -69,18 +69,26 @@ class DataTransformer:
             [1, 1, 1, 1, 1, 0, 1],
             [1, 1, 1, 1, 1, 1, 0],
         ]
-        self._sårskorpe_matrix = [[0, 1, 1],
-                            [1, 0, 1],
-                            [1, 1, 0]]
-        self._granulationsvæv_matrix = [[0, 1, 1],
-                                  [1, 0, 1],
-                                  [1, 1, 0]]
-        self._epithelialisering_matrix = [[0, 1, 1],
-                                    [1, 0, 1],
-                                    [1, 1, 0]]
-        self._kontraktion_matrix = [[0, 1, 1],
-                              [1, 0, 1],
-                              [1, 1, 0]]
+        self._sårskorpe_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
+        self._granulationsvæv_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
+        self._epithelialisering_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
+        self._kontraktion_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
         self._hyperæmi_matrix = [
             [0, 1, 1, 1, 1],
             [1, 0, 1, 1, 1],
@@ -88,12 +96,16 @@ class DataTransformer:
             [1, 1, 1, 0, 1],
             [1, 1, 1, 1, 0],
         ]
-        self._ødem_matrix = [[0, 1, 1],
-                       [1, 0, 1],
-                       [1, 1, 0]]
-        self._eksudat_matrix = [[0, 1, 1],
-                          [1, 0, 1],
-                          [1, 1, 0]]
+        self._ødem_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
+        self._eksudat_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
         self._eksudattype_matrix = [
             [0, 1, 1, 1, 1, 1, 1, 1],
             [1, 0, 1, 1, 1, 1, 1, 1],
@@ -104,10 +116,12 @@ class DataTransformer:
             [1, 1, 1, 1, 1, 1, 0, 1],
             [1, 1, 1, 1, 1, 1, 1, 0],
         ]
-        self._infektionsniveau_matrix = [[0, 1, 1, 1],
-                                   [1, 0, 1, 1],
-                                   [1, 1, 0, 1],
-                                   [1, 1, 1, 0]]
+        self._infektionsniveau_matrix = [
+            [0, 1, 1, 1],
+            [1, 0, 1, 1],
+            [1, 1, 0, 1],
+            [1, 1, 1, 0]
+        ]
         self._sårrand_matrix = [
             [0, 1, 1, 1, 1, 1, 1, 1],
             [1, 0, 1, 1, 1, 1, 1, 1],
