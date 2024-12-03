@@ -21,6 +21,10 @@ from modules.gpuBackend.compatibility.config_param_converter import ConfigParamC
 from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.logging import logger
 from modules.modelTraining.param_grids import ParamGridGenerator
+from modules.modelTraining.progress_search import (
+    GridSearchCVProgressBar,
+    RandomizedSearchCVProgressBar,
+)
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.random import RNG
 from modules.tools.types import (
@@ -310,7 +314,7 @@ class ModelTrainer:
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
-        gscv = GridSearchCV(
+        gscv = GridSearchCVProgressBar(
             estimator=self._unfit_estimator,
             param_grid=grid,
             scoring=self._model_score_funcs,
@@ -364,7 +368,7 @@ class ModelTrainer:
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
-        rscv = RandomizedSearchCV(
+        rscv = RandomizedSearchCVProgressBar(
             estimator=self._unfit_estimator,
             param_distributions=grid,
             scoring=self._model_score_funcs,
