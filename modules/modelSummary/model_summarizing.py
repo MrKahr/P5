@@ -17,6 +17,7 @@ from sklearn.tree import plot_tree
 
 from modules.config.config import Config
 from modules.config.utils.config_enums import Model
+from modules.config.utils.setup_config import SetupConfig
 from modules.logging import logger
 
 
@@ -31,12 +32,11 @@ class ModelSummary:
         self._pipeline_report = pipeline_report
 
     def _writeFigure(self, figure_name: str) -> None:
-        figures = "figures"
-        os.makedirs(figures, exist_ok=True)
+        os.makedirs(SetupConfig().figures_dir, exist_ok=True)
         plt.savefig(
             Path(
                 Path.cwd(),
-                figures,
+                SetupConfig().figures_dir,
                 f"{figure_name}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d")}.png",
             )
         )
