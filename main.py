@@ -38,6 +38,7 @@ if SetupConfig.arg_batch:
     )
 
     logger.info(f"Running in batch mode")
+    # Tell tqdm to consider logging module when printing progress bar
     with logging_redirect_tqdm(loggers=[logger]):
         for configs in tqdm(
             config_list,
