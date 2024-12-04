@@ -1,5 +1,11 @@
-pandas>=2.2.2
-numpy>=2.1.1
-matplotlib>=3.9.2
-scikit-learn>=1.5.2
-colorama>=0.4.6
+pandas
+numpy
+matplotlib
+scikit-learn
+colorama
+tqdm
+
+# For GPU-based models
+scikeras # Bridge between scikit-learn and Tensorflow / PyTorch
+--extra-index-url https://download.pytorch.org/whl/cu124 # Add CUDA support for PyTorch
+torch # PyTorch

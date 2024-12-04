@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.crossValidationSelection.cross_validation_selection import (
     CrossValidationSelector,
 )
@@ -22,7 +22,7 @@ from modules.modelSummary.model_summarizing import ModelSummary
 
 class Pipeline:
     _logger = logger
-    _config = Config()
+    _config = PipelineConfig()
 
     def __init__(self, train_dataset: Dataset) -> None:
         """
@@ -40,11 +40,12 @@ class Pipeline:
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
         self.selected_features = None  # type: NDArray
+        self._data_folder = "dataset"
+        self._logger.setLevel(self._config.getValue("loglevel", "General"))
 
-    @classmethod
-    def loadDataset(cls, dataset: Dataset) -> pd.DataFrame:
+    def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
-        path = Path("data", dataset.value).absolute()
+        path = Path(self._data_folder, dataset.value).absolute()
         return pd.read_csv(path, sep=";", comment="#")
 
     def addMål(self) -> pd.DataFrame:
@@ -52,7 +53,7 @@ class Pipeline:
         Join MÅL with the current dataset using "Gris ID", "Sår ID", and "Dag" as index
         """
         logger.info(f"Loading {Dataset.MÅL.name} dataset")
-        path = Path("data", Dataset.MÅL.value).absolute()
+        path = Path(self._data_folder, Dataset.MÅL.value).absolute()
         mål = pd.read_csv(path, sep=";", comment="#")
         # remove the columns we'll never use
         logger.info(f"Dropping unused rows from {Dataset.MÅL.name} dataset")
@@ -84,7 +85,7 @@ class Pipeline:
         self.df = self.loadDataset(self.train_dataset)
 
         # join dataset with MÅL if we want to use that
-        if Config().getValue("UseContinuousFeatures"):
+        if PipelineConfig().getValue("UseContinuousFeatures"):
             self.addMål()
 
         # run the rest of the pipeline

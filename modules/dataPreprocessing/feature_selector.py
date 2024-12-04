@@ -1,11 +1,10 @@
-import pandas as pd
-
 from typing import Any, Literal, Union
 from sklearn.feature_selection import GenericUnivariateSelect
 from numpy.typing import NDArray
+import pandas as pd
 
-from modules.config.config import Config
-from modules.config.config_enums import FeatureSelectionCriterion
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import FeatureSelectionCriterion
 from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.types import FeatureSelectScoreCallable
@@ -33,7 +32,7 @@ class FeatureSelector:
         """
         self._train_x = train_x
         self._true_y = true_y
-        self._config = Config()
+        self._config = PipelineConfig()
         self._parent_key = "FeatureSelection"
         self.df = None
         self._selected_features = None

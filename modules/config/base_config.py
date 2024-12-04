@@ -1,34 +1,39 @@
-from typing import Any, Optional, Self
+from typing import Any, Optional
 
-from modules.config.config_read_write import (
-    insertDictValue,
-    loadConfig,
-    retrieveDictValue,
-    writeConfig,
-)
-from modules.config.config_template_gen import ConfigTemplate
-from modules.config.setup_config import SetupConfig
+import modules.config.utils.config_read_write as config_rw
 from modules.logging import logger
+from modules.tools.types import StrPath
 
 
-class Config:
-    _instance = None
+class BaseConfig:
+    """Base class for all configs"""
+
     _logger = logger
 
-    # This is a singleton class since we only want 1 instance of a Config at all times
-    def __new__(cls) -> Self:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._created = False
-        return cls._instance
+    def __init__(self, config_name: str, config_path: StrPath, template: dict) -> None:
+        """
+        Initiate config wrapper class.
 
-    def __init__(self) -> None:
-        if not self._created:
-            self._config_name = SetupConfig.config_name
-            self._config_path = SetupConfig.app_config_path
-            self._template = ConfigTemplate().getTemplate()
-            self._config = self._initConfig()
-            self._created = True
+        Remember to call setter for config!
+        ----
+        config : dict
+            The config's underlying dict.
+
+        Parameters
+        ----------
+        config_name : str
+            The name of `config`.
+
+        config_path : StrPath
+            The config's location on disk.
+
+        template : dict | None
+            The template of `config`.
+        """
+        self._config_name = config_name
+        self._config_path = config_path
+        self._config = None  # type: dict[str, Any]
+        self._template = template
 
     def _initConfig(self) -> dict[str, Any]:
         """
@@ -39,12 +44,29 @@ class Config:
         dict[str, Any]
             The loaded config.
         """
-        config = loadConfig(
+        config = config_rw.loadConfig(
             config_name=self._config_name,
             config_path=self._config_path,
             template=self._template,
         )
         return config
+
+    def _setConfig(self, config: dict[str, Any]) -> None:
+        self._config = config
+
+    def getConfig(self) -> dict[str, Any]:
+        """
+        Get the config's underlying dict.
+
+        Returns
+        -------
+        dict[str, dict]
+            The config's underlying dict
+        """
+        return self._config
+
+    def getConfigPath(self) -> StrPath:
+        return self._config_path
 
     def getValue(self, key: str, parent_key: Optional[str] = None) -> Any:
         """
@@ -69,7 +91,9 @@ class Config:
         UnboundLocalError
             If `key` was not found in the config.
         """
-        return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
+        return config_rw.retrieveDictValue(
+            input=self._config, key=key, parent_key=parent_key
+        )
 
     def setValue(self, key: str, value: Any, parent_key: Optional[str] = None) -> None:
         """
@@ -89,14 +113,15 @@ class Config:
             If `key` was not found in the config.
         """
         try:
-            insertDictValue(self._config, key, value, parent_key)
+            config_rw.insertDictValue(self._config, key, value, parent_key)
         except KeyError:
             self._logger.error(
                 f"Failed to update config with '{value}' using key '{key}' {f"inside the scope of parent key '{parent_key}'" if parent_key is not None else ""}."
             )
 
-    def saveToConfig(self) -> None:
+    def writeToDisk(self) -> None:
         """
         Saves the config's underlying dict to disk.
+        The file is defined in the instance variable `_config_path`.
         """
-        writeConfig(self._config, self._config_path)
+        config_rw.writeConfig(self._config, self._config_path)

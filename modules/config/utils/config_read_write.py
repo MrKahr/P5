@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Literal, Optional
 
-from modules.config.setup_config import SetupConfig
+from modules.config.utils.setup_config import SetupConfig
 from modules.exceptions import MissingFieldError
 from modules.logging import logger
 from modules.tools.types import StrPath

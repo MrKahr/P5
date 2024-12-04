@@ -3,8 +3,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from modules.config.config import Config
-from modules.config.config_enums import Model
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import LogLevel, Model
+from modules.gpuBackend.compatibility.config_param_converter import ConfigParamConverter
+from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.tools.types import UnfittedEstimator
 from modules.logging import logger
 
@@ -28,7 +30,27 @@ class ModelSelector:
 
     @classmethod
     def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier:
-        return MLPClassifier(**kwargs)
+        is_verbose = (
+            1
+            if PipelineConfig().getValue("loglevel", "General") == LogLevel.DEBUG.name
+            else 0
+        )
+
+        try:
+            import torch
+
+            use_cuda = torch.cuda.is_available()
+        except ImportError:
+            use_cuda = False
+
+        if use_cuda:
+            return MLPClassifierGPU(
+                verbose=is_verbose,
+                **ConfigParamConverter.convertToMLPClassifierGPU(kwargs),
+            )
+        else:
+            logger.debug(f"CUDA not available. Switching to CPU")
+            return MLPClassifier(**kwargs)
 
     @classmethod
     def _getNaiveBayes(cls, **kwargs) -> GaussianNB:
@@ -44,7 +66,7 @@ class ModelSelector:
         UnfittedEstimator
             An unfit instance of the model as specified in the config file.
         """
-        cls._config = Config()
+        cls._config = PipelineConfig()
         parent_key = "ModelSelection"
         selected_model = cls._config.getValue("model", parent_key)
 

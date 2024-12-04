@@ -1,12 +1,11 @@
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
-    explained_variance_score,
     make_scorer,
 )
 
-from modules.config.config import Config
-from modules.config.config_enums import FeatureScoreFunc, ModelScoreFunc
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import FeatureScoreFunc, ModelScoreFunc
 from modules.logging import logger
 from modules.scoreFunctions.score_functions import (
     FeatureSelectScoreFunctions,
@@ -27,7 +26,7 @@ class ScoreFunctionSelector:
     across the entire pipeline.
     """
 
-    _config = Config()
+    _config = PipelineConfig()
 
     # We use a cache to avoid repeated computation when picking score functions according to the config
     _cache = {

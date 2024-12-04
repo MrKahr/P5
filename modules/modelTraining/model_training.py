@@ -15,10 +15,16 @@ from sklearn.model_selection import (
 )
 from sklearn.utils import Bunch
 
-from modules.config.config import Config
-from modules.config.config_enums import TrainingMethod, Model
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import TrainingMethod, Model
+from modules.gpuBackend.compatibility.config_param_converter import ConfigParamConverter
+from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.logging import logger
 from modules.modelTraining.param_grids import ParamGridGenerator
+from modules.modelTraining.progress_search import (
+    GridSearchCVProgressBar,
+    RandomizedSearchCVProgressBar,
+)
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.random import RNG
 from modules.tools.types import (
@@ -30,7 +36,7 @@ from modules.tools.types import (
 
 class ModelTrainer:
     _logger = logger
-    _config = Config()
+    _config = PipelineConfig()
 
     def __init__(
         self,
@@ -138,8 +144,8 @@ class ModelTrainer:
                     ),
                 )
             ),
-            "feature_names_in": estimator.feature_names_in_,
-            "feature_count": estimator.n_features_in_,
+            "feature_names_in": self._train_x.columns.values,
+            "feature_count": len(self._train_x.columns.values),
             "train_x": self._train_x,  # type: pd.DataFrame
             "train_true_y": self._train_true_y,  # type: pd.Series
             "test_x": self._test_x,  # type: pd.DataFrame
@@ -304,9 +310,13 @@ class ModelTrainer:
 
         self._checkAllFeaturesPresent()
 
-        gscv = GridSearchCV(
+        grid = ParamGridGenerator(len(self._train_x.columns)).getParamGrid()
+        if isinstance(self._unfit_estimator, MLPClassifierGPU):
+            grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
+
+        gscv = GridSearchCVProgressBar(
             estimator=self._unfit_estimator,
-            param_grid=ParamGridGenerator(len(self._train_x.columns)).getParamGrid(),
+            param_grid=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             refit=refit.lower() if isinstance(refit, str) else refit,
@@ -353,11 +363,14 @@ class ModelTrainer:
         """
         # TODO: Get model report out of the search
         self._checkAllFeaturesPresent()
-        rscv = RandomizedSearchCV(
+
+        grid = ParamGridGenerator(len(self._train_x.columns)).getRandomParamGrid()
+        if isinstance(self._unfit_estimator, MLPClassifierGPU):
+            grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
+
+        rscv = RandomizedSearchCVProgressBar(
             estimator=self._unfit_estimator,
-            param_distributions=ParamGridGenerator(
-                len(self._train_x.columns)
-            ).getRandomParamGrid(),
+            param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,

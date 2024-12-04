@@ -1,10 +1,13 @@
-from itertools import product
+from copy import deepcopy
+import numpy as np
 import math
+from itertools import product
 from scipy.stats._discrete_distns import randint
 from scipy.stats._continuous_distns import uniform_gen
-import numpy as np
-from modules.config.config import Config
-from modules.config.config_enums import Model, VariableDistribution
+
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.grid_config import GridConfig
+from modules.config.utils.config_enums import Model, VariableDistribution
 from modules.logging import logger
 
 
@@ -21,7 +24,8 @@ class ParamGridGenerator:
             Number of features seen during fit.
             Used solely for determining the size of the input layer to a MLPClassifier.
         """
-        self._config = Config()
+        self._config = PipelineConfig()
+        self._grid_config = GridConfig()
         self._feature_count = feature_count
 
     def _getRange(
@@ -59,7 +63,7 @@ class ParamGridGenerator:
 
         return value_range
 
-    def _createNNTuple(self, hidden_layer_sizes: dict) -> list[tuple]:
+    def _createNNTuple(self, key_hidden_layer_sizes: dict) -> list[tuple]:
         """
         Create combinations of tuples defining Neural Network layers and neurons per layer.
 
@@ -75,8 +79,8 @@ class ParamGridGenerator:
             layers/neurons for training different sized Neural Networks in Grid-/Random Search.
         """
         # How many hidden layers we want  to use for each model
-        layer_range = self._getRange(**hidden_layer_sizes["layers"])
-        low, high, size = hidden_layer_sizes["layer_size"].values()
+        layer_range = self._getRange(**key_hidden_layer_sizes["layers"])
+        low, high, size = key_hidden_layer_sizes["layer_size"].values()
 
         # Get the size of the input layer
         input_layer = self._getRange(
@@ -89,7 +93,7 @@ class ParamGridGenerator:
         ]  # type: list[np.ndarray]
 
         # Get the size of the output layer
-        output_layer = self._getRange(**hidden_layer_sizes["output_layer"])
+        output_layer = self._getRange(**key_hidden_layer_sizes["output_layer"])
 
         # Combine lists in tuples for different Neural Network (NN) sizes since MLP-constructor requires tuple input
         # It is done in format (INPUT,a,b,...,OUTPUT) e.g. (10, 5, 8, 2)
@@ -127,7 +131,7 @@ class ParamGridGenerator:
         distribution = None
         if isinstance(value, dict) and "dist" in value:
             distribution_type = value["dist"]
-            params = value["dist_params"]  # type: dict
+            params = deepcopy(value["dist_params"])  # type: dict
             if distribution_type == VariableDistribution.RANDINT.name:
                 distribution = randint.rvs(**value["dist_params"]).astype(dtype="int32")
             elif distribution_type == VariableDistribution.RANDFLOAT.name:
@@ -222,25 +226,22 @@ class ParamGridGenerator:
         match current_model:
             case Model.DECISION_TREE.name:
                 grid_key = "ParamGridDecisionTree"
-                grid = self._createGenericGrid(self._config.getValue(grid_key))
+                grid = self._createGenericGrid(self._grid_config.getValue(grid_key))
             case Model.NAIVE_BAYES.name:
                 grid_key = "RandomParamGridGaussianNaiveBayes"
-                grid = self._createGenericGrid(self._config.getValue(grid_key))
+                grid = self._createGenericGrid(self._grid_config.getValue(grid_key))
             case Model.NEURAL_NETWORK.name:
                 grid_key = "ParamGridNeuralNetwork"
-                grid = self._createGenericGrid(self._config.getValue(grid_key))
+                grid = self._createGenericGrid(self._grid_config.getValue(grid_key))
             case Model.RANDOM_FOREST.name:
                 tree_key = "ParamGridDecisionTree"
                 grid_key = "ParamGridRandomForest"
-                grid = self._createGenericGrid(self._config.getValue(tree_key))
-                grid |= self._createGenericGrid(self._config.getValue(grid_key))
+                grid = self._createGenericGrid(self._grid_config.getValue(tree_key))
+                grid |= self._createGenericGrid(self._grid_config.getValue(grid_key))
             case _:
                 self._logger.error(
                     f"Paramgrid not supported for model '{current_model}'. Expected one of '{Model._member_names_}'"
                 )
-
-        # Param grid updated with ranges
-        self._config.setValue(grid_key, grid, "ParamGrid")
         return grid
 
     def getRandomParamGrid(self) -> dict:
@@ -253,7 +254,6 @@ class ParamGridGenerator:
             The parameter grid of distributions as defined in the config.
         """
         # Initialize model and grid
-        parent_key = "RandomParamGrid"
         current_model = self._config.getValue("model", "ModelSelection")
 
         # Ensure param grid matches model
@@ -261,36 +261,28 @@ class ParamGridGenerator:
             case Model.DECISION_TREE.name:
                 grid_key = "RandomParamGridDecisionTree"
                 grid = self._createGenericRandomGrid(
-                    self._config.getValue(grid_key, parent_key)
+                    self._grid_config.getValue(grid_key)
                 )
             case Model.NAIVE_BAYES.name:
                 grid_key = "RandomParamGridGaussianNaiveBayes"
                 grid = self._createGenericRandomGrid(
-                    self._config.getValue(grid_key, parent_key)
+                    self._grid_config.getValue(grid_key)
                 )
             case Model.NEURAL_NETWORK.name:
                 grid_key = "RandomParamGridNeuralNetwork"
-                grid = self._createNNRandomGrid(
-                    self._config.getValue(grid_key, parent_key)
-                )
+                grid = self._createNNRandomGrid(self._grid_config.getValue(grid_key))
             case Model.RANDOM_FOREST.name:
                 # We need to combine keys since random forest uses decision tree params to get keys
                 tree_key = "RandomParamGridDecisionTree"
                 grid_key = "RandomParamGridRandomForest"
                 grid = self._createGenericRandomGrid(
-                    self._config.getValue(tree_key, parent_key)
+                    self._grid_config.getValue(tree_key)
                 )
                 grid |= self._createGenericRandomGrid(
-                    self._config.getValue(grid_key, parent_key)
+                    self._grid_config.getValue(grid_key)
                 )
             case _:
                 self._logger.error(
                     f"Paramgrid not supported for model '{current_model}'. Expected one of '{Model._member_names_}'"
                 )
-
-        self._config.setValue(
-            grid_key,
-            grid,
-            parent_key,
-        )
-        return self._config.getValue(grid_key, parent_key)
+        return grid

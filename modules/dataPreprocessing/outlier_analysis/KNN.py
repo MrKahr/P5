@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.getcwd())
 
-from modules.config.config import Config
-from modules.config.config_enums import OutlierRemovalMethod
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import OutlierRemovalMethod
 from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
 from modules.dataPreprocessing.transformer import DataTransformer
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     from modules.pipeline import Pipeline
 
     dataset = Dataset.REGS
-    config = Config()
+    config = PipelineConfig()
 
     general_key = "General"
     config.setValue("UseCleaner", True, general_key)

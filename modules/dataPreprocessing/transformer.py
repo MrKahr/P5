@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
-from modules.config.config import Config
-from modules.config.config_enums import (
+from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import (
     DiscretizeMethod,
     DistanceMetric,
     ImputationMethod,
@@ -657,41 +657,44 @@ class DataTransformer:
         pd.DataFrame
             The transformed dataframe.
         """
-        config = Config()
+        config = PipelineConfig()
         if config.getValue("UseTransformer"):
+
             # Discretization
-            if len(config.getValue("DiscretizeColumns")) > 0:
+            discretize_method = config.getValue("DiscretizeMethod", "Transformer")
+            if discretize_method == DiscretizeMethod.NONE.name:
+                pass
+            elif discretize_method == DiscretizeMethod.CHIMERGE.name:
                 for column in config.getValue("DiscretizeColumns"):
-                    interval_bounds = None
-                    if (
-                        config.getValue("DiscretizeMethod")
-                        == DiscretizeMethod.CHIMERGE.name
-                    ):
-                        interval_bounds = self.discretizeWithChiMerge(
-                            column,
-                            merge_when_below=config.getValue(
-                                "ChiMergeMaximumMergeThreshold"
-                            ).get(column),
-                            desired_intervals=config.getValue(
-                                "DiscretizeDesiredIntervals"
-                            ).get(column),
-                        )
-                    elif (
-                        config.getValue("DiscretizeMethod")
-                        == DiscretizeMethod.NAIVE.name
-                    ):
-                        interval_bounds = self.discretizeNaively(
-                            column,
-                            desired_intervals=config.getValue(
-                                "DiscretizeDesiredIntervals"
-                            ).get(column),
-                        )
-                    else:
-                        logger.warning("Undefined discretization method! Skipping")
+                    interval_bounds = self.discretizeWithChiMerge(
+                        column,
+                        merge_when_below=config.getValue(
+                            "ChiMergeMaximumMergeThreshold"
+                        ).get(column),
+                        desired_intervals=config.getValue(
+                            "DiscretizeDesiredIntervals"
+                        ).get(column),
+                    )
                     self.assignIntervals(
                         column,
                         lower_bounds=interval_bounds,
                     )
+            elif discretize_method == DiscretizeMethod.NAIVE.name:
+                for column in config.getValue("DiscretizeColumns"):
+                    interval_bounds = self.discretizeNaively(
+                        column,
+                        desired_intervals=config.getValue(
+                            "DiscretizeDesiredIntervals"
+                        ).get(column),
+                    )
+                    self.assignIntervals(
+                        column,
+                        lower_bounds=interval_bounds,
+                    )
+            else:
+                logger.warning(
+                    f"Undefined discretization method '{discretize_method}'. Skipping"
+                )
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):
