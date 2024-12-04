@@ -15,12 +15,16 @@ from sklearn.model_selection import (
 )
 from sklearn.utils import Bunch
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import TrainingMethod, Model
 from modules.gpuBackend.compatibility.config_param_converter import ConfigParamConverter
 from modules.gpuBackend.models.mlp_gpu import MLPClassifierGPU
 from modules.logging import logger
 from modules.modelTraining.param_grids import ParamGridGenerator
+from modules.modelTraining.progress_search import (
+    GridSearchCVProgressBar,
+    RandomizedSearchCVProgressBar,
+)
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.random import RNG
 from modules.tools.types import (
@@ -32,7 +36,7 @@ from modules.tools.types import (
 
 class ModelTrainer:
     _logger = logger
-    _config = Config()
+    _config = PipelineConfig()
 
     def __init__(
         self,
@@ -310,7 +314,7 @@ class ModelTrainer:
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
-        gscv = GridSearchCV(
+        gscv = GridSearchCVProgressBar(
             estimator=self._unfit_estimator,
             param_grid=grid,
             scoring=self._model_score_funcs,
@@ -364,7 +368,7 @@ class ModelTrainer:
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
-        rscv = RandomizedSearchCV(
+        rscv = RandomizedSearchCVProgressBar(
             estimator=self._unfit_estimator,
             param_distributions=grid,
             scoring=self._model_score_funcs,

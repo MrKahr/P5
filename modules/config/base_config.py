@@ -1,11 +1,6 @@
 from typing import Any, Optional
 
-from modules.config.utils.config_read_write import (
-    insertDictValue,
-    loadConfig,
-    retrieveDictValue,
-    writeConfig,
-)
+import modules.config.utils.config_read_write as config_rw
 from modules.logging import logger
 from modules.tools.types import StrPath
 
@@ -49,7 +44,7 @@ class BaseConfig:
         dict[str, Any]
             The loaded config.
         """
-        config = loadConfig(
+        config = config_rw.loadConfig(
             config_name=self._config_name,
             config_path=self._config_path,
             template=self._template,
@@ -96,7 +91,9 @@ class BaseConfig:
         UnboundLocalError
             If `key` was not found in the config.
         """
-        return retrieveDictValue(input=self._config, key=key, parent_key=parent_key)
+        return config_rw.retrieveDictValue(
+            input=self._config, key=key, parent_key=parent_key
+        )
 
     def setValue(self, key: str, value: Any, parent_key: Optional[str] = None) -> None:
         """
@@ -116,7 +113,7 @@ class BaseConfig:
             If `key` was not found in the config.
         """
         try:
-            insertDictValue(self._config, key, value, parent_key)
+            config_rw.insertDictValue(self._config, key, value, parent_key)
         except KeyError:
             self._logger.error(
                 f"Failed to update config with '{value}' using key '{key}' {f"inside the scope of parent key '{parent_key}'" if parent_key is not None else ""}."
@@ -125,5 +122,6 @@ class BaseConfig:
     def writeToDisk(self) -> None:
         """
         Saves the config's underlying dict to disk.
+        The file is defined in the instance variable `_config_path`.
         """
-        writeConfig(self._config, self._config_path)
+        config_rw.writeConfig(self._config, self._config_path)

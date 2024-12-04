@@ -6,7 +6,7 @@ from modules.config.templates.config_template import ConfigTemplate
 from modules.config.utils.setup_config import SetupConfig
 
 
-class Config(BaseConfig):
+class PipelineConfig(BaseConfig):
     _instance = None
 
     # This is a singleton class since we only want 1 instance of a Config at all times
@@ -23,6 +23,7 @@ class Config(BaseConfig):
                 config_name=SetupConfig.config_name,
                 config_path=SetupConfig.pipeline_config_path,
                 template=ConfigTemplate().getTemplate(),
+                config=super()._initConfig(),
             )
-            self._setConfig(self._initConfig())
+            self._setConfig(self._initConfig())  # FIXME: Find better way to init config
             self._created = True

@@ -15,6 +15,12 @@ from modules.tools.arguments.app_arguments import AppArguments
 arguments = AppArguments()
 arguments.executeArguments()
 
+
+from modules.logging.logger import Logger
+
+# Show start header after CLI is initialized
+Logger.writeHeaderToLog()
+
 ######################
 ### Module Imports ###
 ######################
@@ -36,15 +42,17 @@ if SetupConfig.arg_batch:
     batch_id = f"batch.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
 
     logger.info(f"Running in batch mode")
+    # Tell tqdm to consider logging module when printing progress bar
     with logging_redirect_tqdm(loggers=[logger]):
         for i, configs in enumerate(
             tqdm(
                 config_list,
-                desc="Progress",
+                desc="Overall Progress ",
                 unit="model",
                 dynamic_ncols=True,
                 colour="green",
-                bar_format="{l_bar}{bar:15}{r_bar}",
+                position=1,
+                bar_format="{l_bar}{bar:50}{r_bar}",
             )
         ):
             ConfigBatchProcessor.applyConfigs(configs)

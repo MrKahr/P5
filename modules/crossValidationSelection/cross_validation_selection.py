@@ -1,6 +1,6 @@
-from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
+from sklearn.model_selection import StratifiedKFold
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import CrossValidator, TrainingMethod
 from modules.logging import logger
 
@@ -32,7 +32,7 @@ class CrossValidationSelector:
         ValueError
             If the selected cross-validator is invalid.
         """
-        cls._config = Config()
+        cls._config = PipelineConfig()
         parent_key = "CrossValidationSelection"
         selected_cross_validator = cls._config.getValue("cross_validator", parent_key)
 

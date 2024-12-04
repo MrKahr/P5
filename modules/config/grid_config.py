@@ -24,5 +24,5 @@ class GridConfig(BaseConfig):
                 config_path=SetupConfig.grid_config_path,
                 template=GridTemplate().getTemplate(),
             )
-            self._setConfig(self._initConfig())
+            self._setConfig(self._initConfig())  # FIXME: Find better way to init config
             self._created = True

@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.grid_config import GridConfig
 from modules.config.utils.config_batch_processor import ConfigBatchProcessor
 from modules.config.utils.setup_config import SetupConfig
@@ -25,7 +25,7 @@ class ConfigExporter:
         ----------
         bufsize : int, optional
             Read file buffer size in bytes.
-            By default `65536`.
+            By default `65536` (arbitrarily chosen).
         """
         self._bufsize = bufsize
 
@@ -87,7 +87,7 @@ class ConfigExporter:
         os.makedirs(SetupConfig.arg_export_path, exist_ok=True)
 
         # The currently active configs
-        config_paths = [Config()._config_path, GridConfig()._config_path]
+        config_paths = [PipelineConfig()._config_path, GridConfig()._config_path]
 
         # Check that the configs-to-be-exported are unique compared to existing configs on disk
         file_paths = [
