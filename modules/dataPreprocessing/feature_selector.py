@@ -1,4 +1,4 @@
-from typing import Any, Literal, Union
+from typing import Literal, Union
 from sklearn.feature_selection import GenericUnivariateSelect
 from numpy.typing import NDArray
 import pandas as pd
@@ -9,14 +9,7 @@ from modules.logging import logger
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.tools.types import FeatureSelectScoreCallable
 
-# SECTION
-# https://scikit-learn.org/stable/modules/feature_selection.html
-# Tree-based: https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html#sphx-glr-auto-examples-ensemble-plot-forest-importances-py
 
-# https://scikit-learn.org/stable/auto_examples/compose/plot_compare_reduction.html#sphx-glr-auto-examples-compose-plot-compare-reduction-py
-
-
-# TODO: We need a method to generate random features completely independent from dataset for use in verification
 class FeatureSelector:
     def __init__(self, train_x: pd.DataFrame, true_y: pd.Series) -> None:
         """
@@ -95,11 +88,6 @@ class FeatureSelector:
                     f"Invalid mode '{mode}' selected. Expected one of {FeatureSelectionCriterion._member_names_}"
                 )
 
-    def _computeFeatureCorrelation(self) -> Any:
-        # Using Spearman rank-order correlations from SciPy
-        # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#handling-multicollinear-features
-        pass
-
     def genericUnivariateSelect(
         self,
         scoreFunc: FeatureSelectScoreCallable,
@@ -155,22 +143,11 @@ class FeatureSelector:
         https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.GenericUnivariateSelect.html
 
         """
-        # TODO: Plot info gained, see links
-        # TODO: Try a new version of our custom score function as well
         logger.info(f"Running feature selection using mode={mode}, param={param}")
         selector = GenericUnivariateSelect(scoreFunc, mode=mode, param=param)
         transformed_x = selector.fit_transform(self._train_x, self._true_y)
         self._selected_features = selector.get_feature_names_out()
         self._train_x = pd.DataFrame(transformed_x, columns=self._selected_features)
-
-    def varianceThreshold(self) -> Any:
-        # See: https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance
-        pass
-
-    def checkOverfitting(self) -> Any:
-        # NOTE: This appears to only work for tree-based models
-        # See: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-py
-        pass
 
     def run(self) -> tuple[pd.DataFrame, pd.Series, NDArray]:
         """

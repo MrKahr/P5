@@ -11,6 +11,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
 
+from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_curve
 from sklearn.metrics import RocCurveDisplay
 from sklearn.naive_bayes import LabelBinarizer
@@ -222,6 +223,19 @@ class ModelSummary:
         else:
             plt.show(block=False)
 
+    # FIXME: Half-baked implementation!
+    def _plotDecisionBoundary(self) -> None:
+        raise NotImplementedError("FIXME: Half-baked implementation!")
+        x = self._pipeline_report["train_x"]
+        print(x)
+        dbd = DecisionBoundaryDisplay.from_estimator(
+            self._pipeline_report["estimator"], x
+        )
+        dbd.ax_.scatter(
+            x[:, 0], x[:, 1], c=self._pipeline_report["train_true_y"], edgecolor="k"
+        )
+        self._showFigure("decision_boundary")
+
     def _plotTree(self) -> None:
         selected_model = self._config.getValue("model", "ModelSelection")
         if selected_model in [Model.DECISION_TREE.name, Model.RANDOM_FOREST.name]:
@@ -244,14 +258,14 @@ class ModelSummary:
 
     def plotFeatureImportance(self) -> None:
         """
-        Feature importance groups (threshold, distance, accuracy, balanced accuracy) are calculated by summing the importances_mean 
+        Feature importance groups (threshold, distance, accuracy, balanced accuracy) are calculated by summing the importances_mean
         of each feature for these metrics. The features are then grouped, sorted by their sums, and plotted in the determined order.
-            
+
         Variables:
             - result = List with [threshold,distance,accuracy,balanced_accuracy]
                 Note: Getting permutation feature importances from model training containing threshold, distance, accuracy and
                 balanced_accuracy which all consist of importances_mean, importances_std and importances for each feature.
-            - feature_names = List with [names of features used,,...]. 
+            - feature_names = List with [names of features used,,...].
                 Note: we load is because result doesn't save feature names(only values)
             - model = String being the model used.
                 Note: loaded because we want the plots show which model was used
@@ -259,10 +273,10 @@ class ModelSummary:
                 Note: this list is used for calculating the sum of the means.
             - overall_means = List of tuples [(sum of (threshold,distance,accuracy,balanced_accuracy), feature name),(,)(,)...].
                 Note: we have a tuple with sum and feature name for each feature_group which then is sorted where we want to obtain
-                the feature names to order the feature groups in the plot. (we use sum value to get the sorted order)  
+                the feature names to order the feature groups in the plot. (we use sum value to get the sorted order)
             - sorted_group_order = List with [feature name,,,...] Note: this list is needed for plotting the feature groups in the
                 sorted order.
-            
+
         Links
         -----
         - https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
@@ -276,39 +290,69 @@ class ModelSummary:
         sorted_group_order = []
 
         for i, x in enumerate(result):
-            labeled_feature_values = pd.Series(result[x].importances_mean, index=feature_names) # Label the means with their feature name
+            labeled_feature_values = pd.Series(
+                result[x].importances_mean, index=feature_names
+            )  # Label the means with their feature name
 
             for j, feature in enumerate(labeled_feature_values):
-                feature_groups[f"group{labeled_feature_values.index[j]}"].append(feature) # Add the feature mean to corresponding feature group
+                feature_groups[f"group{labeled_feature_values.index[j]}"].append(
+                    feature
+                )  # Add the feature mean to corresponding feature group
 
-                if i == (len(result) - 1): # Calculate sum of all feature groups and sort the groups
+                if i == (
+                    len(result) - 1
+                ):  # Calculate sum of all feature groups and sort the groups
                     # if you want to get the mean of means then change sum() to mean()
-                    overall_means.append((sum(feature_groups[f"group{labeled_feature_values.index[j]}"]), feature_names[j]))
-                    overall_means.sort() # Should only sort on sum values [0]
-                    sorted_group_order = [n[1] for n in overall_means] # Should only collect feature names [1]
-
+                    overall_means.append(
+                        (
+                            sum(
+                                feature_groups[
+                                    f"group{labeled_feature_values.index[j]}"
+                                ]
+                            ),
+                            feature_names[j],
+                        )
+                    )
+                    overall_means.sort()  # Should only sort on sum values [0]
+                    sorted_group_order = [
+                        n[1] for n in overall_means
+                    ]  # Should only collect feature names [1]
 
         fig, ax = plt.subplots(figsize=(20, 10), layout="constrained")
         # Variables are used to position the feature groupings(threshold,distance,accuracy,balanced_accuracy) in the plot.
         positions = np.arange(len(feature_names)) * 10
         width = 2
         multiplier = 0
-        
+
         for y in result:
             offset = width * multiplier
-            feature_importances = pd.Series(result[y].importances_mean, index=feature_names)
-            sorted_feature_importances = feature_importances[sorted_group_order] # To not sort change sorted_group_order to feature_names
+            feature_importances = pd.Series(
+                result[y].importances_mean, index=feature_names
+            )
+            sorted_feature_importances = feature_importances[
+                sorted_group_order
+            ]  # To not sort change sorted_group_order to feature_names
 
-            feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=result[y].importances_std,label=y)
+            feature_plot = ax.barh(
+                positions + offset,
+                sorted_feature_importances,
+                width,
+                xerr=result[y].importances_std,
+                label=y,
+            )
             ax.bar_label(feature_plot, padding=1)
             multiplier += 1
 
         ax.set_xlabel("Mean accuracy")
         ax.set_ylabel("Features")
-        ax.set_title(f"Feature Importances with Standard Deviation for {model.split("(")[0]}")
+        ax.set_title(
+            f"Feature Importances with Standard Deviation for {model.split("(")[0]}"
+        )
         ax.legend(loc="best")
         ax.set_yticks(positions + (width * (len(result) - 1) / 2))
-        ax.set_yticklabels(sorted_group_order) # To not sort change sorted_group_order to feature_names
+        ax.set_yticklabels(
+            sorted_group_order
+        )  # To not sort change sorted_group_order to feature_names
 
         if self._write_fig:
             self._writeFigure("feature importance")
@@ -322,6 +366,8 @@ class ModelSummary:
             self._plotConfusionMatrix()
         if self._config.getValue("plot_roc_curves"):
             self._plotRocCurve()
+        if self._config.getValue("plot_decision_boundary"):
+            self._plotDecisionBoundary()
         if self._config.getValue("plot_tree"):
             self._plotTree()
         if self._config.getValue("plot_feature_importance"):
