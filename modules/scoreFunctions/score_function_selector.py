@@ -200,6 +200,6 @@ class ScoreFunctionSelector:
 
         largest_weight = (None, 0)
         for k, v in score_func_weights.items():
-            if v >= largest_weight[1]:
+            if k in self.getScoreFuncsModel().keys() and v >= largest_weight[1]:
                 largest_weight = (k, v)
         return self.getScoreFuncsModel()[largest_weight[0]]

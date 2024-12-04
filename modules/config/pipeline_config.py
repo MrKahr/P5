@@ -23,7 +23,6 @@ class PipelineConfig(BaseConfig):
                 config_name=SetupConfig.config_name,
                 config_path=SetupConfig.pipeline_config_path,
                 template=ConfigTemplate().getTemplate(),
-                config=super()._initConfig(),
             )
             self._setConfig(self._initConfig())  # FIXME: Find better way to init config
             self._created = True

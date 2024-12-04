@@ -9,8 +9,6 @@ from sklearn import model_selection
 from sklearn.feature_selection import RFE, RFECV, SequentialFeatureSelector
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import (
-    GridSearchCV,
-    RandomizedSearchCV,
     cross_validate,
 )
 from sklearn.utils import Bunch
@@ -116,7 +114,10 @@ class ModelTrainer:
     def _checkModelCompatibility(self) -> FittedEstimator | None:
         model_type = self._config.getValue("model", "ModelSelection")
 
-        if model_type == Model.NAIVE_BAYES.name and self._training_method in [
+        if model_type in [
+            Model.NAIVE_BAYES.name,
+            Model.NEURAL_NETWORK.name,
+        ] and self._training_method in [
             TrainingMethod.RFE.name,
             TrainingMethod.RFECV.name,
         ]:
@@ -152,6 +153,7 @@ class ModelTrainer:
             "test_true_y": self._test_true_y,  # type: pd.Series
         }
 
+    # TODO: Plot for both train and test set
     def _permutationFeatureImportance(
         self,
         estimator: FittedEstimator,
@@ -199,9 +201,6 @@ class ModelTrainer:
 
         """
         # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-        # TODO: Verify that the model is better than a RNG:
-        #       https://scikit-learn.org/stable/auto_examples/model_selection/plot_permutation_tests_for_classification.html#sphx-glr-auto-examples-model-selection-plot-permutation-tests-for-classification-py
-        #       https://scikit-learn.org/stable/modules/cross_validation.html#permutation-test-score
         self._logger.info("Computing permutation feature importances...")
         start_time = time()
         result = permutation_importance(

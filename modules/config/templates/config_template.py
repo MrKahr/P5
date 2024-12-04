@@ -73,26 +73,34 @@ class ConfigTemplate(object):
                     "avfParams": {"k": 10},  # {number of outliers to detect}
                 },
                 "Transformer": {
-                    "DiscretizeColumns": [
-                        "Sårrand (cm)",
-                        "Midte (cm)",
-                    ],  # type: list[str]
-                    "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
-                    "ChiMergeMaximumMergeThreshold": {
-                        "Sårrand (cm)": np.inf,
-                        "Midte (cm)": np.inf,
+                    "Discretization": {
+                        "DiscretizeColumns": [
+                            "Sårrand (cm)",
+                            "Midte (cm)",
+                        ],  # type: list[str]
+                        "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
+                        "ChiMergeMaximumMergeThreshold": {
+                            "Sårrand (cm)": np.inf,
+                            "Midte (cm)": np.inf,
+                        },
+                        "DiscretizeDesiredIntervals": {
+                            "Sårrand (cm)": -1,
+                            "Midte (cm)": -1,
+                        },
                     },
-                    "DiscretizeDesiredIntervals": {
-                        "Sårrand (cm)": -1,
-                        "Midte (cm)": -1,
+                    "OneHotEncoding": {
+                        "UseOneHotEncoding": False,
+                        "OneHotEncodeLabels": [],  # type: list[str]
                     },
-                    "UseOneHotEncoding": False,
-                    "OneHotEncodeLabels": [],  # type: list[str]
-                    "ImputationMethod": ImputationMethod.NONE.name,
-                    "KNN_NearestNeighbors": 5,
-                    "KNN_DistanceMetric": DistanceMetric.MATRIX.name,
-                    "NormalisationMethod": NormalisationMethod.NONE.name,
-                    "NormaliseFeatures": [],  # type: list[str]
+                    "Imputation": {
+                        "ImputationMethod": ImputationMethod.NONE.name,
+                        "KNN_NearestNeighbors": 5,
+                        "KNN_DistanceMetric": DistanceMetric.MATRIX.name,
+                    },
+                    "Normalisation": {
+                        "NormalisationMethod": NormalisationMethod.NONE.name,
+                        "NormaliseFeatures": [],  # type: list[str]
+                    },
                 },
                 "FeatureSelection": {
                     "score_function": FeatureScoreFunc.CHI2.name,
@@ -106,9 +114,6 @@ class ConfigTemplate(object):
                         "mode": FeatureSelectionCriterion.PERCENTILE.name,
                         "param": 25,  # type: int | float | str  # The parameter for the mode
                     },
-                    "ComputeFeatureCorrelation": True,
-                    "VarianceThreshold": True,
-                    "checkOverfitting": True,
                 },
             },
             "ModelSelection": {
@@ -152,12 +157,6 @@ class ConfigTemplate(object):
                     "shuffle": True,
                     "random_state": 177,  # type: int | None  # NOTE: If shuffle is false, random_state must be None
                 },
-                "TimeSeriesSplit": {
-                    "n_splits": 5,
-                    "max_train_size": None,  # type: int | None
-                    "test_size": None,  # type: int | None
-                    "gap": 0,
-                },
             },
             "ModelTraining": {
                 "training_method": TrainingMethod.GRID_SEARCH_CV.name,
@@ -199,5 +198,6 @@ class ConfigTemplate(object):
                 "plot_roc_curves": False,
                 "plot_feature_importance": False,
                 "plot_tree": True,
+                "plot_decision_boundary": True,
             },
         }
