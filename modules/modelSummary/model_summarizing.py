@@ -57,7 +57,7 @@ class ModelSummary:
         formatted = "{\n"
         for k, v in deepcopy(self._pipeline_report).items():
             if k in [
-                # "feature_importances",
+                "feature_importances",
                 "train_pred_y",
                 "test_pred_y",
             ] or isinstance(v, (pd.DataFrame, pd.Series)):

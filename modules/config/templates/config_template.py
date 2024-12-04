@@ -57,8 +57,8 @@ class ConfigTemplate(object):
                 "Cleaning": {
                     "DeleteNanColumns": True,
                     "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
-                    "DeleteMissingValues": False,
-                    "DeleteUndeterminedValue": False,
+                    "DeleteMissingValues": False, # Missing value = 2
+                    "DeleteUndeterminedValue": False, # Undetermined = 100 
                     "RemoveFeaturelessRows": True,
                     "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
@@ -117,7 +117,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelSelection": {
-                "model": Model.RANDOM_FOREST.name,
+                "model": Model.DECISION_TREE.name,
                 "DecisionTree": {
                     "criterion": "gini",  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": None,  # type: int | None
@@ -159,7 +159,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.GRID_SEARCH_CV.name,
+                "training_method": TrainingMethod.FIT.name, #NOTE: ensure param set to FIT when first generating config. 
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -197,7 +197,7 @@ class ConfigTemplate(object):
                 "plot_confusion_matrix": False,
                 "plot_roc_curves": False,
                 "plot_feature_importance": False,
-                "plot_tree": True,
-                "plot_decision_boundary": True,
+                "plot_tree": False,
+                "plot_decision_boundary": False,
             },
         }

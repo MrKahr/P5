@@ -6,8 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from modules.config.config import Config
 from modules.config.grid_config import GridConfig
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.setup_config import SetupConfig
 from modules.logging import logger
 
@@ -83,10 +83,10 @@ class SummaryExporter:
             ]:
                 export_dict[k] = cls._serialize(v)
 
-        export_dict[SetupConfig.pipeline_config_file.split(".")[1]] = (
-            Config().getConfig()
+        export_dict["pipeline_config"] = (
+            PipelineConfig().getConfig()
         )
-        export_dict[SetupConfig.grid_config_file.split(".")[0]] = (
+        export_dict["grid_config"] = (
             GridConfig().getConfig()
         )
 
