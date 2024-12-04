@@ -115,7 +115,6 @@ class BaseSearchCVProgressBar(BaseSearchCV):
 
             def evaluate_candidates(candidate_params, cv=None, more_results=None):
                 cv = cv or cv_orig
-                candidate_params = list(candidate_params)
                 n_candidates = len(candidate_params)
                 n_fits = n_candidates * n_splits  # added
 
