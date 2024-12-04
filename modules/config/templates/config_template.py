@@ -195,8 +195,9 @@ class ConfigTemplate(object):
             },
             "ModelEvaluation": {
                 "print_model_report": True,
-                "plot_confusion_matrix": True,
-                "plot_roc_curves": True,
+                "plot_confusion_matrix": False,
+                "plot_roc_curves": False,
+                "plot_feature_importance": False,
                 "plot_tree": True,
             },
         }

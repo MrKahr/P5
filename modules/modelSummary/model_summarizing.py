@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 import os
 from pathlib import Path
@@ -53,9 +54,9 @@ class ModelSummary:
                 return f"{value}"
 
         formatted = "{\n"
-        for k, v in self._pipeline_report.items():
+        for k, v in deepcopy(self._pipeline_report).items():
             if k in [
-                "feature_importances",
+                # "feature_importances",
                 "train_pred_y",
                 "test_pred_y",
             ] or isinstance(v, (pd.DataFrame, pd.Series)):
@@ -241,6 +242,79 @@ class ModelSummary:
             else:
                 plt.show(block=False)
 
+    def plotFeatureImportance(self) -> None:
+        """
+        Feature importance groups (threshold, distance, accuracy, balanced accuracy) are calculated by summing the importances_mean 
+        of each feature for these metrics. The features are then grouped, sorted by their sums, and plotted in the determined order.
+            
+        Variables:
+            - result = List with [threshold,distance,accuracy,balanced_accuracy]
+                Note: Getting permutation feature importances from model training containing threshold, distance, accuracy and
+                balanced_accuracy which all consist of importances_mean, importances_std and importances for each feature.
+            - feature_names = List with [names of features used,,...]. 
+                Note: we load is because result doesn't save feature names(only values)
+            - model = String being the model used.
+                Note: loaded because we want the plots show which model was used
+            - feature_groups = List with [groupFeaturen_name(threshold.importances_mean,distance.importances_mean,accuracy.importances_mean,balanced_accuracy.importances_mean),(),(),...]
+                Note: this list is used for calculating the sum of the means.
+            - overall_means = List of tuples [(sum of (threshold,distance,accuracy,balanced_accuracy), feature name),(,)(,)...].
+                Note: we have a tuple with sum and feature name for each feature_group which then is sorted where we want to obtain
+                the feature names to order the feature groups in the plot. (we use sum value to get the sorted order)  
+            - sorted_group_order = List with [feature name,,,...] Note: this list is needed for plotting the feature groups in the
+                sorted order.
+            
+        Links
+        -----
+        - https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+        - https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+        """
+        result = self._pipeline_report["feature_importances"]
+        feature_names = self._pipeline_report["feature_names_in"]
+        model = str(self._pipeline_report["estimator"])
+        feature_groups = {f"group{name}": [] for name in feature_names}
+        overall_means = []
+        sorted_group_order = []
+
+        for i, x in enumerate(result):
+            labeled_feature_values = pd.Series(result[x].importances_mean, index=feature_names) # Label the means with their feature name
+
+            for j, feature in enumerate(labeled_feature_values):
+                feature_groups[f"group{labeled_feature_values.index[j]}"].append(feature) # Add the feature mean to corresponding feature group
+
+                if i == (len(result) - 1): # Calculate sum of all feature groups and sort the groups
+                    # if you want to get the mean of means then change sum() to mean()
+                    overall_means.append((sum(feature_groups[f"group{labeled_feature_values.index[j]}"]), feature_names[j]))
+                    overall_means.sort() # Should only sort on sum values [0]
+                    sorted_group_order = [n[1] for n in overall_means] # Should only collect feature names [1]
+
+
+        fig, ax = plt.subplots(figsize=(20, 10), layout="constrained")
+        # Variables are used to position the feature groupings(threshold,distance,accuracy,balanced_accuracy) in the plot.
+        positions = np.arange(len(feature_names)) * 10
+        width = 2
+        multiplier = 0
+        
+        for y in result:
+            offset = width * multiplier
+            feature_importances = pd.Series(result[y].importances_mean, index=feature_names)
+            sorted_feature_importances = feature_importances[sorted_group_order] # To not sort change sorted_group_order to feature_names
+
+            feature_plot = ax.barh(positions + offset,sorted_feature_importances,width,xerr=result[y].importances_std,label=y)
+            ax.bar_label(feature_plot, padding=1)
+            multiplier += 1
+
+        ax.set_xlabel("Mean accuracy")
+        ax.set_ylabel("Features")
+        ax.set_title(f"Feature Importances with Standard Deviation for {model.split("(")[0]}")
+        ax.legend(loc="best")
+        ax.set_yticks(positions + (width * (len(result) - 1) / 2))
+        ax.set_yticklabels(sorted_group_order) # To not sort change sorted_group_order to feature_names
+
+        if self._write_fig:
+            self._writeFigure("feature importance")
+        else:
+            plt.show(block=False)
+
     def run(self) -> None:
         if self._config.getValue("print_model_report"):
             self._printModelReport()
@@ -250,6 +324,8 @@ class ModelSummary:
             self._plotRocCurve()
         if self._config.getValue("plot_tree"):
             self._plotTree()
+        if self._config.getValue("plot_feature_importance"):
+            self.plotFeatureImportance()
 
         if not self._write_fig:
             input("Press enter to close all figures...")
