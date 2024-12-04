@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.crossValidationSelection.cross_validation_selection import (
     CrossValidationSelector,
 )
@@ -22,7 +22,7 @@ from modules.modelSummary.model_summarizing import ModelSummary
 
 class Pipeline:
     _logger = logger
-    _config = Config()
+    _config = PipelineConfig()
 
     def __init__(self, train_dataset: Dataset) -> None:
         """
@@ -85,7 +85,7 @@ class Pipeline:
         self.df = self.loadDataset(self.train_dataset)
 
         # join dataset with MÅL if we want to use that
-        if Config().getValue("UseContinuousFeatures"):
+        if PipelineConfig().getValue("UseContinuousFeatures"):
             self.addMål()
 
         # run the rest of the pipeline

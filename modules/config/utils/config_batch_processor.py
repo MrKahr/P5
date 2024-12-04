@@ -55,12 +55,12 @@ class ConfigBatchProcessor:
             A list of macthing configs.
         """
         while configs:
-            config_pair = [configs.pop()]
-            current_file_id = config_pair[0].split(".")[2]
+            combined_config = [configs.pop()]
+            current_file_id = combined_config[0].split(".")[2]
             for config in deepcopy(configs):
                 if config.split(".")[2] == current_file_id:
-                    config_pair.append(configs.pop())
-            yield config_pair
+                    combined_config.append(configs.pop())
+            yield combined_config
 
     @classmethod
     def applyConfigs(cls, configs: list[StrPath]) -> None:
@@ -69,7 +69,7 @@ class ConfigBatchProcessor:
             if config.find("gridparams") != -1:
                 SetupConfig.grid_config_file = file
                 SetupConfig.grid_config_path = config
-            elif config.find("pipeline_config") != 1:
+            elif config.find("pipeline_config") != -1:
                 SetupConfig.pipeline_config_file = file
                 SetupConfig.pipeline_config_path = config
             else:

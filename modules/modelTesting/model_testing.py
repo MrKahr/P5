@@ -3,7 +3,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.scoreFunctions.score_function_selector import ScoreFunctionSelector
 from modules.logging import logger
 
@@ -22,7 +22,7 @@ class ModelTester:
         pipeline_report : dict
             The pipeline report containing relevant results for the entire pipeline.
         """
-        self._config = Config()
+        self._config = PipelineConfig()
         self._pipeline_report = pipeline_report
         self._estimator = pipeline_report["estimator"]
         self._train_x = pipeline_report["train_x"]

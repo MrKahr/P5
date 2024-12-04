@@ -1,8 +1,7 @@
-from pathlib import Path
 import re
 import pandas as pd
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.dataPreprocessing.dataset_enums import Dataset
 from modules.logging import logger
 
@@ -190,7 +189,7 @@ class DataCleaner(object):
         pd.DataFrame
             The cleaned dataset.
         """
-        config = Config()
+        config = PipelineConfig()
         if config.getValue("UseCleaner"):
             if config.getValue("DeleteNanColumns"):
                 self._deleteNanCols()

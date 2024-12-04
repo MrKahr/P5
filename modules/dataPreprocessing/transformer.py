@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import (
     DiscretizeMethod,
     DistanceMetric,
@@ -615,7 +615,7 @@ class DataTransformer:
         pd.DataFrame
             The transformed dataframe.
         """
-        config = Config()
+        config = PipelineConfig()
         if config.getValue("UseTransformer"):
 
             # Discretization

@@ -8,7 +8,7 @@ import pandas as pd
 from modules.dataPreprocessing.outlier_analysis.KNN import KNNAnalysis
 from modules.dataPreprocessing.outlier_analysis.AVF import AVFAnalysis
 from modules.logging import logger
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import OutlierRemovalMethod
 
 
@@ -77,7 +77,7 @@ class OutlierProcessor:
         pd.DataFrame
             A dataframe with potential outliers removed.
         """
-        config = Config()
+        config = PipelineConfig()
         if config.getValue("UseOutlierRemoval"):
 
             outlier_method = config.getValue("OutlierRemovalMethod")  # type: str

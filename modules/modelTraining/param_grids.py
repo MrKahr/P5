@@ -5,7 +5,7 @@ from itertools import product
 from scipy.stats._discrete_distns import randint
 from scipy.stats._continuous_distns import uniform_gen
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.grid_config import GridConfig
 from modules.config.utils.config_enums import Model, VariableDistribution
 from modules.logging import logger
@@ -24,7 +24,7 @@ class ParamGridGenerator:
             Number of features seen during fit.
             Used solely for determining the size of the input layer to a MLPClassifier.
         """
-        self._config = Config()
+        self._config = PipelineConfig()
         self._grid_config = GridConfig()
         self._feature_count = feature_count
 

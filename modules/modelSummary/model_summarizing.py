@@ -15,7 +15,7 @@ from sklearn.metrics import RocCurveDisplay
 from sklearn.naive_bayes import LabelBinarizer
 from sklearn.tree import plot_tree
 
-from modules.config.config import Config
+from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import Model
 from modules.logging import logger
 
@@ -25,7 +25,7 @@ from modules.logging import logger
 
 class ModelSummary:
     def __init__(self, pipeline_report: dict):
-        self._config = Config()
+        self._config = PipelineConfig()
         self._write_fig = self._config.getValue("write_figure_to_disk")
         self._model_name = type(pipeline_report["estimator"]).__name__
         self._pipeline_report = pipeline_report

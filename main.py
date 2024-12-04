@@ -14,6 +14,12 @@ from modules.tools.arguments.app_arguments import AppArguments
 arguments = AppArguments()
 arguments.executeArguments()
 
+
+from modules.logging.logger import Logger
+
+# Show start header after CLI is initialized
+Logger.writeHeaderToLog()
+
 ######################
 ### Module Imports ###
 ######################
