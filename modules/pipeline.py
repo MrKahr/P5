@@ -1,3 +1,4 @@
+from typing import Any
 import pandas as pd
 from pathlib import Path
 from numpy.typing import NDArray
@@ -76,7 +77,7 @@ class Pipeline:
     def getTrueY(self) -> pd.Series:
         return self.df["Dag"]
 
-    def run(self) -> None:
+    def run(self) -> dict[str, Any]:
         """Using a dataframe, calls relevant pipeline components to perform transformations of dataset as specified in the config file"""
         self._logger.info(
             f"Initializing Pipeline: training dataset '{self.train_dataset.name}'"
@@ -111,3 +112,4 @@ class Pipeline:
             pipeline_report=pipeline_report,
         ).run()
         ModelSummary(pipeline_report).run()
+        return pipeline_report

@@ -28,6 +28,10 @@ class SetupConfig:
     pipeline_config_path = Path(config_dir, pipeline_config_file).resolve()
     grid_config_path = Path(config_dir, grid_config_file).resolve()
 
+    # Model summary paths
+    summary_dir = Path(app_dir, "summary")
+    figures_dir = Path(summary_dir, "figures")
+
     # Program arguments
     arg_batch = False
     arg_export = False
