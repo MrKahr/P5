@@ -42,6 +42,13 @@ if SetupConfig.arg_batch:
     batch_id = f"batch.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
 
     logger.info(f"Running in batch mode")
+
+    if not config_list:
+        logger.warning(
+            f"Found no configs at '{SetupConfig.arg_batch_config_path}'. Please export some using the CLI option '--export'"
+        )
+        exit(0)
+
     # Tell tqdm to consider logging module when printing progress bar
     with logging_redirect_tqdm(loggers=[logger]):
         for i, configs in enumerate(

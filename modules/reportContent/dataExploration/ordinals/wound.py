@@ -5,7 +5,7 @@ sys.path.insert(0, os.getcwd())
 
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
-from modules.dataExploration.visualization import Plotter
+from modules.reportContent.dataExploration.visualization import Plotter
 from modules.dataPreprocessing.transformer import DataTransformer
 
 
@@ -15,8 +15,6 @@ class WoundTissueLevelPlotter:
         cleaner = DataCleaner(dp.df)
         cleaner.cleanRegsDataset()
         self.df = dp.df
-
-
 
     def plotWoundTissueLevel(self) -> None:
         # Swaps values to the following:
@@ -51,7 +49,7 @@ class WoundTissueLevelPlotter:
                 "i niveau",
                 "over og i niveau",
                 "over niveau",
-                "over og under niveau"
+                "over og under niveau",
             ],
         )
 

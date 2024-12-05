@@ -5,12 +5,12 @@ from keras import optimizers
 class OptimizerSelector:
 
     @classmethod
-    def _getAdam(self, **kwargs) -> optimizers.Adam:
+    def _getAdam(cls, **kwargs) -> optimizers.Adam:
         # Values taken from scikit-learns default values of MLPClassifier
         return optimizers.Adam(epsilon=1e-08, **kwargs)
 
     @classmethod
-    def _getSGD(self, **kwargs) -> optimizers.SGD:
+    def _getSGD(cls, **kwargs) -> optimizers.SGD:
         # Values taken from scikit-learns default values of MLPClassifier
         return optimizers.SGD(nesterov=True, momentum=0.9, **kwargs)
 

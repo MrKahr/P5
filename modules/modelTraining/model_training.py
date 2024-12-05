@@ -1,8 +1,8 @@
-from typing import Callable, Union
 import pandas as pd
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
 
+from typing import Callable, Union
 from time import time
 
 from sklearn import model_selection
@@ -72,7 +72,7 @@ class ModelTrainer:
         self._parent_key = "ModelTraining"
         self._n_jobs = self._config.getValue("n_jobs", "General")
         self._training_method = None  # Created during training
-        self._pipeline_report = None  # Created during training
+        self._pipeline_report = {}
 
         # *_x == pd.DataFrame, *_y == pd.Series
         self._train_x, self._test_x, self._train_true_y, self._test_true_y = (
@@ -135,7 +135,7 @@ class ModelTrainer:
         estimator : FittedEstimator
             The trained model.
         """
-        self._pipeline_report = {
+        self._pipeline_report |= {
             "estimator": estimator,
             "feature_importances": (
                 self._permutationFeatureImportance(
@@ -295,18 +295,6 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
         - https://scikit-learn.org/stable/modules/grid_search.html#exhaustive-grid-search
         """
-        # TODO: Get model report out of the search
-        # SECTION
-
-        # Custom refit strategy of a grid search with cross-validation
-        # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html
-
-        # Running GridSearchCV using multiple evaluation metrics
-        # https://scikit-learn.org/stable/auto_examples/model_selection/plot_multi_metric_evaluation.html#sphx-glr-auto-examples-model-selection-plot-multi-metric-evaluation-py
-
-        # Statistical comparison of models:
-        # https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html#sphx-glr-auto-examples-model-selection-plot-grid-search-stats-py
-
         self._checkAllFeaturesPresent()
 
         grid = ParamGridGenerator(len(self._train_x.columns)).getParamGrid()
@@ -322,12 +310,7 @@ class ModelTrainer:
             cv=self._cross_validator,
             **kwargs,
         ).fit(x, y)
-        # Best estimator attribute is the best model found by gridsearch
-        # Alternative predict method uses this attribute but obscures estimator usage
-
-        # TODO: Save relevant info
-        # print(gscv.cv_results_)
-
+        self._pipeline_report["GridSearchCV_BestParams"] = gscv.best_params_
         return gscv.best_estimator_
 
     def _fitRandomSearchWithCrossValidation(
@@ -360,7 +343,6 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html
         - https://scikit-learn.org/stable/modules/grid_search.html#randomized-parameter-optimization
         """
-        # TODO: Get model report out of the search
         self._checkAllFeaturesPresent()
 
         grid = ParamGridGenerator(len(self._train_x.columns)).getRandomParamGrid()
@@ -376,6 +358,8 @@ class ModelTrainer:
             random_state=RNG(random_state),
             **kwargs,
         ).fit(x, y)
+
+        self._pipeline_report["RandomSearchCV_BestParams"] = rscv.best_params_
         return rscv.best_estimator_
 
     def _fitSFS(

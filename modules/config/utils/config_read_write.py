@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 from modules.config.utils.setup_config import SetupConfig
-from modules.exceptions import MissingFieldError
 from modules.logging import logger
+from modules.tools.exceptions import MissingFieldError
 from modules.tools.types import StrPath
 
 # REVIEW: why is this not wrapped in a class? - TODO:make class

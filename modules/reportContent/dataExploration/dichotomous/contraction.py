@@ -5,7 +5,7 @@ sys.path.insert(0, os.getcwd())
 
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
-from modules.dataExploration.visualization import Plotter
+from modules.reportContent.dataExploration.visualization import Plotter
 
 # Process data
 dp = DataPreprocessor(Dataset.REGS)
@@ -13,14 +13,13 @@ cleaner = DataCleaner(dp.df)
 cleaner.cleanRegsDataset()
 cleaner.deleteMissingValues()
 df = dp.df
-# df.drop(df[(df["Epithelialisering"] == 2)].index,inplace=True)
 
 
 # Plot data over time
 Plotter().groupedBarPlot(
     df,
     "Dag",
-    "Epithelialisering",
-    show_percentage=True,
+    "Kontraktion",
+    show_percentage=False,
     labels=["nej", "ja", "kan ikke vurderes"],
 )
