@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt  # Plotting
 
 from modules.dataPreprocessing.preprocessor import DataPreprocessor, Dataset
 from modules.dataPreprocessing.cleaner import DataCleaner
-from modules.dataExploration.visualization import Plotter
+from modules.reportContent.dataExploration.visualization import Plotter
 
 plt.close("all")  # closes all currently active figures
 

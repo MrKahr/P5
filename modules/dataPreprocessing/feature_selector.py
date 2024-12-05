@@ -184,4 +184,4 @@ class FeatureSelector:
                 f"Skipping feature selection ({len(self._selected_features)} features present)"
             )
 
-        return self._train_x, self._true_y, self._selected_features
+        return self._train_x, self._true_y

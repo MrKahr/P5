@@ -1,7 +1,6 @@
 from typing import Any
 import pandas as pd
 from pathlib import Path
-from numpy.typing import NDArray
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.crossValidationSelection.cross_validation_selection import (
@@ -40,7 +39,6 @@ class Pipeline:
         """
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
-        self.selected_features = None  # type: NDArray
         self._data_folder = "dataset"
         self._logger.setLevel(self._config.getValue("loglevel", "General"))
 
@@ -98,7 +96,7 @@ class Pipeline:
         self.df = DataTransformer(self.df).run()
 
         # Unsplit is the dataset not split into train/test
-        unsplit_x, unsplit_true_y, self.selected_features = FeatureSelector(
+        unsplit_x, unsplit_true_y = FeatureSelector(
             self.getTrainX(), self.getTrueY()
         ).run()
 

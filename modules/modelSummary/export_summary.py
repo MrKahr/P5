@@ -34,9 +34,8 @@ class SummaryExporter:
             for k, v in input_value.items():
                 d[k] = cls._serialize(v)
             return d
-        elif isinstance(input_value, np.ndarray):
+        elif isinstance(input_value, np.ndarray) or hasattr(input_value, "dtype"):
             input_value = input_value.tolist()
-
         return input_value
 
     @classmethod
@@ -80,15 +79,13 @@ class SummaryExporter:
                 "test_pred_y",
                 "feature_importances",
                 "feature_names_in",
+                "GridSearchCV_BestParams",
+                "RandomSearchCV_BestParams",
             ]:
                 export_dict[k] = cls._serialize(v)
 
-        export_dict["pipeline_config"] = (
-            PipelineConfig().getConfig()
-        )
-        export_dict["grid_config"] = (
-            GridConfig().getConfig()
-        )
+        export_dict["pipeline_config"] = PipelineConfig().getConfig()
+        export_dict["grid_config"] = GridConfig().getConfig()
 
         estimator_name = type(pipeline_report["estimator"]).__name__
         time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

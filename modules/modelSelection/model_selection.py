@@ -29,7 +29,7 @@ class ModelSelector:
         return RandomForestClassifier(**kwargs)
 
     @classmethod
-    def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier:
+    def _getNeuralNetwork(cls, **kwargs) -> MLPClassifier | MLPClassifierGPU:
         is_verbose = (
             1
             if PipelineConfig().getValue("loglevel", "General") == LogLevel.DEBUG.name
