@@ -32,7 +32,7 @@ class ModelSummary:
         self._write_fig = self._config.getValue("write_figure_to_disk")
         self._model_name = type(pipeline_report["estimator"]).__name__
         self._pipeline_report = pipeline_report
-
+    
     def _writeFigure(self, figure_name: str) -> None:
         os.makedirs(SetupConfig().figures_dir, exist_ok=True)
         plt.savefig(

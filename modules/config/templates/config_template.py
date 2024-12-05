@@ -90,7 +90,7 @@ class ConfigTemplate(object):
                     },
                     "OneHotEncoding": {
                         "UseOneHotEncoding": False,
-                        "OneHotEncodeLabels": [],  # type: list[str]
+                        "OneHotEncodeLabels": ["Eksudattype", "Hyperæmi"],  # type: list[str]
                     },
                     "Imputation": {
                         "ImputationMethod": ImputationMethod.NONE.name,
@@ -99,7 +99,7 @@ class ConfigTemplate(object):
                     },
                     "Normalisation": {
                         "NormalisationMethod": NormalisationMethod.NONE.name,
-                        "NormaliseFeatures": [],  # type: list[str]
+                        "NormaliseFeatures": ["Sårskorpe"],  # type: list[str]
                     },
                 },
                 "FeatureSelection": {
