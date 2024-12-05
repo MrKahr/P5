@@ -137,7 +137,7 @@ class ConfigTemplate(object):
                     "random_state": 53,  # type: int | None
                     "max_samples": None,  # type: int | float | None
                 },
-                "GaussianNaiveBayes": {},  # TODO: Maybe use CategoricalNaiveBayes instead
+                "CategoricalNaiveBayes": {},  
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (20, 2),
                     "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]

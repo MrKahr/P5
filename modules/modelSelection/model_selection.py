@@ -1,4 +1,4 @@
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import CategoricalNB, GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -53,8 +53,8 @@ class ModelSelector:
             return MLPClassifier(**kwargs)
 
     @classmethod
-    def _getNaiveBayes(cls, **kwargs) -> GaussianNB:
-        return GaussianNB(**kwargs)
+    def _getNaiveBayes(cls, **kwargs) -> CategoricalNB:
+        return CategoricalNB(**kwargs)
 
     @classmethod
     def getModel(cls) -> UnfittedEstimator:
@@ -90,7 +90,7 @@ class ModelSelector:
             )
         elif selected_model == Model.NAIVE_BAYES.name:
             model = cls._getNaiveBayes(
-                **cls._config.getValue("GaussianNaiveBayes", parent_key)
+                **cls._config.getValue("CategoricalNaiveBayes", parent_key)
             )
         elif selected_model == Model.NEURAL_NETWORK.name:
             model = cls._getNeuralNetwork(

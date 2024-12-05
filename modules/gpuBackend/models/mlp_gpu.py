@@ -1,8 +1,9 @@
-from typing import Any, Literal, Union
+from typing import Any, Callable, Literal, Union
 import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
 
+from modules.gpuBackend.activation.activationFunctionSelector import ActivationFunctionSelector
 from modules.gpuBackend.optimizers.optimizerSelector import OptimizerSelector
 from modules.logging import logger
 
@@ -29,7 +30,7 @@ class MLPClassifierGPU(KerasClassifier):
         optimizer: (
             Literal["adam", "sgd"] | keras.Optimizer
         ) = "adam",  # "solver" in scikit
-        activation: str = "relu",
+        activation: Literal["logistic","relu","tanh"] | Callable = "relu",
         learning_rate: str = "constant",
         learning_rate_init: float = 0.001,
         alpha: float = 0.0001,
@@ -54,6 +55,11 @@ class MLPClassifierGPU(KerasClassifier):
             Can be an instance of a keras optimizer or a string literal.
             By default `"adam"`.
             NOTE: Called "solver" in scikit-learn.
+        
+        activation: Literal["logistic","relu","tanh"] | Callable 
+            Activation function for all layers except input/output 
+            By default "relu"
+            NOTE: "logistic" is defined as "sigmoid" in scikit-learn
 
         learning_rate : str, optional
             Adjust learning rate across epochs.
@@ -92,8 +98,10 @@ class MLPClassifierGPU(KerasClassifier):
             epochs=epochs,
             verbose=verbose,
         )
+        self.activation = ActivationFunctionSelector.getActivationFunction(
+                activation
+        )
         self.hidden_layer_sizes = hidden_layer_sizes
-        self.activation = activation
         self.learning_rate = learning_rate
         self.learning_rate_init = learning_rate_init
         self.alpha = alpha  # Not implemented
