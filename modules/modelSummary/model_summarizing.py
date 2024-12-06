@@ -392,9 +392,7 @@ class ModelSummary:
         if self._config.getValue("plot_feature_importance"):
             self.plotFeatureImportance()
         if self._config.getValue("plot_score_function"):
-            self._plotAccuracyFunctions(
-                {"hello": [0.1, 0.2, 0.3], "hi": [0.1, 0.2, 0.5]}
-            )
+            self._plotAccuracyFunctions(self._config.getValue("test_accuracies"))
 
         if not self._write_fig:
             input("Press enter to close all figures...")
