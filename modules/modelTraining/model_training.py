@@ -75,13 +75,18 @@ class ModelTrainer:
         self._pipeline_report = {}
 
         # *_x == pd.DataFrame, *_y == pd.Series
+        train_test_args = self._config.getValue("train_test_split", "ModelTraining")
+        train_test_ratio = (
+            f"{train_test_args["train_size"]:.2f}/{1-train_test_args["train_size"]:.2f}"
+        )
+        self._logger.info(f"Train/test split: {train_test_ratio}")
         self._train_x, self._test_x, self._train_true_y, self._test_true_y = (
             model_selection.train_test_split(
                 unsplit_x,
                 unsplit_y,
                 shuffle=True,
                 stratify=unsplit_y,
-                **self._config.getValue("train_test_split", "ModelTraining"),
+                **train_test_args,
             )
         )
 
@@ -199,7 +204,6 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/modules/permutation_importance.html
 
         """
-        # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
         self._logger.info("Computing permutation feature importances...")
         start_time = time()
         result = permutation_importance(
@@ -266,7 +270,6 @@ class ModelTrainer:
         self,
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
-        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -277,10 +280,6 @@ class ModelTrainer:
 
         Parameters
         ----------
-        refit : bool | str | Callable
-            Refit an estimator using the best found parameters on the whole dataset.
-            Only present here to create lowercase string.
-
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -309,23 +308,20 @@ class ModelTrainer:
             param_grid=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            refit=(
-                self._model_score_funcs[refit.lower()]
-                if isinstance(refit, str)
-                else refit
-            ),
             cv=self._cross_validator,
+            refit=False,
             **kwargs,
         ).fit(x, y)
+
         self._pipeline_report["GridSearchCV_BestParams"] = gscv.best_params_
-        return gscv.best_estimator_
+        self._unfit_estimator.set_params(gscv.best_params_)
+        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
 
     def _fitRandomSearchWithCrossValidation(
         self,
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
         random_state: int,
-        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -366,18 +362,15 @@ class ModelTrainer:
             param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            refit=(
-                self._model_score_funcs[refit.lower()]
-                if isinstance(refit, str)
-                else refit
-            ),
+            refit=False,
             cv=self._cross_validator,
             random_state=RNG(random_state),
             **kwargs,
         ).fit(x, y)
 
         self._pipeline_report["RandomSearchCV_BestParams"] = rscv.best_params_
-        return rscv.best_estimator_
+        self._unfit_estimator.set_params(rscv.best_params_)
+        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
 
     def _fitSFS(
         self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
