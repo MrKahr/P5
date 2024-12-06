@@ -36,9 +36,9 @@ class GridTemplate(object):
                         "gini",
                         "log_loss",
                     ],  # type: Literal["gini", "entropy", "log_loss"]
-                    "max_depth": {"start": 1, "stop": 5, "step": 1},
-                    "min_samples_split": {"start": 2, "stop": 10, "step": 1},
-                    "min_samples_leaf": {"start": 1, "stop": 5, "step": 1},
+                    "max_depth": {"start": 1, "stop": 25, "step": 5},
+                    "min_samples_split": {"start": 2, "stop": 10, "step": 2},
+                    "min_samples_leaf": {"start": 1, "stop": 10, "step": 2},
                     "min_weight_fraction_leaf": {
                         "start": 0.0,
                         "stop": 0.5,
@@ -51,14 +51,14 @@ class GridTemplate(object):
                     "max_leaf_nodes": {
                         "start": 2,
                         "stop": 10,
-                        "step": 1,
+                        "step": 2,
                     },  # type: int | None
                     "min_impurity_decrease": {
                         "start": 0.0,
                         "stop": 0.1,
-                        "step": 0.01,
+                        "step": 0.02,
                     },
-                    "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.01},
+                    "ccp_alpha": {"start": 0.0, "stop": 0.5, "step": 0.05},
                 },
                 "ParamGridRandomForest": {
                     "n_estimators": {"start": 100, "stop": 1000, "step": 100},
@@ -69,20 +69,14 @@ class GridTemplate(object):
                     "max_samples": {
                         "start": 10,
                         "stop": 500,
-                        "step": 10,
+                        "step": 50,
                     },  # type: int | float | None
                 },
-                "ParamGridGaussianNaiveBayes": {},  # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
+                "ParamGridCategoricalNaiveBayes": {"min_categories": [100]},
                 "ParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 2, "stop": 10, "step": 1},
                         "layer_size": {"start": 2, "stop": 25, "step": 10},
-                        # "input_layer": DEFINE AT RUNTIME
-                        "output_layer": {
-                            "start": 2,
-                            "stop": 2,
-                            "step": 1,
-                        },  # 2 for binary classification
                     },
                     "activation": [
                         "logistic",
@@ -98,9 +92,17 @@ class GridTemplate(object):
                         "constant"
                     ],  # type: Literal["constant", "invscaling", "adaptive"]
                     "learning_rate_init": [0.001],
-                    "alpha": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
+                    "alpha": {
+                        "start": 0.0001,
+                        "stop": 0.001,
+                        "step": 0.1,
+                    },  # NOTE: Not used by MLPClassifierGPU
                     "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
-                    "tol": {"start": 0.0001, "stop": 0.001, "step": 0.0001},
+                    "tol": {
+                        "start": 0.0001,
+                        "stop": 0.001,
+                        "step": 0.1,
+                    },  # NOTE: Not used by MLPClassifierGPU
                 },
             },
             "RandomParamGrid": {
@@ -111,11 +113,11 @@ class GridTemplate(object):
                     ],  # type: Literal["gini", "entropy", "log_loss"]
                     "max_depth": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 1, "high": 25, "size": 100},
+                        "dist_params": {"low": 3, "high": 25, "size": 100},
                     },
                     "min_samples_split": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 2, "high": 10, "size": 100},
+                        "dist_params": {"low": 2, "high": 20, "size": 100},
                     },
                     "min_samples_leaf": {
                         "dist": VariableDistribution.RANDINT.name,
@@ -123,7 +125,7 @@ class GridTemplate(object):
                     },
                     "min_weight_fraction_leaf": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 0, "high": 1, "size": 10},
+                        "dist_params": {"low": 0, "high": 1, "size": 100},
                     },
                     "max_features": [
                         "sqrt",
@@ -131,7 +133,7 @@ class GridTemplate(object):
                     ],  # type: Litteral["sqrt", "log2"] | int | float | None
                     "max_leaf_nodes": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 2, "high": 10, "size": 10},
+                        "dist_params": {"low": 2, "high": 10, "size": 100},
                     },  # type: int | None
                     "min_impurity_decrease": {
                         "dist": VariableDistribution.RANDFLOAT.name,
@@ -139,7 +141,7 @@ class GridTemplate(object):
                     },
                     "ccp_alpha": {
                         "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0, "high": 0.5, "size": 10},
+                        "dist_params": {"low": 0.0, "high": 0.5, "size": 50},
                     },
                 },
                 "RandomParamGridRandomForest": {
@@ -153,20 +155,14 @@ class GridTemplate(object):
                     ],  # type: bool | Callable # TODO: Add score function
                     "max_samples": {
                         "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 10, "high": 500, "size": 10},
+                        "dist_params": {"low": 10, "high": 500, "size": 50},
                     },
                 },
-                "RandomParamGridGaussianNaiveBayes": {},  # NOTE - There are only two hyperparameters that we cannot change! - This is left empty
+                "RandomParamGridCategoricalNaiveBayes": {"min_categories": [100]},
                 "RandomParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 1, "stop": 10, "step": 1},
-                        "layer_size": {"low": 2, "high": 10, "size": 2},
-                        # "input_layer": DEFINE AT RUNTIME
-                        "output_layer": {
-                            "start": 2,
-                            "stop": 2,
-                            "step": 1,
-                        },  # 2 for binary classification
+                        "layer_size": {"low": 2, "high": 25, "size": 100},
                     },
                     "activation": [
                         "logistic",
@@ -180,17 +176,16 @@ class GridTemplate(object):
                     ],  # type: Literal["lbfgs", "sgd", "adam"]
                     "learning_rate": [
                         "constant",
-                        "adaptive",
-                    ],  # type: Literal["constant", "invscaling", "adaptive"]
+                    ],  # type: Literal["constant"]
                     "learning_rate_init": [0.001],
-                    "alpha": {
+                    "alpha": {  # NOTE: Not used by MLPClassifierGPU
                         "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
+                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 1},
                     },
                     "max_iter": [1000],
-                    "tol": {
+                    "tol": {  # NOTE: Not used by MLPClassifierGPU
                         "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 100},
+                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 1},
                     },
                 },
             },
