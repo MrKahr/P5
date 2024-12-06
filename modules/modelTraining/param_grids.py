@@ -4,17 +4,21 @@ import math
 from itertools import product
 from scipy.stats._discrete_distns import randint
 from scipy.stats._continuous_distns import uniform_gen
+from sklearn.neural_network import MLPClassifier
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.config.grid_config import GridConfig
 from modules.config.utils.config_enums import Model, VariableDistribution
 from modules.logging import logger
+from modules.tools.types import UnfittedEstimator
 
 
 class ParamGridGenerator:
     _logger = logger
 
-    def __init__(self, feature_count: int) -> None:
+    def __init__(
+        self, feature_count: int, target_label_count: int, model: UnfittedEstimator
+    ) -> None:
         """
         Creates paramgrids for use in GridSearch/RandomSearch and friends.
 
@@ -23,10 +27,16 @@ class ParamGridGenerator:
         feature_count : int
             Number of features seen during fit.
             Used solely for determining the size of the input layer to a MLPClassifier.
+
+        target_label_count : int
+            Number of target labels.
+            Used solely for determining the size of the output layer to a MLPClassifier.
         """
         self._config = PipelineConfig()
         self._grid_config = GridConfig()
         self._feature_count = feature_count
+        self._target_label_count = target_label_count
+        self._model = model
 
     def _getRange(
         self, start: int | float, stop: int | float, step: int | float
@@ -80,6 +90,8 @@ class ParamGridGenerator:
         """
         # How many hidden layers we want  to use for each model
         layer_range = self._getRange(**key_hidden_layer_sizes["layers"])
+
+        # NOTE: 'size' is not used in Grid context
         low, high, size = key_hidden_layer_sizes["layer_size"].values()
 
         # Get the size of the input layer
@@ -92,8 +104,14 @@ class ParamGridGenerator:
             randint.rvs(low, high, size=i).astype(dtype="int32") for i in layer_range
         ]  # type: list[np.ndarray]
 
-        # Get the size of the output layer
-        output_layer = self._getRange(**key_hidden_layer_sizes["output_layer"])
+        if isinstance(self._model, MLPClassifier):
+            # Only define output layer for CPU-based MLPClassifier
+            output_layer = self._getRange(
+                start=self._target_label_count, stop=self._target_label_count, step=1
+            )
+        else:
+            # MLPClassifierGPU automatically defines output layer
+            output_layer = []
 
         # Combine lists in tuples for different Neural Network (NN) sizes since MLP-constructor requires tuple input
         # It is done in format (INPUT,a,b,...,OUTPUT) e.g. (10, 5, 8, 2)
@@ -228,7 +246,7 @@ class ParamGridGenerator:
                 grid_key = "ParamGridDecisionTree"
                 grid = self._createGenericGrid(self._grid_config.getValue(grid_key))
             case Model.NAIVE_BAYES.name:
-                grid_key = "RandomParamGridGaussianNaiveBayes"
+                grid_key = "ParamGridCategoricalNaiveBayes"
                 grid = self._createGenericGrid(self._grid_config.getValue(grid_key))
             case Model.NEURAL_NETWORK.name:
                 grid_key = "ParamGridNeuralNetwork"
@@ -264,7 +282,7 @@ class ParamGridGenerator:
                     self._grid_config.getValue(grid_key)
                 )
             case Model.NAIVE_BAYES.name:
-                grid_key = "RandomParamGridGaussianNaiveBayes"
+                grid_key = "RandomParamGridCategoricalNaiveBayes"
                 grid = self._createGenericRandomGrid(
                     self._grid_config.getValue(grid_key)
                 )
