@@ -91,11 +91,11 @@ class ScoreFunctionSelector:
 
                 # Add accuracy score function
                 if score_func in [
-                    ModelScoreFunc.ACCURACY.name,
+                    ModelScoreFunc.EXACT_ACCURACY.name,
                     ModelScoreFunc.ALL.name,
                 ]:
                     selected_score_funcs |= {
-                        ModelScoreFunc.ACCURACY.name.lower(): make_scorer(
+                        ModelScoreFunc.EXACT_ACCURACY.name.lower(): make_scorer(
                             accuracy_score
                         )
                     }
