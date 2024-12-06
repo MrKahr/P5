@@ -144,7 +144,6 @@ class DataTransformer:
         ]
         # fmt: on
 
-    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
         """
         One-hot encode one or more categorical attributes, selected by `labels`.
@@ -238,7 +237,6 @@ class DataTransformer:
                 distance += 1
         return distance
 
-    # TODO - Dicussing with Emil, if you see me, delete me!
     def matrixDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
     ) -> int:
@@ -341,7 +339,6 @@ class DataTransformer:
 
         # remove ID columns so we don't use those for distance calculations. Errors are ignored so this goes through even if the columns are already gone.
         # NOTE we do this here even if we might have done it earlier to ensure that Pig ID and Wound ID don't affect imputation regardless of whether "DeleteNonfeatures" in the config is true or not.
-        # TODO Consider: Maybe we want to use them, actually? Surely a wound would behave similarly to other wounds on the same animal, or similarly to what it has done in the past?
         working_df = df.drop(["Gris ID", "Sår ID"], axis=1, errors="ignore")
 
         # NOTE this makes the imputer return a proper dataframe, rather than a numpy array
@@ -398,7 +395,6 @@ class DataTransformer:
             self.df[feature].max() - self.df[feature].min()
         )
 
-    # REVIEW: What is this method used for?
     def swapValues(self, feature: str, value1: float, value2: float) -> None:
         """
         Swap all instances of `value1` and `value2` in `feature`.
@@ -450,7 +446,7 @@ class DataTransformer:
             A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
         """
         logger.info(
-            f'Preparing discretization of column "{value_column_name}" with class column "{class_column_name}"'
+            f"Preparing discretization of column '{value_column_name}' with class column '{class_column_name}'"
         )
 
         # get values to discretize given some column name and sort them from smallest to biggest. Also handle situation where cleaner has not been used
@@ -537,7 +533,7 @@ class DataTransformer:
             lower_bounds = np.delete(lower_bounds, index + 1)
 
         logger.info(
-            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds.tolist()}'
+            f"Intervals for '{value_column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
         )
 
         # when we're done merging intervals, return the list of lower bounds
@@ -569,7 +565,7 @@ class DataTransformer:
         ValueError
             If the number of desired intervals is 0 or less, no intervals can be generated
         """
-        logger.info(f'Preparing discretization of column "{column_name}"')
+        logger.info(f"Preparing discretization of column '{column_name}'")
 
         values = self.df[column_name].to_numpy()
         # if desired intervals is 0 or less, we can't split the column into any intervals!
@@ -588,7 +584,7 @@ class DataTransformer:
             lower_bounds[i] = values.min() + (step * i)
 
         logger.info(
-            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds.tolist()}'
+            f"Intervals for '{column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
         )
 
         return lower_bounds
@@ -612,7 +608,7 @@ class DataTransformer:
         replace_blacklist: list[float]
             A list of numbers that may or may not occur in the column and shouldn't be replaced
         """
-        logger.info(f"Assigning intervals to values in {column_name}")
+        logger.info(f"Assigning intervals to values in '{column_name}'")
 
         def intervalify(
             x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
@@ -646,7 +642,7 @@ class DataTransformer:
             intervalify, lower_bounds=lower_bounds
         )
 
-        logger.info(f"Discretization of {column_name} complete")
+        logger.info(f"Discretization of '{column_name}' complete")
 
     def run(self) -> pd.DataFrame:
         """
