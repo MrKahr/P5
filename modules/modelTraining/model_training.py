@@ -296,7 +296,11 @@ class ModelTrainer:
         """
         self._checkAllFeaturesPresent()
 
-        grid = ParamGridGenerator(len(self._train_x.columns)).getParamGrid()
+        grid = ParamGridGenerator(
+            feature_count=len(self._train_x.columns),
+            target_label_count=len(self._train_true_y.columns),
+            model=self._unfit_estimator,
+        ).getParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
@@ -305,7 +309,11 @@ class ModelTrainer:
             param_grid=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            refit=refit.lower() if isinstance(refit, str) else refit,
+            refit=(
+                self._model_score_funcs[refit.lower()]
+                if isinstance(refit, str)
+                else refit
+            ),
             cv=self._cross_validator,
             **kwargs,
         ).fit(x, y)
@@ -317,6 +325,7 @@ class ModelTrainer:
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
         random_state: int,
+        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -344,7 +353,11 @@ class ModelTrainer:
         """
         self._checkAllFeaturesPresent()
 
-        grid = ParamGridGenerator(len(self._train_x.columns)).getRandomParamGrid()
+        grid = ParamGridGenerator(
+            feature_count=len(self._train_x.columns),
+            target_label_count=len(self._train_true_y.columns),
+            model=self._unfit_estimator,
+        ).getRandomParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
@@ -353,6 +366,11 @@ class ModelTrainer:
             param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
+            refit=(
+                self._model_score_funcs[refit.lower()]
+                if isinstance(refit, str)
+                else refit
+            ),
             cv=self._cross_validator,
             random_state=RNG(random_state),
             **kwargs,
