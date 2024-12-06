@@ -175,7 +175,7 @@ class FeatureSelector:
         else:
             self._selected_features = self._train_x.columns
             logger.info(
-                f"Skipping feature selection ({len(self._selected_features)} features present)"
+                f"Skipping statistical feature selection ({len(self._selected_features)} features present)"
             )
 
         return self._train_x, self._true_y
