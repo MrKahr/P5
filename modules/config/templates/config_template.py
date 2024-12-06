@@ -57,8 +57,8 @@ class ConfigTemplate(object):
                 "Cleaning": {
                     "DeleteNanColumns": True,
                     "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
-                    "DeleteMissingValues": False, # Missing value = 2
-                    "DeleteUndeterminedValue": False, # Undetermined = 100 
+                    "DeleteMissingValues": False,  # Missing value = 2
+                    "DeleteUndeterminedValue": False,  # Undetermined = 100
                     "RemoveFeaturelessRows": True,
                     "RemoveFeaturelessRowsArgs": 3,
                     "FillNan": True,
@@ -80,8 +80,8 @@ class ConfigTemplate(object):
                         ],  # type: list[str]
                         "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
                         "ChiMergeMaximumMergeThreshold": {
-                            "Sårrand (cm)": np.inf,
-                            "Midte (cm)": np.inf,
+                            "Sårrand (cm)": np.inf.hex(),
+                            "Midte (cm)": np.inf.hex(),
                         },
                         "DiscretizeDesiredIntervals": {
                             "Sårrand (cm)": -1,
@@ -90,7 +90,10 @@ class ConfigTemplate(object):
                     },
                     "OneHotEncoding": {
                         "UseOneHotEncoding": False,
-                        "OneHotEncodeLabels": ["Eksudattype", "Hyperæmi"],  # type: list[str]
+                        "OneHotEncodeLabels": [
+                            "Eksudattype",
+                            "Hyperæmi",
+                        ],  # type: list[str]
                     },
                     "Imputation": {
                         "ImputationMethod": ImputationMethod.NONE.name,
@@ -137,15 +140,17 @@ class ConfigTemplate(object):
                     "random_state": 53,  # type: int | None
                     "max_samples": None,  # type: int | float | None
                 },
-                "CategoricalNaiveBayes": {},  
+                "CategoricalNaiveBayes": {
+                    "min_categories": 100
+                },  # NOTE: Should be largest value in dataset to prevent index out of bounds
                 "NeuralNetwork": {
-                    "hidden_layer_sizes": (20, 2),
-                    "activation": "logistic",  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    "hidden_layer_sizes": (10, 10),
+                    "activation": "logistic",  # type: Literal["logistic", "tanh", "relu"]
                     "solver": "sgd",  # type: Literal["lbfgs", "sgd", "adam"]
                     "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
                     "learning_rate_init": 0.001,
                     "alpha": 0.0001,
-                    "max_iter": 1000,
+                    "max_iter": 100,
                     "tol": 0.0001,
                     "random_state": 678,
                 },
@@ -159,7 +164,7 @@ class ConfigTemplate(object):
                 },
             },
             "ModelTraining": {
-                "training_method": TrainingMethod.FIT.name, #NOTE: ensure param set to FIT when first generating config. 
+                "training_method": TrainingMethod.FIT.name,  # NOTE: ensure param set to FIT when first generating config.
                 "score_functions": [ModelScoreFunc.ALL.name],
                 "score_function_params": {
                     "threshold": 20,
@@ -170,8 +175,12 @@ class ConfigTemplate(object):
                     "accuracy": 1,
                     "balanced_accuracy": 1.1,
                 },
+                "train_test_split": {
+                    "random_state": 111,
+                    "train_size": 0.80,  # NOTE: Percentage of dataset used for training
+                },
                 "PermutationFeatureImportance": {
-                    "n_repeats": 10,
+                    "n_repeats": 10,  # NOTE: Use 500 for model evaluation
                     "random_state": 298,  # type: int | None
                 },
                 "RFE": {
@@ -194,10 +203,10 @@ class ConfigTemplate(object):
             },
             "ModelEvaluation": {
                 "print_model_report": True,
-                "plot_confusion_matrix": False,
-                "plot_roc_curves": False,
-                "plot_feature_importance": False,
-                "plot_tree": False,
+                "plot_confusion_matrix": True,
+                "plot_roc_curves": True,
+                "plot_feature_importance": True,
+                "plot_tree": True,
                 "plot_decision_boundary": False,
             },
         }
