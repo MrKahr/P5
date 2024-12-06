@@ -236,6 +236,11 @@ class ModelSummary:
         )
         self._showFigure("decision_boundary")
 
+    def _plotAccuracyFunctions(self, results: dict) -> None:
+        fig, ax = plt.subplots()
+        accuracy_functions = results.keys()
+        fig.show()
+
     def _plotTree(self) -> None:
         selected_model = self._config.getValue("model", "ModelSelection")
         if selected_model in [Model.DECISION_TREE.name, Model.RANDOM_FOREST.name]:
