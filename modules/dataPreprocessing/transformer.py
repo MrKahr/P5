@@ -666,11 +666,13 @@ class DataTransformer:
                 pass
             elif discretize_method == DiscretizeMethod.CHIMERGE.name:
                 for column in config.getValue("DiscretizeColumns"):
+                    value = config.getValue("ChiMergeMaximumMergeThreshold").get(column)
+                    if value == "inf":
+                        value = np.inf
+
                     interval_bounds = self.discretizeWithChiMerge(
                         column,
-                        merge_when_below=config.getValue(
-                            "ChiMergeMaximumMergeThreshold"
-                        ).get(column),
+                        merge_when_below=value,
                         desired_intervals=config.getValue(
                             "DiscretizeDesiredIntervals"
                         ).get(column),
