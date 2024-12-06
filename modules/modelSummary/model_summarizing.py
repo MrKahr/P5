@@ -32,16 +32,19 @@ class ModelSummary:
         self._write_fig = self._config.getValue("write_figure_to_disk")
         self._model_name = type(pipeline_report["estimator"]).__name__
         self._pipeline_report = pipeline_report
-    
-    def _writeFigure(self, figure_name: str) -> None:
-        os.makedirs(SetupConfig().figures_dir, exist_ok=True)
-        plt.savefig(
-            Path(
-                Path.cwd(),
-                SetupConfig().figures_dir,
-                f"{figure_name}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d")}.png",
+
+    def _showFigure(self, figure_filename: str) -> None:
+        if self._write_fig:
+            figure_path = Path(SetupConfig().figures_dir, self._model_name)
+            os.makedirs(figure_path, exist_ok=True)
+            plt.savefig(
+                Path(
+                    figure_path,
+                    f"{figure_filename}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.png",
+                )
             )
-        )
+        else:
+            plt.show(block=False)
 
     def _printModelReport(self):
         """Print results for model evaluation from pipe_line_report"""
@@ -201,10 +204,7 @@ class ModelSummary:
             ylabel="True Positive Rate",
             title=f"({self._model_name})\nExtension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
         )
-        if self._write_fig:
-            self._writeFigure("roc_auc")
-        else:
-            plt.show(block=False)
+        self._showFigure("roc_auc")
 
     def _plotConfusionMatrix(self) -> None:
         """
@@ -217,11 +217,7 @@ class ModelSummary:
             self._pipeline_report["test_true_y"],
         )
         disp.plot()
-
-        if self._write_fig:
-            self._writeFigure("confusion_matrix")
-        else:
-            plt.show(block=False)
+        self._showFigure("confusion_matrix")
 
     # FIXME: Half-baked implementation!
     def _plotDecisionBoundary(self) -> None:
@@ -238,7 +234,7 @@ class ModelSummary:
 
     def _plotTree(self) -> None:
         selected_model = self._config.getValue("model", "ModelSelection")
-        if selected_model in [Model.DECISION_TREE.name, Model.RANDOM_FOREST.name]:
+        if selected_model in [Model.DECISION_TREE.name]:
             plt.figure(dpi=1200)
             tree = self._pipeline_report["estimator"]
             plot_tree(
@@ -251,10 +247,7 @@ class ModelSummary:
             plt.title(
                 f"{type(tree).__name__} trained on {self._pipeline_report["feature_count"]} features"
             )
-            if self._write_fig:
-                self._writeFigure("tree")
-            else:
-                plt.show(block=False)
+        self._showFigure("tree")
 
     def plotFeatureImportance(self) -> None:
         """
@@ -284,7 +277,6 @@ class ModelSummary:
         """
         result = self._pipeline_report["feature_importances"]
         feature_names = self._pipeline_report["feature_names_in"]
-        model = str(self._pipeline_report["estimator"])
         feature_groups = {f"group{name}": [] for name in feature_names}
         overall_means = []
         sorted_group_order = []
@@ -343,10 +335,11 @@ class ModelSummary:
             ax.bar_label(feature_plot, padding=1)
             multiplier += 1
 
+        n_repeats = self._config.getValue("n_repeats", "PermutationFeatureImportance")
         ax.set_xlabel("Mean accuracy")
         ax.set_ylabel("Features")
         ax.set_title(
-            f"Feature Importances with Standard Deviation for {model.split("(")[0]}"
+            f"Feature Importances with Standard Deviation\n{self._model_name} ({n_repeats} repeats)"
         )
         ax.legend(loc="best")
         ax.set_yticks(positions + (width * (len(result) - 1) / 2))
@@ -354,10 +347,7 @@ class ModelSummary:
             sorted_group_order
         )  # To not sort change sorted_group_order to feature_names
 
-        if self._write_fig:
-            self._writeFigure("feature importance")
-        else:
-            plt.show(block=False)
+        self._showFigure("feature importance")
 
     def run(self) -> None:
         if self._config.getValue("print_model_report"):

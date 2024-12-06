@@ -79,10 +79,9 @@ class ModelTrainer:
             model_selection.train_test_split(
                 unsplit_x,
                 unsplit_y,
-                train_size=0.90,
-                random_state=111,
                 shuffle=True,
                 stratify=unsplit_y,
+                **self._config.getValue("train_test_split", "ModelTraining"),
             )
         )
 
@@ -388,7 +387,7 @@ class ModelTrainer:
         sfs = SequentialFeatureSelector(
             self._unfit_estimator,
             n_features_to_select="auto",  # Feature selection depends on `tol`
-            tol=0.02,  # Tolerance for score improvement that removing a feature must satisfy
+            tol=0.04,  # Tolerance for score improvement that removing a feature must satisfy
             direction="backward",  # Start with all features
             scoring=self._priority_score_func,
             cv=self._cross_validator,
