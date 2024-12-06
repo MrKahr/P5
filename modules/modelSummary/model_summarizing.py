@@ -32,7 +32,7 @@ class ModelSummary:
         self._write_fig = self._config.getValue("write_figure_to_disk")
         self._model_name = type(pipeline_report["estimator"]).__name__
         self._pipeline_report = pipeline_report
-    
+
     def _writeFigure(self, figure_name: str) -> None:
         os.makedirs(SetupConfig().figures_dir, exist_ok=True)
         plt.savefig(
@@ -42,6 +42,25 @@ class ModelSummary:
                 f"{figure_name}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d")}.png",
             )
         )
+
+    def _plotAccuracyFunctions(
+        self,
+        results: dict,
+        plotitle="Accuracy by Score Function",
+        legendName="Score Functions",
+        fileName="scorefunctionPlot.pdf",
+    ) -> None:
+        fig, ax = plt.subplots()
+
+        # Plot naming
+        ax.set_title(plotitle)
+
+        for keys, value in results.items():
+            ax.plot(value)
+
+        # plot axis
+        ax.legend(list(results.keys()))
+        self._showFigure(fileName)
 
     def _printModelReport(self):
         """Print results for model evaluation from pipe_line_report"""
@@ -372,6 +391,10 @@ class ModelSummary:
             self._plotTree()
         if self._config.getValue("plot_feature_importance"):
             self.plotFeatureImportance()
+        if self._config.getValue("plot_score_function"):
+            self._plotAccuracyFunctions(
+                {"hello": [0.1, 0.2, 0.3], "hi": [0.1, 0.2, 0.5]}
+            )
 
         if not self._write_fig:
             input("Press enter to close all figures...")
