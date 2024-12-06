@@ -537,7 +537,7 @@ class DataTransformer:
             lower_bounds = np.delete(lower_bounds, index + 1)
 
         logger.info(
-            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds}'
+            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds.tolist()}'
         )
 
         # when we're done merging intervals, return the list of lower bounds
@@ -579,7 +579,7 @@ class DataTransformer:
         # values of 100 are undefined, so we remove those before moving on
         values = values[values != 100]
 
-        logger.info(f"Running naitve discretization with {len(values)} values")
+        logger.info(f"Running naive discretization with {len(values)} values")
 
         # find out how big each step is when we need desired_intervals intervals
         step = (values.max() - values.min()) / desired_intervals
@@ -588,7 +588,7 @@ class DataTransformer:
             lower_bounds[i] = values.min() + (step * i)
 
         logger.info(
-            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds}'
+            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds.tolist()}'
         )
 
         return lower_bounds
