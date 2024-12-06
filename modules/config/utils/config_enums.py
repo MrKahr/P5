@@ -96,5 +96,5 @@ class ModelScoreFunc(Enum):
     DISTANCE = 1
 
     # Scoring functions for classifications
-    ACCURACY = 100
+    EXACT_ACCURACY = 100
     BALANCED_ACCURACY = 101
