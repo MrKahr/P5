@@ -161,17 +161,11 @@ class FeatureSelector:
             [2]: Selected feature labels.
         """
         if self._config.getValue("UseFeatureSelector"):
-            if self._config.getValue("ComputeFeatureCorrelation", self._parent_key):
-                self._computeFeatureCorrelation()
             if self._config.getValue("GenericUnivariateSelect", self._parent_key):
                 self.genericUnivariateSelect(
                     ScoreFunctionSelector.getScoreFuncFeatureSelect(),
                     *self.__modeArgCompare(),
                 )
-            if self._config.getValue("VarianceThreshold", self._parent_key):
-                self.varianceThreshold()
-            if self._config.getValue("checkOverfitting", self._parent_key):
-                self.checkOverfitting()
 
         if self._selected_features is not None:
             size = len(self._selected_features)
