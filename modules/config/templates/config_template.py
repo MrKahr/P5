@@ -56,7 +56,7 @@ class ConfigTemplate(object):
             "DataPreprocessing": {
                 "Cleaning": {
                     "DeleteNanColumns": True,
-                    "DeleteNonfeatures": True,  # TODO: Remove from config and hardcode True in cleaner
+                    "DeleteNonfeatures": True,
                     "DeleteMissingValues": False,  # Missing value = 2
                     "DeleteUndeterminedValue": False,  # Undetermined = 100
                     "RemoveFeaturelessRows": True,
@@ -78,21 +78,20 @@ class ConfigTemplate(object):
                             "Sårrand (cm)",
                             "Midte (cm)",
                         ],  # type: list[str]
-                        "DiscretizeMethod": DiscretizeMethod.NAIVE.name,
+                        "DiscretizeMethod": DiscretizeMethod.NONE.name,
                         "ChiMergeMaximumMergeThreshold": {
                             "Sårrand (cm)": np.inf.hex(),
                             "Midte (cm)": np.inf.hex(),
                         },
                         "DiscretizeDesiredIntervals": {
-                            "Sårrand (cm)": -1,
-                            "Midte (cm)": -1,
+                            "Sårrand (cm)": 5,
+                            "Midte (cm)": 5,
                         },
                     },
                     "OneHotEncoding": {
                         "UseOneHotEncoding": False,
                         "OneHotEncodeLabels": [
                             "Eksudattype",
-                            "Hyperæmi",
                         ],  # type: list[str]
                     },
                     "Imputation": {
@@ -102,11 +101,11 @@ class ConfigTemplate(object):
                     },
                     "Normalisation": {
                         "NormalisationMethod": NormalisationMethod.NONE.name,
-                        "NormaliseFeatures": ["Sårskorpe"],  # type: list[str]
+                        "NormaliseFeatures": [],  # type: list[str]
                     },
                 },
                 "FeatureSelection": {
-                    "score_function": FeatureScoreFunc.CHI2.name,
+                    "score_function": FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name,
                     "MutualInfoClassifArgs": {
                         "discrete_features": True,
                         "n_neighbors": 3,
@@ -115,7 +114,7 @@ class ConfigTemplate(object):
                     "GenericUnivariateSelect": True,
                     "GenericUnivariateSelectArgs": {
                         "mode": FeatureSelectionCriterion.PERCENTILE.name,
-                        "param": 25,  # type: int | float | str  # The parameter for the mode
+                        "param": 50,  # type: int | float | str  # The parameter for the mode
                     },
                 },
             },
@@ -141,12 +140,12 @@ class ConfigTemplate(object):
                     "max_samples": None,  # type: int | float | None
                 },
                 "CategoricalNaiveBayes": {
-                    "min_categories": 100
-                },  # NOTE: Should be largest value in dataset to prevent index out of bounds
+                    "min_categories": 100  # NOTE: Should be largest value in dataset to prevent index out of bounds
+                },
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (10, 10),
-                    "activation": "logistic",  # type: Literal["logistic", "tanh", "relu"]
-                    "solver": "sgd",  # type: Literal["lbfgs", "sgd", "adam"]
+                    "activation": "relu",  # type: Literal["logistic", "tanh", "relu"]
+                    "solver": "adam",  # type: Literal["lbfgs", "sgd", "adam"]
                     "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
                     "learning_rate_init": 0.001,
                     "alpha": 0.0001,
@@ -170,10 +169,10 @@ class ConfigTemplate(object):
                     "threshold": 20,
                 },
                 "score_function_weights": {
-                    "threshold": 0.8,
-                    "distance": 0.9,
-                    "accuracy": 1,
-                    "balanced_accuracy": 1.1,
+                    ModelScoreFunc.THRESHOLD.name: 0.8,
+                    ModelScoreFunc.DISTANCE.name: 0.9,
+                    ModelScoreFunc.EXACT_ACCURACY.name: 1,
+                    ModelScoreFunc.BALANCED_ACCURACY.name: 1.1,
                 },
                 "train_test_split": {
                     "random_state": 111,
@@ -196,7 +195,7 @@ class ConfigTemplate(object):
                     "random_state": 378,
                 },
                 "GridSearchCV": {
-                    "refit": "accuracy",  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
+                    "refit": ModelScoreFunc.EXACT_ACCURACY.name,  # type: bool | str | Callable  # NOTE: For multiple metric evaluation, this needs to be a str denoting the scorer that would be used to find the best parameters for refitting the estimator at the end.
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
                     "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
@@ -207,6 +206,6 @@ class ConfigTemplate(object):
                 "plot_roc_curves": True,
                 "plot_feature_importance": True,
                 "plot_tree": True,
-                "plot_decision_boundary": False,
+                "plot_decision_boundary": False,  # NOTE: Half-baked implementation
             },
         }
