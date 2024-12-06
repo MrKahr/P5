@@ -298,7 +298,7 @@ class ModelTrainer:
 
         grid = ParamGridGenerator(
             feature_count=len(self._train_x.columns),
-            target_label_count=len(self._train_true_y.columns),
+            target_label_count=len(self._train_true_y.name),
             model=self._unfit_estimator,
         ).getParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
@@ -355,7 +355,7 @@ class ModelTrainer:
 
         grid = ParamGridGenerator(
             feature_count=len(self._train_x.columns),
-            target_label_count=len(self._train_true_y.columns),
+            target_label_count=len(self._train_true_y.name),
             model=self._unfit_estimator,
         ).getRandomParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
