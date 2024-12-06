@@ -169,10 +169,10 @@ class ConfigTemplate(object):
                     "threshold": 20,
                 },
                 "score_function_weights": {
-                    ModelScoreFunc.THRESHOLD.name: 0.8,
-                    ModelScoreFunc.DISTANCE.name: 0.9,
-                    ModelScoreFunc.EXACT_ACCURACY.name: 1,
-                    ModelScoreFunc.BALANCED_ACCURACY.name: 1.1,
+                    ModelScoreFunc.THRESHOLD.name.lower(): 0.8,
+                    ModelScoreFunc.DISTANCE.name.lower(): 0.9,
+                    ModelScoreFunc.EXACT_ACCURACY.name.lower(): 1,
+                    ModelScoreFunc.BALANCED_ACCURACY.name.lower(): 1.1,
                 },
                 "train_test_split": {
                     "random_state": 111,
