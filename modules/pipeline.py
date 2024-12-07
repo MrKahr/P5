@@ -29,8 +29,6 @@ class Pipeline:
         Responsible for running the entire pipeline, collecting datasets for each iteration
         and providing args to pipeline parts.
 
-        # NOTE - Be very careful when making changes here.
-
         Parameters
         ----------
         train_dataset : Dataset
@@ -49,7 +47,7 @@ class Pipeline:
 
     def addMål(self) -> pd.DataFrame:
         """
-        Join MÅL with the current dataset using "Gris ID", "Sår ID", and "Dag" as index
+        Join MÅL with the current dataset using "Gris ID", "Sår ID", and "Dag" as index.
         """
         mål_df = DataCleaner(self.loadDataset(Dataset.MÅL), Dataset.MÅL).run()
 
@@ -59,8 +57,9 @@ class Pipeline:
         )
         # set a multi-index on Mål
         mål_df.set_index(join_columns, inplace=True)
+
         # with the multi-index on Mål, we can join on multiple things at once
-        self.df = self.df.join(mål_df, how="left", on=join_columns)
+        return self.df.join(mål_df, how="left", on=join_columns)
 
     def getTrainX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
@@ -69,18 +68,19 @@ class Pipeline:
         return self.df["Dag"]
 
     def run(self) -> dict[str, Any]:
-        """Using a dataframe, calls relevant pipeline components to perform transformations of dataset as specified in the config file"""
+        """
+        Using a dataframe, calls relevant pipeline components to perform
+        transformations of dataset as specified in the config file.
+        """
         self._logger.info(
             f"Initializing pipeline. Training dataset: '{self.train_dataset.name}'"
         )
-        # load dataset
         self.df = self.loadDataset(self.train_dataset)
 
-        # join dataset with MÅL if we want to use that
+        # Join dataset with MÅL if we want to use that
         if PipelineConfig().getValue("UseContinuousFeatures"):
-            self.addMål()
+            self.df = self.addMål()
 
-        # run the rest of the pipeline
         self.df = DataCleaner(
             self.df,
             self.train_dataset,
