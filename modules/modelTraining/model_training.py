@@ -270,6 +270,7 @@ class ModelTrainer:
         self,
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
+        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -280,6 +281,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -309,19 +314,19 @@ class ModelTrainer:
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
-            refit=False,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             **kwargs,
         ).fit(x, y)
 
         self._pipeline_report["GridSearchCV_BestParams"] = gscv.best_params_
-        self._unfit_estimator.set_params(gscv.best_params_)
-        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
+        return gscv.best_estimator_
 
     def _fitRandomSearchWithCrossValidation(
         self,
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
         random_state: int,
+        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -334,6 +339,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -362,15 +371,14 @@ class ModelTrainer:
             param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            refit=False,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             random_state=RNG(random_state),
             **kwargs,
         ).fit(x, y)
 
         self._pipeline_report["RandomSearchCV_BestParams"] = rscv.best_params_
-        self._unfit_estimator.set_params(rscv.best_params_)
-        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
+        return rscv.best_estimator_
 
     def _fitSFS(
         self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
@@ -630,13 +638,13 @@ class ModelTrainer:
                 self._train_true_y,
                 **self._config.getValue("RFECV", self._parent_key),
             )
-        elif self._training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.RANDOM_SEARCH.name:
             random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
             grid_args = self._config.getValue("GridSearchCV", self._parent_key)
             fitted_estimator = self._fitRandomSearchWithCrossValidation(
                 self._train_x, self._train_true_y, **random_args | grid_args
             )
-        elif self._training_method == TrainingMethod.GRID_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.GRID_SEARCH.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
                 self._train_x,
                 self._train_true_y,

@@ -196,6 +196,7 @@ class ConfigTemplate(object):
                 },
                 "GridSearchCV": {
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
+                    "refit": "accuracy",  # NOTE: Its semantics is different from the score function as it is specific for param Search results
                     "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
             },
