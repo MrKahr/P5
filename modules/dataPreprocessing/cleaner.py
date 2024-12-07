@@ -86,7 +86,7 @@ class DataCleaner(object):
             f"Row removal ratio for dataset '{self.dataset.name}' is currently {self.df.shape[0]}/{self.initial_row_count} ({percentage_row_removal:.2f}% removed)"
         )
 
-    def RemoveNaNAmount(self, threshold: int) -> None:
+    def removeNaNAmount(self, threshold: int) -> None:
         """
         Removes rows containing a critical number of NaN.
 
@@ -191,7 +191,7 @@ class DataCleaner(object):
             if config.getValue("DeleteNanColumns"):
                 self._deleteNanCols()
             if config.getValue("RemoveNaNAmount"):
-                self.RemoveNaNAmount(config.getValue("RemoveNaNAmountArgs"))
+                self.removeNaNAmount(config.getValue("RemoveNaNAmountArgs"))
 
             # Dataset-specific cleaning
             if self.dataset == Dataset.REGS:
