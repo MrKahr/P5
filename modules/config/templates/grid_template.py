@@ -124,8 +124,8 @@ class GridTemplate(object):
                         "dist_params": {"low": 1, "high": 10, "size": 100},
                     },
                     "min_weight_fraction_leaf": {
-                        "dist": VariableDistribution.RANDINT.name,
-                        "dist_params": {"low": 0, "high": 1, "size": 100},
+                        "dist": VariableDistribution.RANDFLOAT.name,
+                        "dist_params": {"low": 0, "high": 0.5, "size": 100},
                     },
                     "max_features": [
                         "sqrt",
