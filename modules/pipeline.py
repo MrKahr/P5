@@ -61,7 +61,6 @@ class Pipeline:
         mål_df.set_index(join_columns, inplace=True)
         # with the multi-index on Mål, we can join on multiple things at once
         self.df = self.df.join(mål_df, how="left", on=join_columns)
-        self.df.to_csv("raw_join_df.csv")
 
     def getTrainX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
@@ -86,10 +85,8 @@ class Pipeline:
             self.df,
             self.train_dataset,
         ).run()
-        self.df = OutlierProcessor(self.df).run()
         self.df = DataTransformer(self.df).run()
-
-        self.df.to_csv("impute_df.csv")
+        self.df = OutlierProcessor(self.df).run()
 
         # Unsplit is the dataset not split into train/test
         unsplit_x, unsplit_true_y = FeatureSelector(
