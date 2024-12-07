@@ -26,7 +26,7 @@ class FeatureSelector:
         self._train_x = train_x
         self._true_y = true_y
         self._config = PipelineConfig()
-        self._parent_key = "FeatureSelection"
+        self._parent_key = "StatisticalFeatureSelection"
         self.df = None
         self._selected_features = None
 
@@ -160,7 +160,7 @@ class FeatureSelector:
             [1]: Target feature, i.e., "Dag".
             [2]: Selected feature labels.
         """
-        if self._config.getValue("UseFeatureSelector"):
+        if self._config.getValue("UseStatisticalFeatureSelector"):
             if self._config.getValue("GenericUnivariateSelect", self._parent_key):
                 self.genericUnivariateSelect(
                     ScoreFunctionSelector.getScoreFuncFeatureSelect(),
@@ -170,7 +170,7 @@ class FeatureSelector:
         if self._selected_features is not None:
             size = len(self._selected_features)
             logger.info(
-                f"Selected {size} feature{"s" if size != 1 else ""} as statistically important: {", ".join(self._selected_features)}"
+                f"Selected {size} feature{"s" if size != 1 else ""} as statistically important: {self._selected_features.tolist()}"
             )
         else:
             self._selected_features = self._train_x.columns
