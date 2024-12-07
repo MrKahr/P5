@@ -176,10 +176,6 @@ class DataCleaner(object):
             f"Added {len(self.df["Gris ID"].isna())} missing values for column 'Gris ID'"
         )
 
-    def cleanOldDataset(self):
-        """Cleans the old_eksperiementelle_sår_2014 dataset according to hardcoded presets"""
-        self.convertHourToDay()
-
     def run(self) -> pd.DataFrame:
         """
         Run all applicable data cleaning methods.
@@ -210,7 +206,9 @@ class DataCleaner(object):
             elif self.dataset == Dataset.MÅL:
                 self.cleanMålDataset()
             elif self.dataset == Dataset.OLD:
-                self.cleanOldDataset()
+                self.convertHourToDay()
+                self.deleteNonfeatures()
+                self.fillNan()
 
             # Cleaning results
             if config.getValue("ShowNan"):
