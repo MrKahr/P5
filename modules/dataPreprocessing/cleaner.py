@@ -151,8 +151,6 @@ class DataCleaner(object):
 
     def cleanMålDataset(self) -> None:
         """Cleans the eksperimentelle_sår_2024_mål dataset according to hardcoded presets"""
-        current_row_count = self.df.shape[0]  # Get number of rows
-
         # Remove columns not used in training
         cols = ["Længde (cm)", "Bredde (cm)", "Dybde (cm)", "Areal (cm^2)"]
         self.df.drop(

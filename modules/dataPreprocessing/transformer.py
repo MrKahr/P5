@@ -494,7 +494,7 @@ class DataTransformer:
                         current_upper_bound = lower_bounds[index + i + 1]
 
                     for j in classes:
-                        # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
+                        # find the number of examples in class j
                         C_j = self.df[self.df[class_column_name] == j].shape[0]
 
                         # find the number of examples in the current interval by counting the how many Trues there are in the series returned by between() with sum()
@@ -712,10 +712,8 @@ class DataTransformer:
                     metric = None
                     match config.getValue("KNN_DistanceMetric"):
                         case DistanceMetric.ZERO_ONE.name:
-                            # logger.info("Preparing zero-one distance metric")
                             metric = self.zeroOneDistance
                         case DistanceMetric.MATRIX.name:
-                            # logger.info("Preparing matrix distance metric")
                             metric = self.matrixDistance
                     self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
                 else:
