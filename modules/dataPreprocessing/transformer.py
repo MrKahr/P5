@@ -332,7 +332,7 @@ class DataTransformer:
         imputer = KNNImputer(
             missing_values=100,
             n_neighbors=neighbors,
-            weights="uniform",
+            weights="distance",
             metric=distance_metric,
             copy=False,
         )
@@ -694,10 +694,6 @@ class DataTransformer:
                     f"Undefined discretization method '{discretize_method}'. Skipping"
                 )
 
-            # One-hot encoding
-            if config.getValue("UseOneHotEncoding"):
-                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
-
             # Imputation
             imputation_method = config.getValue("ImputationMethod")
             if imputation_method != ImputationMethod.NONE.name:
@@ -722,6 +718,10 @@ class DataTransformer:
                     )
             else:
                 logger.info("Skipping imputation")
+
+            # One-hot encoding
+            if config.getValue("UseOneHotEncoding"):
+                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
 
             # Normalization
             match config.getValue("NormalisationMethod"):
