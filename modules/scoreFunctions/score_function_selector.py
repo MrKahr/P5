@@ -142,7 +142,7 @@ class ScoreFunctionSelector:
             If the selected feature selection function is invalid.
         """
         if cls._cache["feature_select"] is None:
-            parent_key = "FeatureSelection"
+            parent_key = "StatisticalFeatureSelection"
             score_func = cls._config.getValue("score_function", parent_key)
 
             # Chi-squared function

@@ -48,7 +48,7 @@ class ConfigTemplate(object):
                 "n_jobs": -1,  # type: int | None  # NOTE: -1 means use all cores and None means 1 unless in joblib context
                 "write_figure_to_disk": True,
                 "UseCleaner": True,
-                "UseFeatureSelector": False,
+                "UseStatisticalFeatureSelector": False,
                 "UseTransformer": False,
                 "UseOutlierRemoval": False,
                 "UseContinuousFeatures": False,
@@ -59,8 +59,8 @@ class ConfigTemplate(object):
                     "DeleteNonfeatures": True,
                     "DeleteMissingValues": False,  # Missing value = 2
                     "DeleteUndeterminedValue": False,  # Undetermined = 100
-                    "RemoveFeaturelessRows": True,
-                    "RemoveFeaturelessRowsArgs": 3,
+                    "RemoveNaNAmount": True,
+                    "RemoveNaNAmountArgs": 3,
                     "FillNan": True,
                     "ShowNan": True,
                 },
@@ -104,10 +104,10 @@ class ConfigTemplate(object):
                         "NormaliseFeatures": [],  # type: list[str]
                     },
                 },
-                "FeatureSelection": {
+                "StatisticalFeatureSelection": {
                     "score_function": FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name,
                     "MutualInfoClassifArgs": {
-                        "discrete_features": True,
+                        "discrete_features": False,  # False if dataset contains floats (i.e. if using MÅL)
                         "n_neighbors": 3,
                         "random_state": 12,
                     },

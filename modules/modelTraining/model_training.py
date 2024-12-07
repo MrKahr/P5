@@ -108,7 +108,7 @@ class ModelTrainer:
         key = "GenericUnivariateSelect"
         parent_key = "DataPreprocessing"
         if self._config.getValue(
-            "UseFeatureSelector", parent_key="General"
+            "UseStatisticalFeatureSelector", parent_key="General"
         ) and self._config.getValue(key, parent_key=parent_key):
             self._logger.warning(
                 f"Using a reduced feature set for hyperparameter tuning (this might harm model performance). "
