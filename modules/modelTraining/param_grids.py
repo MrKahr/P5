@@ -149,15 +149,13 @@ class ParamGridGenerator:
         distribution = None
         if isinstance(value, dict) and "dist" in value:
             distribution_type = value["dist"]
-            params = deepcopy(value["dist_params"])  # type: dict
             if distribution_type == VariableDistribution.RANDINT.name:
                 distribution = randint.rvs(**value["dist_params"]).astype(dtype="int32")
             elif distribution_type == VariableDistribution.RANDFLOAT.name:
+                params = value["dist_params"]
                 distribution = uniform_gen(
-                    a=params.pop("low"),
-                    b=params.pop("high"),
                     name="uniform2",
-                ).rvs(**params)
+                ).rvs(loc=params["low"], scale=params["high"], size=params["size"])
 
         return distribution if distribution is not None else value
 
