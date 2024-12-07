@@ -617,7 +617,7 @@ class ModelTrainer:
             "training_method", parent_key=self._parent_key
         )
 
-        self._logger.info(f"Training model...")
+        self._logger.info(f"Training model using '{self._training_method}'...")
         start_time = time()
 
         if self._training_method == TrainingMethod.FIT.name:
