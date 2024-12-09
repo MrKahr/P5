@@ -93,16 +93,20 @@ class SummaryExporter:
         with open(Path(export_folder, file_name), "w", encoding="utf-8") as file:
             file.write(json.dumps(export_dict, indent=4))
 
-    @classmethod   
-    def _writeKeyToLatexTable(cls,piplinereport:dict, selectedKey:str,filename:str, separator:str) -> None:
-        # Generate txt file for results if one does not exist 
-        with  open(f"{filename}.txt", "a", encoding= "utf-8") as file:
+    @classmethod
+    def writeKeyToLatexTable(
+        cls, piplinereport: dict, selectedKey: str, filename: str, separator: str
+    ) -> None:
+        # Generate txt file for results if one does not exist
+        with open(
+            Path(SetupConfig.summary_dir, f"{filename}.txt"), "a", encoding="utf-8"
+        ) as file:
             file.write(f"{separator}" + f"{piplinereport["estimator"]}\n")
             # Context manager handles opening and closing of files
-            report =  piplinereport[selectedKey]
+            report = piplinereport[selectedKey]
             # Case 1: value is a key value pair
             for value in report.values():
                 file.write(separator + f"{value:.3f}")
             file.write("\\\\" + "\n")
-            # Case 2: key value at highest level 
+            # Case 2: key value at highest level
             # TODO: implement if needed

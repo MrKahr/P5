@@ -68,6 +68,7 @@ if SetupConfig.arg_batch:
 else:
     # Single processing
     pipeline_report = Pipeline(Dataset.REGS).run()
-    SummaryExporter._writeKeyToLatexTable(
+    SummaryExporter.export(pipeline_report, 0, "", "")
+    SummaryExporter.writeKeyToLatexTable(
         pipeline_report, "test_accuracies", "accuracies", "&"
     )

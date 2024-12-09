@@ -75,14 +75,18 @@ class ModelTrainer:
         self._pipeline_report = {}
 
         # *_x == pd.DataFrame, *_y == pd.Series
+        train_test_args = self._config.getValue("train_test_split", "ModelTraining")
+        train_test_ratio = (
+            f"{train_test_args["train_size"]:.2f}/{1-train_test_args["train_size"]:.2f}"
+        )
+        self._logger.info(f"Train/test split: {train_test_ratio}")
         self._train_x, self._test_x, self._train_true_y, self._test_true_y = (
             model_selection.train_test_split(
                 unsplit_x,
                 unsplit_y,
-                train_size=0.90,
-                random_state=111,
                 shuffle=True,
                 stratify=unsplit_y,
+                **train_test_args,
             )
         )
 
@@ -104,7 +108,7 @@ class ModelTrainer:
         key = "GenericUnivariateSelect"
         parent_key = "DataPreprocessing"
         if self._config.getValue(
-            "UseFeatureSelector", parent_key="General"
+            "UseStatisticalFeatureSelector", parent_key="General"
         ) and self._config.getValue(key, parent_key=parent_key):
             self._logger.warning(
                 f"Using a reduced feature set for hyperparameter tuning (this might harm model performance). "
@@ -200,7 +204,6 @@ class ModelTrainer:
         - https://scikit-learn.org/stable/modules/permutation_importance.html
 
         """
-        # TODO: Implement plots from: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
         self._logger.info("Computing permutation feature importances...")
         start_time = time()
         result = permutation_importance(
@@ -297,7 +300,11 @@ class ModelTrainer:
         """
         self._checkAllFeaturesPresent()
 
-        grid = ParamGridGenerator(len(self._train_x.columns)).getParamGrid()
+        grid = ParamGridGenerator(
+            feature_count=len(self._train_x.columns),
+            target_label_count=len(self._train_true_y.name),
+            model=self._unfit_estimator,
+        ).getParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
@@ -306,10 +313,11 @@ class ModelTrainer:
             param_grid=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
-            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             **kwargs,
         ).fit(x, y)
+
         self._pipeline_report["GridSearchCV_BestParams"] = gscv.best_params_
         return gscv.best_estimator_
 
@@ -318,6 +326,7 @@ class ModelTrainer:
         x: Union[pd.DataFrame, ArrayLike],
         y: Union[pd.Series, ArrayLike],
         random_state: int,
+        refit: Union[bool, str, Callable],
         **kwargs,
     ) -> FittedEstimator:
         """
@@ -330,6 +339,10 @@ class ModelTrainer:
 
         Parameters
         ----------
+        refit : bool | str | Callable
+            Refit an estimator using the best found parameters on the whole dataset.
+            Only present here to create lowercase string.
+
         **kwargs : dict
             Additional parameters defined in the config.
 
@@ -345,7 +358,11 @@ class ModelTrainer:
         """
         self._checkAllFeaturesPresent()
 
-        grid = ParamGridGenerator(len(self._train_x.columns)).getRandomParamGrid()
+        grid = ParamGridGenerator(
+            feature_count=len(self._train_x.columns),
+            target_label_count=len(self._train_true_y.name),
+            model=self._unfit_estimator,
+        ).getRandomParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
             grid = ConfigParamConverter.convertToMLPClassifierGPU(grid)
 
@@ -354,6 +371,7 @@ class ModelTrainer:
             param_distributions=grid,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
+            refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             random_state=RNG(random_state),
             **kwargs,
@@ -388,7 +406,7 @@ class ModelTrainer:
         sfs = SequentialFeatureSelector(
             self._unfit_estimator,
             n_features_to_select="auto",  # Feature selection depends on `tol`
-            tol=0.02,  # Tolerance for score improvement that removing a feature must satisfy
+            tol=0.04,  # Tolerance for score improvement that removing a feature must satisfy
             direction="backward",  # Start with all features
             scoring=self._priority_score_func,
             cv=self._cross_validator,
@@ -599,7 +617,7 @@ class ModelTrainer:
             "training_method", parent_key=self._parent_key
         )
 
-        self._logger.info(f"Training model...")
+        self._logger.info(f"Training model using '{self._training_method}'...")
         start_time = time()
 
         if self._training_method == TrainingMethod.FIT.name:
@@ -620,13 +638,13 @@ class ModelTrainer:
                 self._train_true_y,
                 **self._config.getValue("RFECV", self._parent_key),
             )
-        elif self._training_method == TrainingMethod.RANDOM_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.RANDOM_SEARCH.name:
             random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
             grid_args = self._config.getValue("GridSearchCV", self._parent_key)
             fitted_estimator = self._fitRandomSearchWithCrossValidation(
                 self._train_x, self._train_true_y, **random_args | grid_args
             )
-        elif self._training_method == TrainingMethod.GRID_SEARCH_CV.name:
+        elif self._training_method == TrainingMethod.GRID_SEARCH.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
                 self._train_x,
                 self._train_true_y,
