@@ -31,6 +31,11 @@ class ParamGridGenerator:
         target_label_count : int
             Number of target labels.
             Used solely for determining the size of the output layer to a MLPClassifier.
+
+        model : UnfittedEstimator
+            Model used in training.
+            Used solely for distinguishing between CPU-based and GPU-based MLPClassifier,
+            as their output layers are generated differently.
         """
         self._config = PipelineConfig()
         self._grid_config = GridConfig()

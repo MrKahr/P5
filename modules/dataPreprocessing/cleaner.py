@@ -140,8 +140,9 @@ class DataCleaner(object):
         """
         nan_count = len(self.df[self.df.isna().any(axis=1)])  # Get number of NaN rows
         self.df.fillna(fill_value, inplace=True)
+        new_nan_count = len(self.df[self.df.isna().any(axis=1)])
         logger.info(
-            f"Filled NaN values in {nan_count - len(self.df[self.df.isna().any(axis=1)])} rows with '{fill_value}'"
+            f"Filled NaN values in {nan_count - new_nan_count} rows with '{fill_value}'"
         )
 
     def showNan(self) -> None:

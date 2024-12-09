@@ -80,7 +80,7 @@ class ConfigTemplate(object):
                         ],  # type: list[str]
                         "DiscretizeMethod": DiscretizeMethod.NONE.name,
                         "ChiMergeMaximumMergeThreshold": {
-                            "Sårrand (cm)": np.inf.hex(),
+                            "Sårrand (cm)": np.inf.hex(),  # Convert to string as not all JSON parsers support np.inf
                             "Midte (cm)": np.inf.hex(),
                         },
                         "DiscretizeDesiredIntervals": {
