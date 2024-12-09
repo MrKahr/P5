@@ -91,11 +91,11 @@ class ScoreFunctionSelector:
 
                 # Add accuracy score function
                 if score_func in [
-                    ModelScoreFunc.ACCURACY.name,
+                    ModelScoreFunc.EXACT_ACCURACY.name,
                     ModelScoreFunc.ALL.name,
                 ]:
                     selected_score_funcs |= {
-                        ModelScoreFunc.ACCURACY.name.lower(): make_scorer(
+                        ModelScoreFunc.EXACT_ACCURACY.name.lower(): make_scorer(
                             accuracy_score
                         )
                     }
@@ -111,18 +111,6 @@ class ScoreFunctionSelector:
                         )
                     }
 
-                # Add explained variance score function
-                # REVIEW: Do we want regression score functions?
-                # if score_func in [
-                #     ModelScoreFunc.EXPLAINED_VARIANCE.name,
-                #     ModelScoreFunc.ALL.name,
-                # ]:
-                #     selected_score_funcs |= {
-                #         ModelScoreFunc.EXPLAINED_VARIANCE.name.lower(): make_scorer(
-                #             explained_variance_score
-                #         )
-                #     }
-
                 # We didn't find any score functions to use. Thus, the config's value must be invalid
                 if not selected_score_funcs:
                     raise ValueError(
@@ -130,7 +118,7 @@ class ScoreFunctionSelector:
                     )
 
             logger.info(
-                f"Using model score functions: '{", ".join(selected_score_funcs.keys())}'"
+                f"Using model score functions: [{", ".join(selected_score_funcs.keys())}]"
             )
             cls._cache["model"] = selected_score_funcs
 
@@ -154,7 +142,7 @@ class ScoreFunctionSelector:
             If the selected feature selection function is invalid.
         """
         if cls._cache["feature_select"] is None:
-            parent_key = "FeatureSelection"
+            parent_key = "StatisticalFeatureSelection"
             score_func = cls._config.getValue("score_function", parent_key)
 
             # Chi-squared function

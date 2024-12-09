@@ -144,7 +144,6 @@ class DataTransformer:
         ]
         # fmt: on
 
-    # FIXME: float/int label issue when one-hot encoding
     def oneHotEncode(self, labels: list[str]) -> None:
         """
         One-hot encode one or more categorical attributes, selected by `labels`.
@@ -238,7 +237,6 @@ class DataTransformer:
                 distance += 1
         return distance
 
-    # TODO - Dicussing with Emil, if you see me, delete me!
     def matrixDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
     ) -> int:
@@ -334,14 +332,13 @@ class DataTransformer:
         imputer = KNNImputer(
             missing_values=100,
             n_neighbors=neighbors,
-            weights="uniform",
+            weights="distance",
             metric=distance_metric,
             copy=False,
         )
 
         # remove ID columns so we don't use those for distance calculations. Errors are ignored so this goes through even if the columns are already gone.
         # NOTE we do this here even if we might have done it earlier to ensure that Pig ID and Wound ID don't affect imputation regardless of whether "DeleteNonfeatures" in the config is true or not.
-        # TODO Consider: Maybe we want to use them, actually? Surely a wound would behave similarly to other wounds on the same animal, or similarly to what it has done in the past?
         working_df = df.drop(["Gris ID", "Sår ID"], axis=1, errors="ignore")
 
         # NOTE this makes the imputer return a proper dataframe, rather than a numpy array
@@ -398,7 +395,6 @@ class DataTransformer:
             self.df[feature].max() - self.df[feature].min()
         )
 
-    # REVIEW: What is this method used for?
     def swapValues(self, feature: str, value1: float, value2: float) -> None:
         """
         Swap all instances of `value1` and `value2` in `feature`.
@@ -450,7 +446,7 @@ class DataTransformer:
             A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
         """
         logger.info(
-            f'Preparing discretization of column "{value_column_name}" with class column "{class_column_name}"'
+            f"Preparing discretization of column '{value_column_name}' with class column '{class_column_name}'"
         )
 
         # get values to discretize given some column name and sort them from smallest to biggest. Also handle situation where cleaner has not been used
@@ -498,7 +494,7 @@ class DataTransformer:
                         current_upper_bound = lower_bounds[index + i + 1]
 
                     for j in classes:
-                        # find the number of examples in class j # TODO - if the @ doesn't work, try making the query a format string instead: f"{class_column_name} == {j}"
+                        # find the number of examples in class j
                         C_j = self.df[self.df[class_column_name] == j].shape[0]
 
                         # find the number of examples in the current interval by counting the how many Trues there are in the series returned by between() with sum()
@@ -537,7 +533,7 @@ class DataTransformer:
             lower_bounds = np.delete(lower_bounds, index + 1)
 
         logger.info(
-            f'Intervals for "{value_column_name}" generated. Interval bounds are {lower_bounds}'
+            f"Intervals for '{value_column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
         )
 
         # when we're done merging intervals, return the list of lower bounds
@@ -569,7 +565,7 @@ class DataTransformer:
         ValueError
             If the number of desired intervals is 0 or less, no intervals can be generated
         """
-        logger.info(f'Preparing discretization of column "{column_name}"')
+        logger.info(f"Preparing discretization of column '{column_name}'")
 
         values = self.df[column_name].to_numpy()
         # if desired intervals is 0 or less, we can't split the column into any intervals!
@@ -579,7 +575,7 @@ class DataTransformer:
         # values of 100 are undefined, so we remove those before moving on
         values = values[values != 100]
 
-        logger.info(f"Running naitve discretization with {len(values)} values")
+        logger.info(f"Running naive discretization with {len(values)} values")
 
         # find out how big each step is when we need desired_intervals intervals
         step = (values.max() - values.min()) / desired_intervals
@@ -588,7 +584,7 @@ class DataTransformer:
             lower_bounds[i] = values.min() + (step * i)
 
         logger.info(
-            f'Intervals for "{column_name}" generated. Interval bounds are {lower_bounds}'
+            f"Intervals for '{column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
         )
 
         return lower_bounds
@@ -612,7 +608,7 @@ class DataTransformer:
         replace_blacklist: list[float]
             A list of numbers that may or may not occur in the column and shouldn't be replaced
         """
-        logger.info(f"Assigning intervals to values in {column_name}")
+        logger.info(f"Assigning intervals to values in '{column_name}'")
 
         def intervalify(
             x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
@@ -646,7 +642,7 @@ class DataTransformer:
             intervalify, lower_bounds=lower_bounds
         )
 
-        logger.info(f"Discretization of {column_name} complete")
+        logger.info(f"Discretization of '{column_name}' complete")
 
     def run(self) -> pd.DataFrame:
         """
@@ -666,11 +662,13 @@ class DataTransformer:
                 pass
             elif discretize_method == DiscretizeMethod.CHIMERGE.name:
                 for column in config.getValue("DiscretizeColumns"):
+                    value = config.getValue("ChiMergeMaximumMergeThreshold").get(column)
+                    if value == "inf":
+                        value = np.inf
+
                     interval_bounds = self.discretizeWithChiMerge(
                         column,
-                        merge_when_below=config.getValue(
-                            "ChiMergeMaximumMergeThreshold"
-                        ).get(column),
+                        merge_when_below=value,
                         desired_intervals=config.getValue(
                             "DiscretizeDesiredIntervals"
                         ).get(column),
@@ -696,10 +694,6 @@ class DataTransformer:
                     f"Undefined discretization method '{discretize_method}'. Skipping"
                 )
 
-            # One-hot encoding
-            if config.getValue("UseOneHotEncoding"):
-                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
-
             # Imputation
             imputation_method = config.getValue("ImputationMethod")
             if imputation_method != ImputationMethod.NONE.name:
@@ -714,10 +708,8 @@ class DataTransformer:
                     metric = None
                     match config.getValue("KNN_DistanceMetric"):
                         case DistanceMetric.ZERO_ONE.name:
-                            # logger.info("Preparing zero-one distance metric")
                             metric = self.zeroOneDistance
                         case DistanceMetric.MATRIX.name:
-                            # logger.info("Preparing matrix distance metric")
                             metric = self.matrixDistance
                     self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
                 else:
@@ -726,6 +718,10 @@ class DataTransformer:
                     )
             else:
                 logger.info("Skipping imputation")
+
+            # One-hot encoding
+            if config.getValue("UseOneHotEncoding"):
+                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
 
             # Normalization
             match config.getValue("NormalisationMethod"):

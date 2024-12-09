@@ -72,8 +72,8 @@ class TrainingMethod(Enum):
     CROSS_VALIDATION = 1
     RFE = 2
     RFECV = 3
-    RANDOM_SEARCH_CV = 4
-    GRID_SEARCH_CV = 5
+    RANDOM_SEARCH = 4
+    GRID_SEARCH = 5
 
 
 class VariableDistribution(Enum):
@@ -96,5 +96,5 @@ class ModelScoreFunc(Enum):
     DISTANCE = 1
 
     # Scoring functions for classifications
-    ACCURACY = 100
+    EXACT_ACCURACY = 100
     BALANCED_ACCURACY = 101
