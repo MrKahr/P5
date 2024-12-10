@@ -43,6 +43,7 @@ class ModelSummary:
                     f"{figure_filename}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.png",
                 )
             )
+            plt.close()
         else:
             plt.show(block=False)
 
