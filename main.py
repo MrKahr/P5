@@ -8,13 +8,11 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
 os.environ["KERAS_BACKEND"] = "torch"
-
 from modules.tools.arguments.app_arguments import AppArguments
 
 # Setup CLI
 arguments = AppArguments()
 arguments.executeArguments()
-
 
 from modules.logging.logger import Logger
 
@@ -65,10 +63,21 @@ if SetupConfig.arg_batch:
             ConfigBatchProcessor.applyConfigs(configs)
             pipeline_report = Pipeline(Dataset.REGS).run()
             SummaryExporter.export(pipeline_report, i, total_batches, batch_id)
+            SummaryExporter.writeKeyToLatexTable(
+                str(SetupConfig.pipeline_config_path),
+                pipeline_report,
+                "test_accuracies",
+                "accuracies",
+                "&",
+            )
 else:
     # Single processing
     pipeline_report = Pipeline(Dataset.REGS).run()
     SummaryExporter.export(pipeline_report, 0, "", "")
     SummaryExporter.writeKeyToLatexTable(
-        pipeline_report, "test_accuracies", "accuracies", "&"
+        str(SetupConfig.pipeline_config_path),
+        pipeline_report,
+        "test_accuracies",
+        "accuracies",
+        "&",
     )
