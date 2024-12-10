@@ -46,6 +46,33 @@ class ModelSummary:
         else:
             plt.show(block=False)
 
+    def _plotAccuracyFunctions(
+        self,
+        results: dict,
+        x_label,
+        y_label="Accuracy Score",
+        plotitle="Accuracy by Score Function",
+        legendName="Score Functions",
+        fileName="scorefunctionPlot",
+    ) -> None:
+        fig, ax = plt.subplots()
+
+        # Plot naming
+        ax.set_title(plotitle)
+        ax.set_xlabel(x_label)'
+        ax.set_ylabel(y_label)
+ 
+        # Set reasonable plot limits
+        ax.set_ylim(0, 1)
+        ax.set_xlim(0)
+
+        for keys, value in results.items():
+            ax.plot(value)
+
+        # Plot axis
+        ax.legend(list(results.keys()))
+        self._showFigure(fileName)
+
     def _printModelReport(self):
         """Print results for model evaluation from pipe_line_report"""
 
@@ -362,6 +389,8 @@ class ModelSummary:
             self._plotTree()
         if self._config.getValue("plot_feature_importance"):
             self.plotFeatureImportance()
+        if self._config.getValue("plot_score_function"):
+            self._plotAccuracyFunctions(self._config.getValue("test_accuracies"))
 
         if not self._write_fig:
             input("Press enter to close all figures...")
