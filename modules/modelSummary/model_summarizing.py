@@ -49,25 +49,6 @@ class ModelSummary:
     def _plotAccuracyFunctions(
         self,
         results: dict,
-        plotitle="Accuracy by Score Function",
-        legendName="Score Functions",
-        fileName="scorefunctionPlot.pdf",
-    ) -> None:
-        fig, ax = plt.subplots()
-
-        # Plot naming
-        ax.set_title(plotitle)
-
-        for keys, value in results.items():
-            ax.plot(value)
-
-        # plot axis
-        ax.legend(list(results.keys()))
-        self._showFigure(fileName)
-
-    def _plotAccuracyFunctions(
-        self,
-        results: dict,
         x_label,
         y_label="Accuracy Score",
         plotitle="Accuracy by Score Function",
