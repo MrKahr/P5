@@ -95,18 +95,32 @@ class SummaryExporter:
 
     @classmethod
     def writeKeyToLatexTable(
-        cls, piplinereport: dict, selectedKey: str, filename: str, separator: str
+        cls,
+        config_path: str,
+        pipeline_report: dict,
+        selected_key: str,
+        filename: str,
+        separator: str,
     ) -> None:
         # Generate txt file for results if one does not exist
+        # Context manager handles opening and closing of files
         with open(
             Path(SetupConfig.summary_dir, f"{filename}.txt"), "a", encoding="utf-8"
         ) as file:
-            file.write(f"{separator}" + f"{piplinereport["estimator"]}\n")
-            # Context manager handles opening and closing of files
-            report = piplinereport[selectedKey]
+            # Write experiment type
+            if config_path.find("gridparams") == -1:
+                file.write(f"{os.path.split(config_path)[1]}\n")
+
+            # Write model used
+            file.write(
+                f"{separator}" + f"{type(pipeline_report["estimator"]).__name__}\n"
+            )
+
+            # Write experiment result
+            report = pipeline_report[selected_key]
             # Case 1: value is a key value pair
             for value in report.values():
                 file.write(separator + f"{value:.3f}")
-            file.write("\\\\" + "\n")
+            file.write("\\\\" + "\n\n")
             # Case 2: key value at highest level
             # TODO: implement if needed
