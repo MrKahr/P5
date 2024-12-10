@@ -46,8 +46,7 @@ class AppArguments:
         parser.add_argument(
             "--export",
             "-x",
-            action="store_true",
-            help="export the currently active configs and exit",
+            help="export the currently active configs and exit. Supply a name as argument",
         )
         parser.add_argument(
             "--export_path",
@@ -55,7 +54,6 @@ class AppArguments:
             default=SetupConfig.arg_export_path,
             help="location of the folder for exported configs (default: '%(default)s')",
         )
-
         return parser
 
     def _verifyArguments(self, args: Namespace) -> Namespace:
@@ -84,13 +82,12 @@ class AppArguments:
 
         SetupConfig.arg_batch = args.batch
         SetupConfig.arg_export = args.export
-
         return args
 
     def executeArguments(self) -> None:
         args = self._args
         if args.export:
-            ConfigExporter().exportConfigs()
+            ConfigExporter().exportConfigs(args.export)
             sys.exit()
 
     def getArguments(self) -> Namespace:
