@@ -9,6 +9,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 import matplotlib.colors as mcolors
 
 from sklearn.inspection import DecisionBoundaryDisplay
@@ -33,46 +34,22 @@ class ModelSummary:
         self._model_name = type(pipeline_report["estimator"]).__name__
         self._pipeline_report = pipeline_report
 
-    def _showFigure(self, figure_filename: str) -> None:
+    def _showFigure(self, figure: Figure, figure_filename: str) -> None:
         if self._write_fig:
             figure_path = Path(SetupConfig().figures_dir, self._model_name)
+            config_filename = os.path.splitext(
+                os.path.split(self._config.getConfigPath())[1]
+            )[0]
             os.makedirs(figure_path, exist_ok=True)
             plt.savefig(
                 Path(
                     figure_path,
-                    f"{figure_filename}.{self._model_name}.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.png",
+                    f"{figure_filename}_{config_filename}_{self._model_name}.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.png",
                 )
             )
-            plt.close()
+            plt.close(figure)
         else:
             plt.show(block=False)
-
-    def _plotAccuracyFunctions(
-        self,
-        results: dict,
-        x_label,
-        y_label="Accuracy Score",
-        plotitle="Accuracy by Score Function",
-        legendName="Score Functions",
-        fileName="scorefunctionPlot",
-    ) -> None:
-        fig, ax = plt.subplots()
-
-        # Plot naming
-        ax.set_title(plotitle)
-        ax.set_xlabel(x_label)'
-        ax.set_ylabel(y_label)
- 
-        # Set reasonable plot limits
-        ax.set_ylim(0, 1)
-        ax.set_xlim(0)
-
-        for keys, value in results.items():
-            ax.plot(value)
-
-        # Plot axis
-        ax.legend(list(results.keys()))
-        self._showFigure(fileName)
 
     def _printModelReport(self):
         """Print results for model evaluation from pipe_line_report"""
@@ -232,7 +209,7 @@ class ModelSummary:
             ylabel="True Positive Rate",
             title=f"({self._model_name})\nExtension of Receiver Operating Characteristic\nto One-vs-Rest multiclass",
         )
-        self._showFigure("roc_auc")
+        self._showFigure(figure, "roc_auc")
 
     def _plotConfusionMatrix(self) -> None:
         """
@@ -245,7 +222,7 @@ class ModelSummary:
             self._pipeline_report["test_true_y"],
         )
         disp.plot()
-        self._showFigure("confusion_matrix")
+        self._showFigure(disp.figure_, "confusion_matrix")
 
     # FIXME: Half-baked implementation!
     def _plotDecisionBoundary(self) -> None:
@@ -263,7 +240,7 @@ class ModelSummary:
     def _plotTree(self) -> None:
         selected_model = self._config.getValue("model", "ModelSelection")
         if selected_model in [Model.DECISION_TREE.name]:
-            plt.figure(dpi=1200)
+            figure = plt.figure(dpi=1200)
             tree = self._pipeline_report["estimator"]
             plot_tree(
                 tree,
@@ -275,9 +252,9 @@ class ModelSummary:
             plt.title(
                 f"{type(tree).__name__} trained on {self._pipeline_report["feature_count"]} features"
             )
-        self._showFigure("tree")
+            self._showFigure(figure, "tree")
 
-    def plotFeatureImportance(self) -> None:
+    def _plotFeatureImportance(self) -> None:
         """
         Feature importance groups (threshold, distance, accuracy, balanced accuracy) are calculated by summing the importances_mean
         of each feature for these metrics. The features are then grouped, sorted by their sums, and plotted in the determined order.
@@ -375,7 +352,7 @@ class ModelSummary:
             sorted_group_order
         )  # To not sort change sorted_group_order to feature_names
 
-        self._showFigure("feature importance")
+        self._showFigure(fig, "feature importance")
 
     def run(self) -> None:
         if self._config.getValue("print_model_report"):
@@ -389,9 +366,7 @@ class ModelSummary:
         if self._config.getValue("plot_tree"):
             self._plotTree()
         if self._config.getValue("plot_feature_importance"):
-            self.plotFeatureImportance()
-        if self._config.getValue("plot_score_function"):
-            self._plotAccuracyFunctions(self._config.getValue("test_accuracies"))
+            self._plotFeatureImportance()
 
         if not self._write_fig:
             input("Press enter to close all figures...")

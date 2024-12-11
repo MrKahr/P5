@@ -40,7 +40,10 @@ class SummaryExporter:
 
     @classmethod
     def export(
-        cls, pipeline_report: dict, batch_number: int, batch_total: int, batch_id: str
+        cls,
+        pipeline_report: dict,
+        batch_id: str,
+        name_prefix: str = "summary",
     ) -> None:
         """
         Export select entries in the pipeline report as a model summary.
@@ -89,7 +92,7 @@ class SummaryExporter:
 
         estimator_name = type(pipeline_report["estimator"]).__name__
         time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = f"{batch_number}_{batch_total}.summary.{estimator_name}.{time}.json"
+        file_name = f"{name_prefix}.{estimator_name}.{time}.json"
         with open(Path(export_folder, file_name), "w", encoding="utf-8") as file:
             file.write(json.dumps(export_dict, indent=4))
 

@@ -36,7 +36,6 @@ if SetupConfig.arg_batch:
             ConfigBatchProcessor.getBatchConfigs(SetupConfig.arg_batch_config_path)
         )
     )
-    total_batches = len(config_list) - 1
     batch_id = f"batch.{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
 
     logger.info(f"Running in batch mode")
@@ -62,7 +61,11 @@ if SetupConfig.arg_batch:
         ):
             ConfigBatchProcessor.applyConfigs(configs)
             pipeline_report = Pipeline(Dataset.REGS).run()
-            SummaryExporter.export(pipeline_report, i, total_batches, batch_id)
+            SummaryExporter.export(
+                pipeline_report,
+                batch_id,
+                os.path.splitext(os.path.split(SetupConfig.pipeline_config_path)[1])[0],
+            )
             SummaryExporter.writeKeyToLatexTable(
                 str(SetupConfig.pipeline_config_path),
                 pipeline_report,
@@ -73,7 +76,9 @@ if SetupConfig.arg_batch:
 else:
     # Single processing
     pipeline_report = Pipeline(Dataset.REGS).run()
-    SummaryExporter.export(pipeline_report, 0, "", "")
+    SummaryExporter.export(
+        pipeline_report, datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    )
     SummaryExporter.writeKeyToLatexTable(
         str(SetupConfig.pipeline_config_path),
         pipeline_report,

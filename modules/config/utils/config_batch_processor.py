@@ -36,7 +36,7 @@ class ConfigBatchProcessor:
         files = []
         for extension in extensions:
             files.extend(glob.glob(f"{folder}/**/*.{extension}", recursive=True))
-        return sorted(files)
+        return sorted(files, key=lambda string: os.path.split(string)[1])
 
     @classmethod
     def getConfigPairsFromBatch(
@@ -58,7 +58,7 @@ class ConfigBatchProcessor:
         """
         while configs:
             combined_config = [configs.pop()]
-            current_filename = os.path.split(combined_config[0])[1]
+            current_filename = os.path.splitext(os.path.split(combined_config[0])[1])[0]
             # Dirty fix
             try:
                 current_file_id = current_filename.split(".")[2]
