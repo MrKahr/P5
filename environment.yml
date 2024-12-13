@@ -1,0 +1,6 @@
+name: .conda
+dependencies:
+  - python==3.12.7
+  - pip
+  - pip:
+    - -r file:requirements.txt
