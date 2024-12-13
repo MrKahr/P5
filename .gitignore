@@ -5,6 +5,7 @@ logs/
 config/*
 configExports/
 Experiment configs/
+.buildtools/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
