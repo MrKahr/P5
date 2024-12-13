@@ -1,5 +1,7 @@
 {
     "files.exclude": {
         "/.venv": true,
-    }
+        "/.conda": true
+    },
+    "black-formatter.importStrategy": "fromEnvironment"
 }
