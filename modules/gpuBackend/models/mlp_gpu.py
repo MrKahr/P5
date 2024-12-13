@@ -180,6 +180,6 @@ class MLPClassifierGPU(KerasClassifier):
         )
         model.add(out)
         model.compile(
-            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile="auto"
+            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile=True
         )
         return model
