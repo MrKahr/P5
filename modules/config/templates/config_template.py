@@ -140,7 +140,7 @@ class ConfigTemplate(object):
                     "max_samples": None,  # type: int | float | None
                 },
                 "CategoricalNaiveBayes": {
-                    "min_categories": 100  # NOTE: Should be largest value in dataset to prevent index out of bounds
+                    "min_categories": 101  # NOTE: Should be largest value + 1 in dataset to prevent index out of bounds
                 },
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (10, 10),
@@ -148,6 +148,7 @@ class ConfigTemplate(object):
                     "solver": "adam",  # type: Literal["lbfgs", "sgd", "adam"]
                     "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
                     "learning_rate_init": 0.001,
+                    "batch_size": 500,
                     "alpha": 0.0001,
                     "max_iter": 100,
                     "tol": 0.0001,
@@ -196,7 +197,7 @@ class ConfigTemplate(object):
                 },
                 "GridSearchCV": {
                     "return_train_score": False,  # NOTE: Computing training scores is used to get insights on how different parameter settings impact the overfitting/underfitting trade-off. However computing the scores on the training set can be computationally expensive and is not strictly required to select the parameters that yield the best generalization performance.
-                    "refit": "accuracy",  # NOTE: Its semantics is different from the score function as it is specific for param Search results
+                    "refit": ModelScoreFunc.EXACT_ACCURACY.name.lower(),  # NOTE: Its semantics is different from the score function as it is specific for param Search results
                     "verbose": 1,  # type: Literal[0, 1, 2, 3]  # NOTE: 0 = silent, 1 = the computation time for each fold and parameter candidate is displayed, 2 = the score is also displayed, 3 = the fold and candidate parameter indexes are also displayed.
                 },
             },
