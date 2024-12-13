@@ -7,5 +7,6 @@ dependencies:
   - python==3.12.7
   - black
   - pytorch-cuda=12.4
+  - pip
   - pip:
     - -r file:requirements.txt
