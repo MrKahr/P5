@@ -1,6 +1,11 @@
 name: .conda
+channels:
+  - defaults
+  - pytorch
+  - nvidia
 dependencies:
   - python==3.12.7
-  - pip
+  - black
+  - pytorch-cuda=12.4
   - pip:
     - -r file:requirements.txt
