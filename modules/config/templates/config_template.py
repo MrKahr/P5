@@ -145,12 +145,12 @@ class ConfigTemplate(object):
                 "NeuralNetwork": {
                     "hidden_layer_sizes": (10, 10),
                     "activation": "relu",  # type: Literal["logistic", "tanh", "relu"]
-                    "solver": "adam",  # type: Literal["lbfgs", "sgd", "adam"]
-                    "learning_rate": "constant",  # type: Literal["constant", "invscaling", "adaptive"]
+                    "solver": "adam",  # type: Literal["sgd", "adam"]
+                    "learning_rate": "constant",  # type: Literal["constant", "adaptive"]
                     "learning_rate_init": 0.001,
-                    "batch_size": 500,
-                    "alpha": 0.0001,
-                    "max_iter": 100,
+                    "batch_size": 2000,
+                    "alpha": 0.001,
+                    "max_iter": 1000,
                     "tol": 0.0001,
                     "random_state": 678,
                 },
