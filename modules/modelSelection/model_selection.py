@@ -1,4 +1,4 @@
-from sklearn.naive_bayes import CategoricalNB, GaussianNB
+from sklearn.naive_bayes import CategoricalNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier

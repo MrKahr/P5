@@ -42,7 +42,7 @@ class SummaryImporter:
         legend_name: str = "Score Functions",
         file_name: str = "scorefunctionPlot",
     ) -> None:
-        fig, ax = plt.subplots(figsize=(15, 15))
+        fig, ax = plt.subplots(figsize=(20, 20))
 
         # Plot naming
         ax.set(
@@ -72,7 +72,7 @@ class SummaryImporter:
 
             for i in x:
                 ax.annotate(
-                    text=f"{abs(v[i] - y_min):.3f}",
+                    text=f"{(v[i] - y_min):.3f}",
                     xy=(i, v[i]),
                     xytext=(i, v_yscaled[i]),
                 )
