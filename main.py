@@ -3,11 +3,17 @@
 #####################
 from datetime import datetime
 import os
+from pathlib import Path
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
 os.environ["KERAS_BACKEND"] = "torch"
+os.environ["PATH"] += str(
+    Path(Path.cwd(), r".buildtools\VC\Tools\MSVC\14.42.34433\bin\Hostx64\x64")
+)
+
+
 from modules.tools.arguments.app_arguments import AppArguments
 
 # Setup CLI
