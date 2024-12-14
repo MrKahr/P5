@@ -61,15 +61,15 @@ class ConfigBatchProcessor:
             current_filename = os.path.splitext(os.path.split(combined_config[0])[1])[0]
             # Dirty fix
             try:
-                current_file_id = current_filename.split(".")[2]
+                current_file_id = current_filename.split(".")[-1]
             except IndexError:
                 current_file_id = current_filename
 
             for config in deepcopy(configs):
-                new_filename = os.path.split(config)[1]  # Filename with extension
+                new_filename = os.path.splitext(os.path.split(config)[1])[0]
                 # Dirty fix
                 try:
-                    new_file_id = new_filename.split(".")[2]
+                    new_file_id = new_filename.split(".")[-1]
                 except IndexError:
                     new_file_id = new_filename
 
@@ -84,7 +84,10 @@ class ConfigBatchProcessor:
             if config.find("gridparams") != -1:
                 SetupConfig.grid_config_file = file
                 SetupConfig.grid_config_path = config
-                setattr(GridConfig, "_created", False)
+                gridconf = GridConfig()
+                # Reset config such that a new instance is created
+                gridconf._created = False
+                gridconf._instance = None
             elif config.find("pipeline_config") != -1:
                 SetupConfig.pipeline_config_file = file
                 SetupConfig.pipeline_config_path = config
