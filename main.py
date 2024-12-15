@@ -8,15 +8,27 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
+
+
+####################################
+### Setup for GPU-based training ###
+####################################
 os.environ["KERAS_BACKEND"] = "torch"
-os.environ["PATH"] += str(
-    Path(Path.cwd(), r".buildtools\VC\Tools\MSVC\14.42.34433\bin\Hostx64\x64")
-)
+os.environ["CUDA_PATH"] = str(Path(Path.cwd(), r".conda\Library"))
+
+import torch
+import torch._dynamo.config
+
+torch.set_float32_matmul_precision("high")  # Use TF32 or approximate FP32
+torch._dynamo.config.cache_size_limit = 16  # Double cache size for compilation
+torch._dynamo.config.suppress_errors = True  # Prevent weird TypeError in Keras model
 
 
+###################
+### # Setup CLI ###
+###################
 from modules.tools.arguments.app_arguments import AppArguments
 
-# Setup CLI
 arguments = AppArguments()
 arguments.executeArguments()
 
