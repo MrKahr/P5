@@ -1,8 +1,10 @@
 from typing import Any
 import pandas as pd
 from pathlib import Path
+import torch
 
 from modules.config.pipeline_config import PipelineConfig
+from modules.config.utils.config_enums import LogLevel
 from modules.crossValidationSelection.cross_validation_selection import (
     CrossValidationSelector,
 )
@@ -38,7 +40,19 @@ class Pipeline:
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
         self._data_folder = "dataset"
-        self._logger.setLevel(self._config.getValue("loglevel", "General"))
+
+    def _setLogLevel(self) -> None:
+        level = LogLevel._member_map_.get(
+            self._config.getValue("loglevel", "General"), None
+        )
+        if level is None:
+            level = LogLevel.DEBUG
+            self._logger.warning(
+                f"Invalid loglevel '{level}', defaulting to '{level.name}'"
+            )
+
+        self._logger.setLevel(level)
+        torch._logging.set_logs(all=level)
 
     def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
