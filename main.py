@@ -1,8 +1,8 @@
 #####################
 ### Initial Setup ###
 #####################
-from datetime import datetime
 import os
+from datetime import datetime
 from pathlib import Path
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
@@ -13,11 +13,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
 ####################################
 ### Setup for GPU-based training ###
 ####################################
+# Set environ BEFORE any CUDA-related imports
 os.environ["KERAS_BACKEND"] = "torch"
 os.environ["CUDA_PATH"] = str(Path(Path.cwd(), r".conda\Library"))
 
 import torch
 import torch._dynamo.config
+import torch._dynamo.logging
 
 torch.set_float32_matmul_precision("high")  # Use TF32 or approximate FP32
 torch._dynamo.config.cache_size_limit = 16  # Double cache size for compilation
@@ -65,7 +67,7 @@ if SetupConfig.arg_batch:
         exit(0)
 
     # Tell tqdm to consider logging module when printing progress bar
-    with logging_redirect_tqdm(loggers=[logger]):
+    with logging_redirect_tqdm(loggers=[logger, *torch._dynamo.logging.get_loggers()]):
         for i, configs in enumerate(
             tqdm(
                 config_list,
