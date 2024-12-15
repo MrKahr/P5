@@ -36,7 +36,7 @@ class MLPClassifierGPU(KerasClassifier):
         activation: Literal["logistic", "relu", "tanh"] | Callable = "relu",
         learning_rate: str = "constant",
         learning_rate_init: float = 0.001,
-        alpha: float = 0.0001,
+        regularizer: float = 0.0001,
         epochs: int = 200,  # "max_iter" in scikit
         batch_size=200,
         tol: float = 0.0001,
@@ -110,7 +110,7 @@ class MLPClassifierGPU(KerasClassifier):
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate = learning_rate
         self.learning_rate_init = learning_rate_init
-        self.regularizer = RegularizerSelector.getRegularizer("l2", l2=alpha)
+        self.regularizer = RegularizerSelector.getRegularizer("l2", l2=regularizer)
         self.tol = tol  # Not implemented
 
         if learning_rate != "constant":
