@@ -2,6 +2,7 @@ from typing import Any, Callable, Literal, Union
 import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
+import torch
 
 from modules.gpuBackend.activation.activationFunctionSelector import (
     ActivationFunctionSelector,
@@ -36,9 +37,9 @@ class MLPClassifierGPU(KerasClassifier):
         activation: Literal["logistic", "relu", "tanh"] | Callable = "relu",
         learning_rate: str = "constant",
         learning_rate_init: float = 0.001,
-        regularizer: float = 0.0001,
+        alpha: float = 0.0001,
         epochs: int = 200,  # "max_iter" in scikit
-        batch_size=200,
+        batch_size: Union[int, None] = 200,
         tol: float = 0.0001,
         random_state: Union[int, RandomState, None] = None,
         verbose: int = 1,
@@ -61,9 +62,8 @@ class MLPClassifierGPU(KerasClassifier):
             NOTE: Called "solver" in scikit-learn.
 
         activation: Literal["logistic","relu","tanh"] | Callable
-            Activation function for all layers except input/output
-            By default "relu"
-            NOTE: "logistic" is defined as "sigmoid" in scikit-learn.
+            Activation function for all layers except input/output.
+            By default "relu".
 
         learning_rate : str, optional
             Adjust learning rate across epochs.
@@ -77,7 +77,6 @@ class MLPClassifierGPU(KerasClassifier):
         alpha : float, optional
             Strength of the L2 regularization term.
             By default `0.0001`.
-            NOTE: Included for compatibiity with scikit-learn but currently not implemented.
 
         epochs : int, optional
             Number of training iterations.
@@ -110,12 +109,12 @@ class MLPClassifierGPU(KerasClassifier):
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate = learning_rate
         self.learning_rate_init = learning_rate_init
-        self.regularizer = RegularizerSelector.getRegularizer("l2", l2=regularizer)
+        self.alpha = alpha
         self.tol = tol  # Not implemented
 
         if learning_rate != "constant":
             logger.warning(
-                f"Only 'constant' learning rate is supported, switching to 'constant'. Got '{learning_rate}'"
+                f"Only 'constant' learning rate is supported. Got '{learning_rate}'"
             )
 
     def _keras_build_fn(self, compile_kwargs: dict[str, Any]):
@@ -147,7 +146,9 @@ class MLPClassifierGPU(KerasClassifier):
             layer = keras.layers.Dense(
                 hidden_layer_size,
                 activation=self.activation,
-                activity_regularizer=self.regularizer,
+                activity_regularizer=RegularizerSelector.getRegularizer(
+                    "l2", l2=self.alpha
+                ),
             )
             model.add(layer)
 
@@ -176,10 +177,24 @@ class MLPClassifierGPU(KerasClassifier):
         out = keras.layers.Dense(
             n_output_units,
             activation=output_activation,
-            activity_regularizer=self.regularizer,
+            activity_regularizer=RegularizerSelector.getRegularizer(
+                "l2", l2=self.alpha
+            ),
         )
         model.add(out)
+
+        # Check GPU capability
+        cuda_device_cap = torch.cuda.get_device_capability()
+        required_device_cap = (8, 1)
+        if cuda_device_cap < required_device_cap:
+            logger.warning(
+                f"CUDA device capability {cuda_device_cap} is lower than {required_device_cap}. Disabling Triton compiler"
+            )
+            jit_compile = "auto"
+        else:
+            jit_compile = True
+
         model.compile(
-            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile=True
+            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile=jit_compile
         )
         return model
