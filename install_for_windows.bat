@@ -10,7 +10,19 @@ start /wait "" .\miniconda.exe /S
 del miniconda.exe
 
 
-:install-msvc-buildtools
-curl https://github.com/Data-Oriented-House/PortableBuildTools/releases/latest/download/PortableBuildTools.exe
-start /wait "" .\PortableBuildTools.exe accept_license target=x64 host=x64 path=%~dp0.buildtools
-del PortableBuildTools.exe
+:copy-files-to-cuda-path
+
+
+
+
+:: Fix bug in PyTorch code!
+:: See https://github.com/pytorch/pytorch/issues/138211 and https://github.com/woct0rdho/triton-windows/issues/10
+:: In `torch/_inductor/codecache.py` do
+:: REPLACE 
+  tmp_path.rename
+:: WITH
+    try:
+        tmp_path.rename(target=path)
+    except FileExistsError as e_file_exist:
+        if not _IS_WINDOWS:
+            raise
