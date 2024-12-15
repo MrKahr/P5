@@ -1,4 +1,4 @@
-name: .conda
+name: p5deps
 channels:
   - defaults
   - pytorch
