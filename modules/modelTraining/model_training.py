@@ -315,6 +315,7 @@ class ModelTrainer:
             n_jobs=self._n_jobs,
             cv=self._cross_validator,
             refit=refit.lower() if isinstance(refit, str) else refit,
+            error_score="raise",
             **kwargs,
         ).fit(x, y)
 
@@ -374,6 +375,7 @@ class ModelTrainer:
             refit=refit.lower() if isinstance(refit, str) else refit,
             cv=self._cross_validator,
             random_state=RNG(random_state),
+            error_score="raise",
             **kwargs,
         ).fit(x, y)
 
