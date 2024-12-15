@@ -1,4 +1,3 @@
-from copy import deepcopy
 import numpy as np
 import math
 from itertools import product
@@ -109,32 +108,43 @@ class ParamGridGenerator:
             randint.rvs(low, high, size=i).astype(dtype="int32") for i in layer_range
         ]  # type: list[np.ndarray]
 
-        if isinstance(self._model, MLPClassifier):
-            # Only define output layer for CPU-based MLPClassifier
-            output_layer = self._getRange(
-                start=self._target_label_count, stop=self._target_label_count, step=1
-            )
-        else:
-            # MLPClassifierGPU automatically defines output layer
-            output_layer = []
-
+        # FIXME: Bad duplicate code
         # Combine lists in tuples for different Neural Network (NN) sizes since MLP-constructor requires tuple input
         # It is done in format (INPUT,a,b,...,OUTPUT) e.g. (10, 5, 8, 2)
         # Input: 10 neurons, Layer1: 5 neurons, Layer2: 8 neurons, Output: 2 neurons.
         # To create tuple, hidden_layer_sizes, are arrays, not literals.
         # There are unpacked in the final NN tuple
-        layer_tuples = []
-        # Cartesian product of all layer types
-        for layer_tuple in product(input_layer, hidden_layer_sizes, output_layer):
-            # Container for tuples
-            temp = []
-            for elem in layer_tuple:
-                if isinstance(elem, (np.ndarray, list)):
-                    temp.extend(elem)  # Unpack array in final NN tuple
-                else:
-                    temp.append(elem)  # Element is already a number. Add as is
-            # Create the final NN tuple and add to list of NN tuples
-            layer_tuples.append((tuple(temp)))
+        if isinstance(self._model, MLPClassifier):
+            # Only define output layer for CPU-based MLPClassifier
+            output_layer = self._getRange(
+                start=self._target_label_count, stop=self._target_label_count, step=1
+            )
+            layer_tuples = []
+            # Cartesian product of all layer types
+            for layer_tuple in product(input_layer, hidden_layer_sizes, output_layer):
+                # Container for tuples
+                temp = []
+                for elem in layer_tuple:
+                    if isinstance(elem, (np.ndarray, list)):
+                        temp.extend(elem)  # Unpack array in final NN tuple
+                    else:
+                        temp.append(elem)  # Element is already a number. Add as is
+                # Create the final NN tuple and add to list of NN tuples
+                layer_tuples.append((tuple(temp)))
+        else:
+            # MLPClassifierGPU automatically defines output layer
+            layer_tuples = []
+            # Cartesian product of all layer types
+            for layer_tuple in product(input_layer, hidden_layer_sizes):
+                # Container for tuples
+                temp = []
+                for elem in layer_tuple:
+                    if isinstance(elem, (np.ndarray, list)):
+                        temp.extend(elem)  # Unpack array in final NN tuple
+                    else:
+                        temp.append(elem)  # Element is already a number. Add as is
+                # Create the final NN tuple and add to list of NN tuples
+                layer_tuples.append((tuple(temp)))
         return layer_tuples
 
     def _createGenericDistribution(self, value: dict) -> np.ndarray | None:
