@@ -4,8 +4,7 @@ dataset/
 logs/
 config/*
 configExports/
-Experiment configs/
-.buildtools/
+.conda/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
