@@ -1,6 +1,7 @@
 from copy import deepcopy
 import glob
 import os
+import re
 from typing import Any, Generator
 from modules.config.grid_config import GridConfig
 from modules.config.pipeline_config import PipelineConfig
@@ -56,35 +57,38 @@ class ConfigBatchProcessor:
         Generator[list[StrPath], Any, None]
             A list of matching configs.
         """
+        pipeline_config_name = os.path.splitext(SetupConfig.pipeline_config_file)[0]
+        gridparams_name = os.path.splitext(SetupConfig.grid_config_file)[0]
         while configs:
             combined_config = [configs.pop()]
             current_filename = os.path.splitext(os.path.split(combined_config[0])[1])[0]
-            # Dirty fix
-            try:
-                current_file_id = current_filename.split(".")[2]
-            except IndexError:
-                current_file_id = current_filename
-
             for config in deepcopy(configs):
-                new_filename = os.path.split(config)[1]  # Filename with extension
-                # Dirty fix
-                try:
-                    new_file_id = new_filename.split(".")[2]
-                except IndexError:
-                    new_file_id = new_filename
+                new_filename = os.path.splitext(os.path.split(config)[1])[0]
 
-                if new_file_id == current_file_id:
+                current_file_id = re.sub(
+                    gridparams_name,
+                    "",
+                    re.sub(pipeline_config_name, "", current_filename),
+                )
+                new_file_id = re.sub(
+                    gridparams_name, "", re.sub(pipeline_config_name, "", new_filename)
+                )
+                if current_file_id == new_file_id:
                     combined_config.append(configs.pop())
             yield combined_config
 
     @classmethod
     def applyConfigs(cls, configs: list[StrPath]) -> None:
+        # FIXME Bad duplicate code
         for config in configs:
             file = os.path.split(config)[1]
             if config.find("gridparams") != -1:
                 SetupConfig.grid_config_file = file
                 SetupConfig.grid_config_path = config
-                setattr(GridConfig, "_created", False)
+                gridconf = GridConfig()
+                # Reset config such that a new instance is created
+                gridconf._created = False
+                gridconf._instance = None
             elif config.find("pipeline_config") != -1:
                 SetupConfig.pipeline_config_file = file
                 SetupConfig.pipeline_config_path = config
