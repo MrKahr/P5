@@ -24,6 +24,4 @@ class ConfigParamConverter:
 
         if "max_iter" in kwargs:
             kwargs |= {"epochs": kwargs.pop("max_iter")}
-        if "alpha" in kwargs:
-            kwargs |= {"regularizer": kwargs.pop("alpha")}
         return kwargs
