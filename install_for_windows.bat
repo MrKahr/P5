@@ -42,23 +42,39 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
     echo:  This script helps with installing the necessary dependencies
     echo:  and setting everything up.
     echo:
-    echo:  NOTE: In order to utilise Triton Windows to compile models,
-    echo:  Visual Studio Build Tools are required ^(https://aka.ms/vs/17/release/vs_BuildTools.exe^).
-    echo:
     echo:  The following steps needs to be executed:
     echo:
     echo:  - Download and install '%conda_name%' from
-    echo:    %conda_url%
+    echo:      %conda_url%
     echo:    This means accepting their license: %conda_license%
     echo:
     echo:  - Create a virtual environment at '%conda_env_prefix%'
-    echo:    and install dependencies from %conda_environ%
+    echo:    and install dependencies from '%conda_environ%'.
     echo:
-    echo:  - Copy CUDA file '%cudalib_file%' to the location %triton_windows_name% expects
+    echo:  - Copy CUDA file '%cudalib_file%' to the location %triton_windows_name% expects.
     echo:
-    echo:  - Patch bug in %torch_name% file '%torch_codecache_file%'
+    echo:  - Patch bug in %torch_name% file %torch_codecache_path%.
     echo: ______________________________________________________________
     echo:
+    echo:  NOTE_1:
+    echo:        In order to utilise Triton Windows to compile models,
+    echo:        MSVC and Windows SDK are required.
+    echo:        They can be installed with Visual Studio Build Tools:
+    echo:          https://aka.ms/vs/17/release/vs_BuildTools.exe
+    echo:        However, this is NOT required in order use the program.
+    echo:
+    echo:  NOTE_2: (after installing everything)
+    echo:        In order to use the CLI with the environment, start a
+    echo:        powershell terminal and enter command:
+    echo:
+    echo:        ^& '%conda_shell_hook%'; conda activate '%conda_env_path%'
+    echo:
+    echo:        then, run main as follows:
+    echo:
+    echo:        ^& '%conda_python_path%' '%main_path%' ^<CLI options here^>
+    echo:
+    echo: ______________________________________________________________
+
 
 :menu
     echo:
@@ -66,7 +82,7 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
     echo:
     echo: ____Start______________
     echo:  1. Install everything.
-    echo:  2. Start program.
+    echo:  2. Start program (without CLI, see NOTE_2).
     echo:
     echo: ____%conda_name%___________
     echo:  c1. Download and install %conda_name%.
@@ -144,7 +160,7 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
         ECHO:   https://github.com/woct0rdho/triton-windows/issues/10
         ECHO: The issue is resolved by PyTorch in v2.6 nightly, however, we use 2.5.1 stable.
         ECHO: Thus, we fix the bug manually using the code from the fixed PyTorch version.
-        ECHO: NOTE: The patch is line 466-470.
+        ECHO: NOTE: The patch is line 466-470 in file %torch_patched_codecache_path%.
         ECHO: ===========================================
         ECHO:
         ECHO: Press enter to continue
