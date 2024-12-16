@@ -41,7 +41,11 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
     echo:  Hello there!
     echo:  This script helps with installing the necessary dependencies
     echo:  and setting everything up.
-    echo:  To do this, the following steps will be executed:
+    echo:
+    echo:  NOTE: In order to utilise Triton Windows to compile models,
+    echo:  Visual Studio Build Tools are required ^(https://aka.ms/vs/17/release/vs_BuildTools.exe^).
+    echo:
+    echo:  The following steps needs to be executed:
     echo:
     echo:  - Download and install '%conda_name%' from
     echo:    %conda_url%
@@ -80,6 +84,9 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
     echo: ____Other______________
     echo:  o1. Reinstall environment.
     echo:
+    echo: ____exit______________
+    echo:  q. Exit installer.
+    echo:
     set /p menuChoice="Select option: "
 
     IF %menuChoice%==1 (
@@ -115,6 +122,7 @@ SET torch_patched_codecache_path=%installer_path%\%torch_codecache_file%
         CALL :copy_files_to_cuda_path
         CALL :fix_bug_in_pytorch
     )
+    IF %menuChoice%==q GOTO EOF
     IF %menuChoice%==h1 (
         ECHO:
         ECHO: ==============Explanation==================
