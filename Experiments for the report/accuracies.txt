@@ -305,3 +305,11 @@ E2.2_AVF-NB.json
 7.2_Search-DT.pipeline_config.2024-12-15_10-50-12.json
 &DecisionTreeClassifier
 &0.814&0.773&0.131&0.000\\
+
+7.1_Search-RF.pipeline_config.2024-12-15_10-45-24.json
+&RandomForestClassifier
+&0.966&0.965&0.597&0.460\\
+
+7.2_Search-RF.pipeline_config.2024-12-15_10-47-36.json
+&RandomForestClassifier
+&0.814&0.919&0.434&0.241\\
