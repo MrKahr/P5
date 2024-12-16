@@ -302,3 +302,6 @@ E2.2_AVF-NB.json
 &DecisionTreeClassifier
 &0.955&0.959&0.572&0.482\\
 
+7.2_Search-DT.pipeline_config.2024-12-15_10-50-12.json
+&DecisionTreeClassifier
+&0.814&0.773&0.131&0.000\\

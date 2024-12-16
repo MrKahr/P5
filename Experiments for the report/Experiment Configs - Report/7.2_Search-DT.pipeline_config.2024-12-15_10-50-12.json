@@ -158,7 +158,7 @@
             "step": 1
         },
         "RandomizedSearchCV": {
-            "n_iter": 4300000,
+            "n_iter": 433125,
             "random_state": 378
         },
         "GridSearchCV": {

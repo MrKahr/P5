@@ -121,31 +121,31 @@
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 50,
-                    "size": 100
+                    "high": 22,
+                    "size": 50
                 }
             },
             "min_samples_split": {
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 40,
-                    "size": 100
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_samples_leaf": {
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 1,
-                    "high": 30,
-                    "size": 100
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_weight_fraction_leaf": {
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 1.0,
+                    "high": 0.5,
                     "size": 100
                 }
             },
@@ -157,7 +157,7 @@
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 100,
+                    "high": 50,
                     "size": 100
                 }
             },
@@ -165,7 +165,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.3,
+                    "high": 0.2,
                     "size": 100
                 }
             },
@@ -173,8 +173,8 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.8,
-                    "size": 50
+                    "high": 0.5,
+                    "size": 100
                 }
             }
         },
