@@ -105,7 +105,7 @@ class ConfigTemplate(object):
                     },
                 },
                 "StatisticalFeatureSelection": {
-                    "score_function": FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name,
+                    "score_function": FeatureScoreFunc.MUTUAL_INFO_CLASSIFIER.name,
                     "MutualInfoClassifArgs": {
                         "discrete_features": False,  # False if dataset contains floats (i.e. if using MÅL)
                         "n_neighbors": 3,

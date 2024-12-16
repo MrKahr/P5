@@ -1930,7 +1930,7 @@
                 }
             },
             "StatisticalFeatureSelection": {
-                "score_function": "MUTUAL_INFO_CLASSIFER",
+                "score_function": "MUTUAL_INFO_CLASSIFIER",
                 "MutualInfoClassifArgs": {
                     "discrete_features": true,
                     "n_neighbors": 3,
