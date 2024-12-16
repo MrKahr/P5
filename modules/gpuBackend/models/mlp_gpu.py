@@ -3,6 +3,7 @@ import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
 import torch
+import triton
 
 from modules.gpuBackend.activation.activationFunctionSelector import (
     ActivationFunctionSelector,
@@ -193,6 +194,9 @@ class MLPClassifierGPU(KerasClassifier):
             jit_compile = "auto"
         else:
             jit_compile = True
+
+        if triton.msvc_winsdk_inc_dirs is None or triton.cuda_bin_path is None:
+            jit_compile = "auto"
 
         model.compile(
             loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile=jit_compile
