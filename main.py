@@ -90,7 +90,7 @@ if SetupConfig.arg_batch:
                 str(SetupConfig.pipeline_config_path),
                 pipeline_report,
                 "test_accuracies",
-                Path("Experiments for the report", "accuracies"),
+                "accuracies",
                 "&",
             )
 else:
@@ -103,6 +103,6 @@ else:
         str(SetupConfig.pipeline_config_path),
         pipeline_report,
         "test_accuracies",
-        Path("Experiments for the report", "accuracies"),
+        "accuracies",
         "&",
     )

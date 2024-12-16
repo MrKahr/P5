@@ -65,9 +65,9 @@ class SummaryExporter:
             The unique ID of this batch.
             Used to distinguish summaries across batch runs.
         """
+        logger.info(f"Exporting model summary")
         export_folder = Path(SetupConfig.summary_dir, batch_id)
         os.makedirs(export_folder, exist_ok=True)
-        logger.info(f"Exporting model summary")
 
         export_dict = {}
         for k, v in pipeline_report.items():
