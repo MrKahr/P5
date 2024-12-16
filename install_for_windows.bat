@@ -14,7 +14,7 @@ SET conda_env_prefix=./%conda_env_name%
 SET conda_env_path=%~dp0%conda_env_name%
 SET conda_environ=environment.yml
 SET conda_path=%USERPROFILE%\Miniconda3
-SET conda_exe=%conda_path\_conda.exe
+SET conda_exe=%conda_path%\_conda.exe
 SET conda_shell_hook=%USERPROFILE%\miniconda3\shell\condabin\conda-hook.ps1
 
 :: Python & Program
@@ -194,9 +194,6 @@ EXIT /B
 
 :start_program
 ECHO:
-ECHO: Activating environment
-CALL powershell -ExecutionPolicy ByPass -NoExit -Command "& '%conda_shell_hook%'; conda activate '%conda_env_path%'; '%conda_python_path%' '%main_path%'; Write-Host '`n'; Read-Host -Prompt 'Press Enter to exit'"
-pause
 ECHO: Starting program
-START powershell -NoExit -command "& '%conda_exe%' activate '%conda_env_path%'"; -command "'%conda_python_path%' '%main_path%'"; Write-Host "`n"; "Read-Host -Prompt 'Press Enter to exit'"
+START powershell -ExecutionPolicy ByPass -Command "& '%conda_shell_hook%'; conda activate '%conda_env_path%'"; "& '%conda_python_path%' '%main_path%'"; Write-Host "`n"; "Read-Host -Prompt 'Press Enter to exit'"
 EXIT /B
