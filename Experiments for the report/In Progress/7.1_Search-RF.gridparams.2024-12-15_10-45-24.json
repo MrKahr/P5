@@ -57,7 +57,7 @@
             ],
             "max_samples": {
                 "start": 200,
-                "stop": 1000,
+                "stop": 928,
                 "step": 100
             }
         },

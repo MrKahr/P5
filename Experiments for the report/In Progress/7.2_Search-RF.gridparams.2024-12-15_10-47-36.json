@@ -120,24 +120,24 @@
             "max_depth": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 50,
-                    "size": 100
+                    "low": 8,
+                    "high": 30,
+                    "size": 60
                 }
             },
             "min_samples_split": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 40,
-                    "size": 100
+                    "low": 7,
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_samples_leaf": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 1,
-                    "high": 30,
+                    "low": 3,
+                    "high": 10,
                     "size": 100
                 }
             },
@@ -145,7 +145,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 1.0,
+                    "high": 0.5,
                     "size": 100
                 }
             },
@@ -156,8 +156,8 @@
             "max_leaf_nodes": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 100,
+                    "low": 50,
+                    "high": 70,
                     "size": 100
                 }
             },
@@ -165,7 +165,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.3,
+                    "high": 0.2,
                     "size": 100
                 }
             },
@@ -173,8 +173,8 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.8,
-                    "size": 50
+                    "high": 0.5,
+                    "size": 100
                 }
             }
         },
@@ -182,8 +182,8 @@
             "n_estimators": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 50,
-                    "high": 5000,
+                    "low": 100,
+                    "high": 1000,
                     "size": 200
                 }
             },
@@ -196,9 +196,9 @@
             "max_samples": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 10,
-                    "high": 1500,
-                    "size": 100
+                    "low": 200,
+                    "high": 928,
+                    "size": 200
                 }
             }
         },
