@@ -82,21 +82,25 @@ class GridTemplate(object):
                         "logistic",
                         "relu",
                         "tanh",
-                    ],  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    ],  # type: Literal["logistic", "tanh", "relu"]
                     "solver": [
                         "sgd",
                         "lbfgs",
                         "adam",
-                    ],  # type: Literal["lbfgs", "sgd", "adam"]
+                    ],  # type: Literal["sgd", "adam"]
                     "learning_rate": [
-                        "constant"
-                    ],  # type: Literal["constant", "invscaling", "adaptive"]
-                    "learning_rate_init": [0.001],
+                        "constant"  # type: Literal["constant"]
+                    ],
+                    "learning_rate_init": {
+                        "start": 0.001,
+                        "stop": 0.1,
+                        "step": 0.2,
+                    },
                     "alpha": {
                         "start": 0.0001,
                         "stop": 0.001,
                         "step": 0.1,
-                    },  # NOTE: Not used by MLPClassifierGPU
+                    },
                     "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
                     "tol": {
                         "start": 0.0001,
@@ -168,19 +172,21 @@ class GridTemplate(object):
                         "logistic",
                         "relu",
                         "tanh",
-                    ],  # type: Literal["identity", "logistic", "tanh", "relu"]
+                    ],  # type: Literal["logistic", "tanh", "relu"]
                     "solver": [
                         "sgd",
-                        "lbfgs",
                         "adam",
-                    ],  # type: Literal["lbfgs", "sgd", "adam"]
+                    ],  # type: Literal["sgd", "adam"]
                     "learning_rate": [
-                        "constant",
-                    ],  # type: Literal["constant"]
-                    "learning_rate_init": [0.001],
-                    "alpha": {  # NOTE: Not used by MLPClassifierGPU
+                        "constant",  # type: Literal["constant"]
+                    ],
+                    "learning_rate_init": {
                         "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 1},
+                        "dist_params": {"low": 0.001, "high": 0.1, "size": 200},
+                    },
+                    "alpha": {
+                        "dist": VariableDistribution.RANDFLOAT.name,
+                        "dist_params": {"low": 0.0001, "high": 0.01, "size": 200},
                     },
                     "max_iter": [1000],
                     "tol": {  # NOTE: Not used by MLPClassifierGPU
