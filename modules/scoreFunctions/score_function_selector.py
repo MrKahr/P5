@@ -154,7 +154,7 @@ class ScoreFunctionSelector:
                 selected_score_func = FeatureSelectScoreFunctions.fClassifIndependence
 
             # Mutual information function
-            elif score_func == FeatureScoreFunc.MUTUAL_INFO_CLASSIFER.name:
+            elif score_func == FeatureScoreFunc.MUTUAL_INFO_CLASSIFIER.name:
                 # Lambda function needed to supply kwargs to the function when called elsewhere
                 # (as the users of this callable cannot supply such args)
                 selected_score_func = lambda train_x, true_y: FeatureSelectScoreFunctions.mutualInfoClassif(

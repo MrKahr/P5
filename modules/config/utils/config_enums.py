@@ -50,7 +50,7 @@ class FeatureSelectionCriterion(Enum):
 class FeatureScoreFunc(Enum):
     CHI2 = 0
     ANOVA_F = 1
-    MUTUAL_INFO_CLASSIFER = 2
+    MUTUAL_INFO_CLASSIFIER = 2
 
 
 # SECTION Model Selection

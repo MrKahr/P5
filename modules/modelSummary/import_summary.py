@@ -39,7 +39,6 @@ class SummaryImporter:
         x_label: str,
         y_label: str = "Accuracy Score",
         plot_title: str = "Accuracy by Score Function",
-        legend_name: str = "Score Functions",
         file_name: str = "scorefunctionPlot",
     ) -> None:
         fig, ax = plt.subplots(figsize=(20, 20))
@@ -58,10 +57,9 @@ class SummaryImporter:
         colors = cycle(
             mcolors.XKCD_COLORS
         )  # Long list of colors from https://matplotlib.org/stable/gallery/color/named_colors.html
-        x = np.arange(len(results_labels))
+        x = np.arange(min(len(results_labels), len(next(iter(results.values())))))
         for k, v in results.items():
             plt.plot(v)
-
             y_min = baseline[k]
             v_arr = np.array(v)
             v_yscaled = v_arr + ((v_arr - y_min) * -1)
@@ -78,7 +76,7 @@ class SummaryImporter:
                 )
         ax.set_xticks(
             x,
-            results_labels,
+            results_labels[: len(x)],
         )
 
         # Plot axis

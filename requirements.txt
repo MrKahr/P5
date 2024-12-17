@@ -1,4 +1,4 @@
-pandas
+pandas<=2.2.3
 numpy<=2.2.0
 matplotlib==3.9.4
 scikit-learn==1.5.2
@@ -7,5 +7,4 @@ tqdm==4.67.1
 
 # For GPU-based models
 scikeras==0.13.0 # Bridge between scikit-learn and Tensorflow / PyTorch
---extra-index-url https://download.pytorch.org/whl/cu124 # Add CUDA support for PyTorch
-torch==2.5.1 # PyTorch
+https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post5/triton-3.1.0-cp312-cp312-win_amd64.whl # Windows fork of Triton, language & compiler for NNs

@@ -1,0 +1,13 @@
+name: p5deps
+channels:
+  - defaults
+  - pytorch
+  - nvidia
+dependencies:
+  - python==3.12.7
+  - pytorch==2.5.1
+  - pytorch-cuda==12.4
+  - cuda-toolkit==12.4
+  - pip
+  - pip:
+    - -r requirements.txt

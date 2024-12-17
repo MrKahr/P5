@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, Namespace
+import os
 from pathlib import Path
 import sys
 
@@ -58,7 +59,7 @@ class AppArguments:
         parser.add_argument(
             "--plot_result",
             "-p",
-            help="plot summary results from multiple models. Argument the to search for in summary files (default: '%(default)s')",
+            help="plot summary results from multiple models. Argument the key to search for in summary files (default: '%(default)s')",
         )
         parser.add_argument(
             "--summary_path",
@@ -92,10 +93,6 @@ class AppArguments:
             # Save argument
             SetupConfig.arg_export_path = export_path
 
-        load_summary_path = Path(args.summary_path)
-        if not (load_summary_path.exists() or load_summary_path.resolve().exists()):
-            raise RuntimeError(f"Directory {load_summary_path} does not exists")
-
         SetupConfig.arg_batch = args.batch
         SetupConfig.arg_export = args.export
         return args
@@ -106,6 +103,7 @@ class AppArguments:
             ConfigExporter().exportConfigs(args.export)
             sys.exit()
         if args.plot_result:
+            os.makedirs(args.summary_path, exist_ok=True)
             SummaryImporter.plotSummaries(args.summary_path, [args.plot_result])
             sys.exit()
 
