@@ -88,7 +88,7 @@ class SummaryExporter:
                 export_dict[k] = cls._serialize(v)
 
         export_dict["pipeline_config"] = PipelineConfig().getConfig()
-        export_dict["grid_config"] = GridConfig().getConfig()
+        export_dict["grid_config"] = cls._serialize(GridConfig().getConfig())
 
         estimator_name = type(pipeline_report["estimator"]).__name__
         time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
