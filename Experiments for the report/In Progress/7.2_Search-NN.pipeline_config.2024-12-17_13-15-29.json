@@ -1,10 +1,10 @@
 {
     "General": {
-        "loglevel": "DEBUG",
+        "loglevel": "INFO",
         "n_jobs": -1,
         "write_figure_to_disk": true,
         "UseCleaner": true,
-        "UseStatisticalFeatureSelector": false,
+        "UseStatisticalFeatureSelector": true,
         "UseTransformer": false,
         "UseOutlierRemoval": false,
         "UseContinuousFeatures": false
@@ -47,13 +47,13 @@
                 }
             },
             "OneHotEncoding": {
-                "UseOneHotEncoding": false,
+                "UseOneHotEncoding": true,
                 "OneHotEncodeLabels": [
                     "Eksudattype"
                 ]
             },
             "Imputation": {
-                "ImputationMethod": "NONE",
+                "ImputationMethod": "MODE",
                 "KNN_NearestNeighbors": 5,
                 "KNN_DistanceMetric": "MATRIX"
             },
@@ -66,7 +66,7 @@
             }
         },
         "StatisticalFeatureSelection": {
-            "score_function": "MUTUAL_INFO_CLASSIFIER",
+            "score_function": "CHI2",
             "MutualInfoClassifArgs": {
                 "discrete_features": true,
                 "n_neighbors": 3,
@@ -82,16 +82,16 @@
     "ModelSelection": {
         "model": "NEURAL_NETWORK",
         "DecisionTree": {
-            "criterion": "gini",
-            "max_depth": null,
-            "min_samples_split": 2,
-            "min_samples_leaf": 1,
-            "min_weight_fraction_leaf": 0,
-            "max_features": "sqrt",
-            "random_state": 42,
-            "max_leaf_nodes": null,
+            "min_weight_fraction_leaf": 0.0,
+            "min_samples_split": 6,
+            "min_samples_leaf": 7,
             "min_impurity_decrease": 0.0,
-            "ccp_alpha": 0.0
+            "max_leaf_nodes": 22,
+            "max_features": "sqrt",
+            "max_depth": 10,
+            "criterion": "gini",
+            "ccp_alpha": 0.0,
+            "random_state": 42
         },
         "RandomForest": {
             "n_estimators": 100,
@@ -112,7 +112,7 @@
             "solver": "sgd",
             "learning_rate": "constant",
             "learning_rate_init": 0.001,
-            "batch_size": 2000,
+            "batch_size": 500,
             "alpha": 0.0001,
             "max_iter": 1000,
             "tol": 0.0001,
@@ -128,7 +128,7 @@
         }
     },
     "ModelTraining": {
-        "training_method": "RFE",
+        "training_method": "RANDOM_SEARCH",
         "score_functions": [
             "ALL"
         ],
@@ -158,7 +158,7 @@
             "step": 1
         },
         "RandomizedSearchCV": {
-            "n_iter": 10,
+            "n_iter": 120,
             "random_state": 378
         },
         "GridSearchCV": {
@@ -169,10 +169,10 @@
     },
     "ModelEvaluation": {
         "print_model_report": true,
-        "plot_confusion_matrix": false,
-        "plot_roc_curves": false,
-        "plot_feature_importance": false,
-        "plot_tree": false,
+        "plot_confusion_matrix": true,
+        "plot_roc_curves": true,
+        "plot_feature_importance": true,
+        "plot_tree": true,
         "plot_decision_boundary": false
     }
 }

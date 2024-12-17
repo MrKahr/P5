@@ -1,12 +1,12 @@
 {
     "General": {
-        "loglevel": "DEBUG",
+        "loglevel": "INFO",
         "n_jobs": -1,
         "write_figure_to_disk": true,
         "UseCleaner": true,
-        "UseStatisticalFeatureSelector": false,
-        "UseTransformer": false,
-        "UseOutlierRemoval": false,
+        "UseStatisticalFeatureSelector": true,
+        "UseTransformer": true,
+        "UseOutlierRemoval": true,
         "UseContinuousFeatures": false
     },
     "DataPreprocessing": {
@@ -60,13 +60,13 @@
             "Normalisation": {
                 "NormalisationMethod": "MIN_MAX",
                 "NormaliseFeatures": [
-                    "Niveau sårvæv",
-                    "Sårskorpe"
+                    "Niveau s\u00e5rv\u00e6v",
+                    "S\u00e5rskorpe"
                 ]
             }
         },
         "StatisticalFeatureSelection": {
-            "score_function": "MUTUAL_INFO_CLASSIFIER",
+            "score_function": "CHI2",
             "MutualInfoClassifArgs": {
                 "discrete_features": true,
                 "n_neighbors": 3,
@@ -80,7 +80,7 @@
         }
     },
     "ModelSelection": {
-        "model": "DECISION_TREE",
+        "model": "NEURAL_NETWORK",
         "DecisionTree": {
             "criterion": "gini",
             "max_depth": null,
@@ -112,6 +112,7 @@
             "solver": "sgd",
             "learning_rate": "constant",
             "learning_rate_init": 0.001,
+            "batch_size": 2000,
             "alpha": 0.0001,
             "max_iter": 1000,
             "tol": 0.0001,
@@ -127,7 +128,7 @@
         }
     },
     "ModelTraining": {
-        "training_method": "RFE",
+        "training_method": "RFECV",
         "score_functions": [
             "ALL"
         ],

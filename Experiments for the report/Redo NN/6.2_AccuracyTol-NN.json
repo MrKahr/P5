@@ -128,7 +128,7 @@
         }
     },
     "ModelTraining": {
-        "training_method": "RFE",
+        "training_method": "RFECV",
         "score_functions": [
             "ALL"
         ],
