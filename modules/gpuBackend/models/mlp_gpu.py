@@ -3,8 +3,11 @@ import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
 
-from modules.gpuBackend.activation.activationFunctionSelector import ActivationFunctionSelector
+from modules.gpuBackend.activation.activationFunctionSelector import (
+    ActivationFunctionSelector,
+)
 from modules.gpuBackend.optimizers.optimizerSelector import OptimizerSelector
+from modules.gpuBackend.regularizer.regularizerSelector import RegularizerSelector
 from modules.logging import logger
 
 # SECTION - SciKeras MLPClassifier example
@@ -30,11 +33,12 @@ class MLPClassifierGPU(KerasClassifier):
         optimizer: (
             Literal["adam", "sgd"] | keras.Optimizer
         ) = "adam",  # "solver" in scikit
-        activation: Literal["logistic","relu","tanh"] | Callable = "relu",
+        activation: Literal["logistic", "relu", "tanh"] | Callable = "relu",
         learning_rate: str = "constant",
         learning_rate_init: float = 0.001,
         alpha: float = 0.0001,
         epochs: int = 200,  # "max_iter" in scikit
+        batch_size=200,
         tol: float = 0.0001,
         random_state: Union[int, RandomState, None] = None,
         verbose: int = 1,
@@ -55,11 +59,11 @@ class MLPClassifierGPU(KerasClassifier):
             Can be an instance of a keras optimizer or a string literal.
             By default `"adam"`.
             NOTE: Called "solver" in scikit-learn.
-        
-        activation: Literal["logistic","relu","tanh"] | Callable 
-            Activation function for all layers except input/output 
+
+        activation: Literal["logistic","relu","tanh"] | Callable
+            Activation function for all layers except input/output
             By default "relu"
-            NOTE: "logistic" is defined as "sigmoid" in scikit-learn
+            NOTE: "logistic" is defined as "sigmoid" in scikit-learn.
 
         learning_rate : str, optional
             Adjust learning rate across epochs.
@@ -80,6 +84,10 @@ class MLPClassifierGPU(KerasClassifier):
             By default `200`.
             NOTE: Called "max_iter" in scikit-learn.
 
+        batch_size : int, optional
+            Size of minibatches for stochastic optimizers.
+            By default `200`.
+
         random_state : Union[int, RandomState, None], optional
             Determines random number generation for weights and bias initialization etc.
             Pass an int for reproducible results across multiple function calls.
@@ -87,24 +95,22 @@ class MLPClassifierGPU(KerasClassifier):
 
         verbose : int, optional
             Enable verbose logging of training and inference.
-            `0` = False, `1` = True.
             By default `1`.
         """
         super().__init__(
             optimizer=OptimizerSelector.getOptimizer(
                 optimizer, learning_rate=learning_rate_init
             ),
+            batch_size=batch_size,
             random_state=random_state,
             epochs=epochs,
             verbose=verbose,
         )
-        self.activation = ActivationFunctionSelector.getActivationFunction(
-                activation
-        )
+        self.activation = ActivationFunctionSelector.getActivationFunction(activation)
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate = learning_rate
         self.learning_rate_init = learning_rate_init
-        self.alpha = alpha  # Not implemented
+        self.regularizer = RegularizerSelector.getRegularizer("l2", l2=alpha)
         self.tol = tol  # Not implemented
 
         if learning_rate != "constant":
@@ -133,12 +139,16 @@ class MLPClassifierGPU(KerasClassifier):
         """
         model = keras.Sequential()
         # Input layer
-        inp = keras.layers.Input(shape=(self.n_features_in_,))
-        model.add(inp)
+        input = keras.layers.Input(shape=(self.n_features_in_,))
+        model.add(input)
 
         # Hidden layers
         for hidden_layer_size in self.hidden_layer_sizes:
-            layer = keras.layers.Dense(hidden_layer_size, activation=self.activation)
+            layer = keras.layers.Dense(
+                hidden_layer_size,
+                activation=self.activation,
+                activity_regularizer=self.regularizer,
+            )
             model.add(layer)
 
         # Output layer
@@ -163,7 +173,13 @@ class MLPClassifierGPU(KerasClassifier):
         else:
             raise NotImplementedError(f"Unsupported task type: {self.target_type_}")
 
-        out = keras.layers.Dense(n_output_units, activation=output_activation)
+        out = keras.layers.Dense(
+            n_output_units,
+            activation=output_activation,
+            activity_regularizer=self.regularizer,
+        )
         model.add(out)
-        model.compile(loss=loss, optimizer=compile_kwargs["optimizer"])
+        model.compile(
+            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile="auto"
+        )
         return model

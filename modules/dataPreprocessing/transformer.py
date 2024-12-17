@@ -656,6 +656,31 @@ class DataTransformer:
         config = PipelineConfig()
         if config.getValue("UseTransformer"):
 
+            # Imputation
+            imputation_method = config.getValue("ImputationMethod")
+            if imputation_method != ImputationMethod.NONE.name:
+                missing_val_key = "DeleteMissingValues"
+                if config.getValue(missing_val_key, "Cleaning"):
+                    logger.warning(
+                        f"Cannot impute correctly when {missing_val_key} is True. Aborting"
+                    )
+                elif imputation_method == ImputationMethod.MODE.name:
+                    self.modeImputationByDay()
+                elif imputation_method == ImputationMethod.KNN.name:
+                    metric = None
+                    match config.getValue("KNN_DistanceMetric"):
+                        case DistanceMetric.ZERO_ONE.name:
+                            metric = self.zeroOneDistance
+                        case DistanceMetric.MATRIX.name:
+                            metric = self.matrixDistance
+                    self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
+                else:
+                    logger.warning(
+                        f"Undefined imputation method '{imputation_method}'. Skipping"
+                    )
+            else:
+                logger.info("Skipping imputation")
+
             # Discretization
             discretize_method = config.getValue("DiscretizeMethod", "Transformer")
             if discretize_method == DiscretizeMethod.NONE.name:
@@ -693,31 +718,6 @@ class DataTransformer:
                 logger.warning(
                     f"Undefined discretization method '{discretize_method}'. Skipping"
                 )
-
-            # Imputation
-            imputation_method = config.getValue("ImputationMethod")
-            if imputation_method != ImputationMethod.NONE.name:
-                missing_val_key = "DeleteMissingValues"
-                if config.getValue(missing_val_key, "Cleaning"):
-                    logger.warning(
-                        f"Cannot impute correctly when {missing_val_key} is True. Aborting"
-                    )
-                elif imputation_method == ImputationMethod.MODE.name:
-                    self.modeImputationByDay()
-                elif imputation_method == ImputationMethod.KNN.name:
-                    metric = None
-                    match config.getValue("KNN_DistanceMetric"):
-                        case DistanceMetric.ZERO_ONE.name:
-                            metric = self.zeroOneDistance
-                        case DistanceMetric.MATRIX.name:
-                            metric = self.matrixDistance
-                    self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
-                else:
-                    logger.warning(
-                        f"Undefined imputation method '{imputation_method}'. Skipping"
-                    )
-            else:
-                logger.info("Skipping imputation")
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):

@@ -72,7 +72,7 @@ class GridTemplate(object):
                         "step": 50,
                     },  # type: int | float | None
                 },
-                "ParamGridCategoricalNaiveBayes": {"min_categories": [100]},
+                "ParamGridCategoricalNaiveBayes": {"min_categories": [101]},
                 "ParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 2, "stop": 10, "step": 1},
@@ -158,7 +158,7 @@ class GridTemplate(object):
                         "dist_params": {"low": 10, "high": 500, "size": 50},
                     },
                 },
-                "RandomParamGridCategoricalNaiveBayes": {"min_categories": [100]},
+                "RandomParamGridCategoricalNaiveBayes": {"min_categories": [101]},
                 "RandomParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 1, "stop": 10, "step": 1},

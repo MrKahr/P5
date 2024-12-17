@@ -4,7 +4,7 @@ dataset/
 logs/
 config/*
 configExports/
-
+Experiment configs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

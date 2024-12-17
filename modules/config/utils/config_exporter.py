@@ -81,7 +81,7 @@ class ConfigExporter:
             disk_files[file_path] = file_hash
         return is_unique
 
-    def exportConfigs(self) -> None:
+    def exportConfigs(self, name_prefix: str) -> None:
         """Export the active configs to disk with a unique name and check for duplicate configs."""
         # Create export directory
         os.makedirs(SetupConfig.arg_export_path, exist_ok=True)
@@ -102,7 +102,7 @@ class ConfigExporter:
         for config_path in config_paths:
             file = os.path.split(config_path)[1]
             file_name, extension = os.path.splitext(file)
-            file_name = f"exported.{file_name}.{time}{extension}"
+            file_name = f"{name_prefix}.{file_name}.{time}{extension}"
             shutil.copyfile(config_path, Path(SetupConfig.arg_export_path, file_name))
 
         self._logger.info(f"All configs exported succesfully!")
