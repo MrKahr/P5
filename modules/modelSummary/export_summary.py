@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import numpy as np
 
@@ -36,6 +36,11 @@ class SummaryExporter:
             return d
         elif isinstance(input_value, np.ndarray) or hasattr(input_value, "dtype"):
             input_value = input_value.tolist()
+        elif isinstance(input_value, tuple):
+            out = []
+            for v in input_value:
+                out.append(cls._serialize(v))
+            input_value = tuple(out)
         return input_value
 
     @classmethod
