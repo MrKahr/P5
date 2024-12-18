@@ -149,10 +149,6 @@
             "n_repeats": 1,
             "random_state": 298
         },
-        "RFE": {
-            "n_features_to_select": null,
-            "step": 1
-        },
         "RFECV": {
             "min_features_to_select": 1,
             "step": 1
@@ -169,10 +165,10 @@
     },
     "ModelEvaluation": {
         "print_model_report": true,
-        "plot_confusion_matrix": true,
-        "plot_roc_curves": true,
-        "plot_feature_importance": true,
-        "plot_tree": true,
+        "plot_confusion_matrix": false,
+        "plot_roc_curves": false,
+        "plot_feature_importance": false,
+        "plot_tree": false,
         "plot_decision_boundary": false
     }
 }

@@ -70,7 +70,6 @@ class CrossValidator(Enum):
 class TrainingMethod(Enum):
     FIT = 0
     CROSS_VALIDATION = 1
-    RFE = 2
     RFECV = 3
     RANDOM_SEARCH = 4
     GRID_SEARCH = 5
