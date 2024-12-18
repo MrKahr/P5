@@ -101,9 +101,9 @@ class SummaryImporter:
     @classmethod
     def processSummariesForPlotting(
         cls, summaries: dict, keys: list[str]
-    ) -> tuple[dict, dict, list[str]]:
+    ) -> tuple[dict, dict, dict]:
         processed_summaries = {}
-        summary_labels = []
+        summary_labels = {}
         baseline = {}
 
         for summary_id, sub_summaries in summaries.items():
@@ -117,6 +117,7 @@ class SummaryImporter:
 
                 if model_name not in processed_summaries:
                     processed_summaries |= {model_name: {}}
+                    summary_labels |= {model_name: []}
 
                 model_summary = processed_summaries[model_name]
                 for key in keys:
@@ -136,7 +137,7 @@ class SummaryImporter:
                                 key_model_summary |= {k: [v]}
                     else:
                         model_summary[key] = target_value
-            summary_labels.append(summary_id)
+                summary_labels[model_name].append(summary_id)
         return processed_summaries, baseline, summary_labels
 
     @classmethod
@@ -149,7 +150,7 @@ class SummaryImporter:
                 model_name = "".join([piece.capitalize() for piece in model.split("_")])
                 cls.plotAccuracyFunctions(
                     results=result,
-                    results_labels=summary_labels,
+                    results_labels=summary_labels[model],
                     baseline=baseline[model][key],
                     x_label="Experiment",
                     plot_title=f"Accuracy by Score Function\n{model_name}",
