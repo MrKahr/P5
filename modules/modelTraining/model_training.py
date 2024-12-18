@@ -122,7 +122,6 @@ class ModelTrainer:
             Model.NAIVE_BAYES.name,
             Model.NEURAL_NETWORK.name,
         ] and self._training_method in [
-            TrainingMethod.RFE.name,
             TrainingMethod.RFECV.name,
         ]:
             self._logger.warning(
@@ -627,12 +626,6 @@ class ModelTrainer:
         elif self._training_method == TrainingMethod.CROSS_VALIDATION.name:
             fitted_estimator = self._fitWithCrossValidation(
                 self._train_x, self._train_true_y
-            )
-        elif self._training_method == TrainingMethod.RFE.name:
-            fitted_estimator = self._fitRFE(
-                self._train_x,
-                self._train_true_y,
-                **self._config.getValue("RFE", self._parent_key),
             )
         elif self._training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFEWithCrossValidation(
