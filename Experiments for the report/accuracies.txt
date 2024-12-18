@@ -298,8 +298,6 @@ E2.2_AVF-NB.json
 &DecisionTreeClassifier
 &0.935&0.957&0.584&0.491\\
 
-===== NEW =====
-
 7.1_Search-DT.pipeline_config.2024-12-14_10-54-11.json
 &DecisionTreeClassifier
 &0.955&0.959&0.572&0.482\\
@@ -403,3 +401,11 @@ E2.2_AVF-NB.json
 1_Baseline-NN.json
 &MLPClassifierGPU
 &0.828&0.821&0.195&0.050\\
+
+===== NEW =====
+
+7.2_Search-NN.pipeline_config.2024-12-17_13-15-29.json
+&MLPClassifierGPU
+&0.828&0.825&0.126&0.000\\
+
+
