@@ -423,3 +423,7 @@ E2.2_AVF-NB.json
 7.2_Search-NN.pipeline_config.2024-12-17_13-15-29.json
 &MLPClassifierGPU
 &0.828&0.825&0.126&0.000\\
+
+8_Cont-NN.pipeline_config.2024-12-19_11-10-46.json
+&MLPClassifierGPU
+&0.828&0.782&0.126&0.000\\
