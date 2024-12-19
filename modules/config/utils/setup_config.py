@@ -6,7 +6,7 @@ class SetupConfig:
 
     # General
     app_name = "P5 Project"
-    app_desc = "Student project about machine learning at AAU"
+    app_desc = "Student project about machine learning at AAU. Title: Estimating the Age of Wounds in Pigs Using Machine Learning - An Experimental Approach for Finding the Best Model"
     app_version = "0.0.1"
     is_release = False
     traceback_limit = 0 if is_release else None
