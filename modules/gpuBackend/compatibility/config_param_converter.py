@@ -1,5 +1,7 @@
 from typing import Any
 
+import numpy as np
+
 
 class ConfigParamConverter:
 
@@ -24,4 +26,14 @@ class ConfigParamConverter:
 
         if "max_iter" in kwargs:
             kwargs |= {"epochs": kwargs.pop("max_iter")}
+        if "activation" in kwargs:
+            if isinstance(kwargs["activation"], (list, np.ndarray)):
+                arr = []
+                for item in kwargs["activation"]:
+                    if item == "logistic":
+                        item = "sigmoid"
+                    arr.append(item)
+                kwargs["activation"] = np.array(arr)
+            elif kwargs["activation"] == "logistic":
+                kwargs["activation"] = "sigmoid"
         return kwargs
