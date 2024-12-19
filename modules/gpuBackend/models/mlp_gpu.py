@@ -2,8 +2,6 @@ from typing import Any, Callable, Literal, Union
 import keras
 from numpy.random import RandomState
 from scikeras.wrappers import KerasClassifier
-import torch
-import triton
 
 from modules.gpuBackend.activation.activationFunctionSelector import (
     ActivationFunctionSelector,
@@ -183,22 +181,5 @@ class MLPClassifierGPU(KerasClassifier):
             ),
         )
         model.add(out)
-
-        # Check GPU capability
-        cuda_device_cap = torch.cuda.get_device_capability()
-        required_device_cap = (8, 1)
-        if cuda_device_cap < required_device_cap:
-            logger.warning(
-                f"CUDA device capability {cuda_device_cap} is lower than {required_device_cap}. Disabling Triton compiler"
-            )
-            jit_compile = "auto"
-        else:
-            jit_compile = True
-
-        if triton.msvc_winsdk_inc_dirs is None or triton.cuda_bin_path is None:
-            jit_compile = "auto"
-
-        model.compile(
-            loss=loss, optimizer=compile_kwargs["optimizer"], jit_compile=jit_compile
-        )
+        model.compile(loss=loss, optimizer=compile_kwargs["optimizer"])
         return model

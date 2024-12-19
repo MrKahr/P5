@@ -4,6 +4,7 @@ dataset/
 logs/
 config/*
 configExports/
+.venv/
 .conda/
 
 # Byte-compiled / optimized / DLL files
