@@ -92,7 +92,7 @@ class ParamGridGenerator:
             A list of tuples defining different combinations of
             layers/neurons for training different sized Neural Networks in Grid-/Random Search.
         """
-        # How many hidden layers we want  to use for each model
+        # How many hidden layers we want to use for each model
         layer_range = self._getRange(**key_hidden_layer_sizes["layers"])
 
         # NOTE: 'size' is not used in Grid context
@@ -135,7 +135,7 @@ class ParamGridGenerator:
             # MLPClassifierGPU automatically defines output layer
             layer_tuples = []
             # Cartesian product of all layer types
-            for layer_tuple in product(input_layer, hidden_layer_sizes):
+            for layer_tuple in product(hidden_layer_sizes, repeat=1):
                 # Container for tuples
                 temp = []
                 for elem in layer_tuple:
@@ -191,7 +191,7 @@ class ParamGridGenerator:
         new_grid = {}
         for k, v in grid.items():
             if k == "hidden_layer_sizes":
-                new_grid |= {k: list(self._createGenericGrid(v).values())}
+                new_grid |= {k: self._createNNTuple(v)}
             elif isinstance(v, dict):
                 new_grid |= {k: self._getRange(**v)}
             else:
