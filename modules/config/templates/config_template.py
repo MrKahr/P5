@@ -183,10 +183,6 @@ class ConfigTemplate(object):
                     "n_repeats": 10,  # NOTE: Use 500 for model evaluation
                     "random_state": 298,  # type: int | None
                 },
-                "RFE": {
-                    "n_features_to_select": 0.50,  # type: float | int | None  # NOTE: If None, half of the features are selected. If float between 0 and 1, it is the fraction of features to select.
-                    "step": 1,  # type: float | int  # NOTE: If greater than or equal to 1, then step corresponds to the (integer) number of features to remove at each iteration. If within (0.0, 1.0), then step corresponds to the percentage (rounded down) of features to remove at each iteration.
-                },
                 "RFECV": {
                     "min_features_to_select": 1,  # type: int
                     "step": 1,  # type: float | int

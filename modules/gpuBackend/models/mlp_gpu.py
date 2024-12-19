@@ -33,7 +33,7 @@ class MLPClassifierGPU(KerasClassifier):
         optimizer: (
             Literal["adam", "sgd"] | keras.Optimizer
         ) = "adam",  # "solver" in scikit
-        activation: Literal["logistic", "relu", "tanh"] | Callable = "relu",
+        activation: Literal["sigmoid", "relu", "tanh"] | Callable = "relu",
         learning_rate: str = "constant",
         learning_rate_init: float = 0.001,
         alpha: float = 0.0001,

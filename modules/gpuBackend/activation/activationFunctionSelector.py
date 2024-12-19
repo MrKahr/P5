@@ -3,7 +3,7 @@ from keras import activations
 
 
 class ActivationFunctionSelector:
-    # Get the function pointer to activation function 
+    # Get the function pointer to activation function
 
     @classmethod
     def _getSigmoid(cls) -> activations.sigmoid:
@@ -12,6 +12,7 @@ class ActivationFunctionSelector:
     @classmethod
     def _getRelu(cls) -> activations.relu:
         return activations.relu
+
     @classmethod
     def _getTanh(cls) -> activations.tanh:
         return activations.tanh
@@ -19,12 +20,12 @@ class ActivationFunctionSelector:
     @classmethod
     def getActivationFunction(
         cls, activationFunction: str | Callable
-    ) -> Union[activations.sigmoid, activations.relu,activations.tanh]:
+    ) -> Union[activations.sigmoid, activations.relu, activations.tanh]:
         # If already defined in keras, don't waster operations searching for it
         if callable(activationFunction):
             return activationFunction
 
-        if activationFunction == "logistic":
+        if activationFunction in ["logistic", "sigmoid"]:
             # Different naming in kera caused issue where NN could not be fitted.
             activationFunction = cls._getSigmoid()
         elif activationFunction == "relu":

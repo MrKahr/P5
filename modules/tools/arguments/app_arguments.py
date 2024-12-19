@@ -59,7 +59,7 @@ class AppArguments:
         parser.add_argument(
             "--plot_result",
             "-p",
-            help="plot summary results from multiple models. Argument the key to search for in summary files (default: '%(default)s')",
+            help="plot summary results from multiple models. Argument the key to search for in summary files",
         )
         parser.add_argument(
             "--summary_path",

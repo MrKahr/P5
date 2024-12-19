@@ -1937,7 +1937,7 @@
             },
             "GridSearchCV": {
                 "return_train_score": false,
-                "refit": "accuracy",
+                "refit": "exact_accuracy",
                 "verbose": 1
             }
         },
