@@ -1913,10 +1913,6 @@
                 "n_repeats": 1,
                 "random_state": 298
             },
-            "RFE": {
-                "n_features_to_select": null,
-                "step": 1
-            },
             "RFECV": {
                 "min_features_to_select": 1,
                 "step": 1
