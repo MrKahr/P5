@@ -402,10 +402,6 @@ E2.2_AVF-NB.json
 &MLPClassifierGPU
 &0.828&0.821&0.195&0.050\\
 
-7.2_Search-NN.pipeline_config.2024-12-17_13-15-29.json
-&MLPClassifierGPU
-&0.828&0.825&0.126&0.000\\
-
 ===== NEW =====
 
 8_Cont-RF.pipeline_config.2024-12-18_10-18-51.json
@@ -415,3 +411,15 @@ E2.2_AVF-NB.json
 8_Cont-DT.pipeline_config.2024-12-18_10-03-44.json
 &DecisionTreeClassifier
 &0.904&0.928&0.564&0.543\\
+
+8_AVF-NB.json
+&CategoricalNB
+&0.933&0.953&0.563&0.376\\
+
+7.1_Search-NN.pipeline_config.2024-12-17_13-11-54.json
+&MLPClassifierGPU
+&0.828&0.908&0.311&0.158\\
+
+7.2_Search-NN.pipeline_config.2024-12-17_13-15-29.json
+&MLPClassifierGPU
+&0.828&0.825&0.126&0.000\\
