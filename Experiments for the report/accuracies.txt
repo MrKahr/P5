@@ -402,8 +402,6 @@ E2.2_AVF-NB.json
 &MLPClassifierGPU
 &0.828&0.821&0.195&0.050\\
 
-===== NEW =====
-
 8_Cont-RF.pipeline_config.2024-12-18_10-18-51.json
 &RandomForestClassifier
 &0.962&0.971&0.639&0.557\\
@@ -412,7 +410,7 @@ E2.2_AVF-NB.json
 &DecisionTreeClassifier
 &0.904&0.928&0.564&0.543\\
 
-8_AVF-NB.json
+8_Cont-NB.pipeline_config.2024-12-19_14-04-36.json
 &CategoricalNB
 &0.933&0.953&0.563&0.376\\
 
