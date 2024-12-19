@@ -96,6 +96,7 @@ class GridTemplate(object):
                         "stop": 0.1,
                         "step": 0.2,
                     },
+                    "batch_size": [2000],
                     "alpha": {
                         "start": 0.0001,
                         "stop": 0.001,
@@ -184,6 +185,7 @@ class GridTemplate(object):
                         "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.001, "high": 0.1, "size": 200},
                     },
+                    "batch_size": [2000],
                     "alpha": {
                         "dist": VariableDistribution.RANDFLOAT.name,
                         "dist_params": {"low": 0.0001, "high": 0.01, "size": 200},
