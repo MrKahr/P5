@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
+from absl import logging as absl_logging
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
 
@@ -57,7 +58,7 @@ if SetupConfig.arg_batch:
         exit(0)
 
     # Tell tqdm to consider logging module when printing progress bar
-    with logging_redirect_tqdm(loggers=[logger]):
+    with logging_redirect_tqdm(loggers=[logger, absl_logging.get_absl_logger()]):
         for i, configs in enumerate(
             tqdm(
                 config_list,
@@ -65,7 +66,7 @@ if SetupConfig.arg_batch:
                 unit="model",
                 dynamic_ncols=True,
                 colour="green",
-                position=1,
+                position=2,
                 bar_format="{l_bar}{bar:50}{r_bar}",
             )
         ):
