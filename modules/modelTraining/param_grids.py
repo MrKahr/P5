@@ -77,6 +77,17 @@ class ParamGridGenerator:
 
         return value_range
 
+    def _createFixedNNTuple(self, hidden_layer_size_spec: dict) -> list[tuple]:
+        layer_counts = self._getRange(**hidden_layer_size_spec["layers"])
+        layer_sizes = hidden_layer_size_spec["layer_size"]
+        hidden_layer_sizes = []
+        for tuple_length in layer_counts:
+            for layer_size in layer_sizes:
+                hidden_layer_sizes.append(
+                    tuple([layer_size for i in range(tuple_length)])
+                )
+        return hidden_layer_sizes
+
     def _createNNTuple(self, key_hidden_layer_sizes: dict) -> list[tuple]:
         """
         Create combinations of tuples defining Neural Network layers and neurons per layer.
@@ -191,7 +202,7 @@ class ParamGridGenerator:
         new_grid = {}
         for k, v in grid.items():
             if k == "hidden_layer_sizes":
-                new_grid |= {k: self._createNNTuple(v)}
+                new_grid |= {k: self._createFixedNNTuple(v)}
             elif isinstance(v, dict):
                 new_grid |= {k: self._getRange(**v)}
             else:
@@ -236,7 +247,7 @@ class ParamGridGenerator:
         distribution = {}
         for k, v in grid.items():
             if k == "hidden_layer_sizes":
-                distribution |= {k: self._createNNTuple(v)}
+                distribution |= {k: self._createFixedNNTuple(v)}
             else:
                 distribution |= {k: self._createGenericDistribution(v)}
         return distribution
