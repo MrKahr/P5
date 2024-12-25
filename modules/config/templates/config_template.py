@@ -146,12 +146,13 @@ class ConfigTemplate(object):
                     "hidden_layer_sizes": (10, 10),
                     "activation": "relu",  # type: Literal["logistic", "tanh", "relu"]
                     "solver": "adam",  # type: Literal["sgd", "adam"]
-                    "learning_rate": "constant",  # type: Literal["constant", "adaptive"]
-                    "learning_rate_init": 0.001,
+                    "learning_rate": "adaptive",  # type: Literal["constant", "adaptive"]
+                    "learning_rate_init": 0.1,
                     "batch_size": 2000,
                     "alpha": 0.001,
                     "max_iter": 1000,
                     "tol": 0.0001,
+                    "n_iter_no_change": 20,
                     "random_state": 678,
                 },
             },
