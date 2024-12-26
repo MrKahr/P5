@@ -177,6 +177,9 @@ class DataTransformer:
         # replace the missing value (if the most common value is 100, replace with the most common value in the column)
         # repeat
         df = self.df
+        working_df = (
+            df.copy()
+        )  # we will modify a deep copy of the dataset to ensure the order we do things won't affect the result
         impute_count = 0
         fallback_count = 0
         for index, row in df.iterrows():
@@ -200,12 +203,12 @@ class DataTransformer:
 
                     impute_count += 1
 
-                    df.at[index, label] = mode
+                    working_df.at[index, label] = mode
 
         logger.info(
             f"Mode imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
         )
-        self.df = df
+        self.df = working_df  # we're done. The working df now has all the missing values replaced and is good to go
 
     def zeroOneDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
