@@ -469,8 +469,11 @@ class DataTransformer:
 
         # initialise this to get the while loop going
         minimum_chi_square = -np.inf
+        current_range = range(lower_bounds.size - 1)
+        # NOTE we're working with pairs of lower bounds, so we stop iterating at the second-to-last index
+        # the first current_range covers all interval pairs to get a value for all of them. Subsequent ones will cover only intervals affected by lower bounds' removals
 
-        # NOTE see section on ChiMerge for how this works
+        # NOTE see section on ChiMerge for how the following works
         # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. lower_bounds[i-1] and lower_bounds[i], and lower_bounds[i] and lower_bounds[i+1])
 
         logger.info(
@@ -483,9 +486,7 @@ class DataTransformer:
             and lower_bounds.size != desired_intervals
         ):
             # calculate chi-square for all pairs of adjacent intervals.
-            for index in range(
-                lower_bounds.size - 1
-            ):  # we're working with pairs of lower bounds, so we stop iterating before we hit the last index
+            for index in current_range:
 
                 chi_square = 0
                 for i in range(2):
