@@ -174,37 +174,35 @@ class DataTransformer:
         # for every row
         # if there is a missing value, find its day
         # find the most common value in that column for that day
-        # replace the missing value
+        # replace the missing value (if the most common value is 100, replace with the most common value in the column)
         # repeat
         df = self.df
         impute_count = 0
+        fallback_count = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
+                # get a fallback-value: the mode of the feature
+                # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
+                fallback_value = df[label].mode()[0]
+                logger.info(
+                    f'Fallback value for imputation of "{label}" is {fallback_value}.'
+                )
                 if row[label] == 100:
                     day = row["Dag"]
 
-                    # logger.info(
-                    #     f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
-                    # )  # NOTE 'Internal Index' is the index of the row in the dataframe.
-                    # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
                     same_day_rows = df[df["Dag"] == day]
                     column = same_day_rows[label]
-                    mode = column.mode()[
-                        0
-                    ]  # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
-
-                    # logger.info(f"Mode of {label} is {mode}.")
+                    mode = column.mode()[0]
                     if mode == 100:
-                        logger.warning(
-                            "Mode is a missing value! Cannot properly impute!"
-                        )
+                        df.at[index, label] = fallback_value
                     else:
                         impute_count += 1
 
                     df.at[index, label] = mode
 
-                    # logger.info(f"Replaced missing value with {mode}.")
-        logger.info(f"Mode imputation replaced {impute_count} missing values")
+        logger.info(
+            f"Mode imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
+        )
         self.df = df
 
     def zeroOneDistance(
