@@ -1,5 +1,6 @@
 # Project P5
 summary/
+dataset/
 logs/
 config/*
 configExports/
