@@ -536,6 +536,27 @@ class DataTransformer:
             chi_squares = np.delete(chi_squares, index)
             lower_bounds = np.delete(lower_bounds, index + 1)
 
+            # we don't want to recalculate chi-squared values for all interval pairs, so we update current_range to only include the affected intervals
+            # 0 1 2 3 -> 0 1 2 3
+            # a b c d    a b d
+            # see above what happens when we delete interval bound c to merge its interval with interval bound b's interval
+            # we're interested in the pairs a & b and b & d. That's the interval represented by lower_bounds[index-1] & lower_bounds[index] and lower_bounds[index] & lower_bounds[index+1]
+            # but lower_bounds[index+1] does not exist in the case where index = lower_bounds.size - 1 i.e. when we have merged the last two intervals
+            # and lower_bounds[index-1] does not exist in the case where index = 0 i.e. when we have merged the first two intervals
+            # for the general case, our new current_range will be [index-1, index] (remember that we check intervals with bounds at index and index + 1 each iteration)
+            # if index = lower_bounds.size - 1, our range will be [index-1]
+            # if index = 0, our range will be [index]
+
+            if index == (lower_bounds.size - 1):
+                # we have just merged the last two intervals
+                current_range = [index - 1]
+            elif index == 0:
+                # we have just merged the first two intervals
+                current_range = [index]
+            else:
+                # we have not merged the first or last two intervals
+                current_range = [index - 1, index]
+
         logger.info(
             f"Intervals for '{value_column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
         )
