@@ -146,8 +146,6 @@ class Pipeline:
             cross_validator=CrossValidationSelector.getCrossValidator(),
             pipeline_report=pipeline_report,
         ).run()
-        pipeline_report = ModelTester(
-            pipeline_report=pipeline_report,
-        ).run()
+        pipeline_report = ModelTester(pipeline_report).run()
         ModelSummary(pipeline_report).run()
         return pipeline_report
