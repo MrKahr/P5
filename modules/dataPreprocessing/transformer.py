@@ -196,7 +196,7 @@ class DataTransformer:
                         # get a fallback-value: the mode of the feature
                         feature_column = df[label]  # type: pd.Series
                         fallback_value = feature_column[
-                            ~feature_column.isin[100]
+                            ~feature_column.isin({100})
                         ].mode()[0]
                         logger.debug(
                             f'Fallback value for imputation of "{label}" at index {index} is {fallback_value}.'
