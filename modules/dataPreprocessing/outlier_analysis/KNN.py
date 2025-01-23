@@ -14,25 +14,46 @@ from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, pipeline_report: dict) -> None:
         """
         Perform k-nearest neighbors analysis of `df`.
 
         Parameters
         ----------
-        df : pd.DataFrame
-            A dataframe of the dataset to perform KNN analysis on.
+        pipeline_report : dict
+            Pipeline report containing train/test split.
         """
+        self.train_df
+        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
+        self._train_y = pipeline_report["train_y"]  # type: pd.Series
+        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
+        self._test_y = pipeline_report["test_y"]  # type: pd.Series
+        dataset = [
+            self._train_x,
+            self._train_y,
+            self._test_x,
+            self._test_y,
+        ]
+
         # Ensure that Gris ID and Sår ID are removed as they're useless for outlier analysis
         try:
-            df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+            for item in dataset:
+                item.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
         except KeyError:
             pass
 
-        self.df = df
-        transformer = DataTransformer(self.df)
+        transformer = DataTransformer(
+            train_x=self._train_x,
+            test_x=self._test_x,
+            train_y=self._train_y,
+            test_y=self._test_y,
+        )
         transformer.minMaxNormalization("Dag")
-        self.df = transformer.df
+        pipeline_report = transformer.getPipelineReport()
+        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
+        self._train_y = pipeline_report["train_y"]  # type: pd.Series
+        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
+        self._test_y = pipeline_report["test_y"]  # type: pd.Series
 
     def knn(self, degree: int) -> None:
         """

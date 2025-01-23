@@ -169,7 +169,6 @@ class AVFAnalysis:
         plt.show()
 
 
-# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
 if __name__ == "__main__":
     # Testing code to check if AVF works
     from modules.pipeline import Pipeline
