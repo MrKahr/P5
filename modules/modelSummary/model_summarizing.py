@@ -152,19 +152,19 @@ class ModelSummary:
         """
 
         # Load model results from model report
-        train_true_y = self._pipeline_report["train_true_y"]
-        test_true_y = self._pipeline_report["test_true_y"]
+        train_y = self._pipeline_report["train_y"]
+        test_y = self._pipeline_report["test_y"]
         y_score = self._pipeline_report["estimator"].predict_proba(
             self._pipeline_report["test_x"]
         )
 
         # Get the different days trained on
-        target_names = np.unique(train_true_y)
+        target_names = np.unique(train_y)
         n_classes = len(target_names)
 
         # Split categorical classification into multiple binary classifications (one-vs-all/one-vs-rest)
-        label_binarizer = LabelBinarizer().fit(train_true_y)
-        y_onehot_test = label_binarizer.transform(test_true_y)
+        label_binarizer = LabelBinarizer().fit(train_y)
+        y_onehot_test = label_binarizer.transform(test_y)
         y_onehot_test.shape  # (n_samples, n_classes)
 
         # Store the fpr (false positive rate), tpr (true positive rate), and roc_auc (ROC area under curve) for micro and macro averaging strategies
@@ -219,7 +219,7 @@ class ModelSummary:
         disp = ConfusionMatrixDisplay.from_estimator(
             self._pipeline_report["estimator"],
             self._pipeline_report["test_x"],
-            self._pipeline_report["test_true_y"],
+            self._pipeline_report["test_y"],
         )
         disp.plot()
         self._showFigure(disp.figure_, "confusion_matrix")
@@ -233,7 +233,7 @@ class ModelSummary:
             self._pipeline_report["estimator"], x
         )
         dbd.ax_.scatter(
-            x[:, 0], x[:, 1], c=self._pipeline_report["train_true_y"], edgecolor="k"
+            x[:, 0], x[:, 1], c=self._pipeline_report["train_y"], edgecolor="k"
         )
         self._showFigure("decision_boundary")
 
