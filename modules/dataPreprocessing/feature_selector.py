@@ -23,10 +23,10 @@ class FeatureSelector:
         self._config = PipelineConfig()
         self._selected_features = None
         self._pipeline_report = pipeline_report
-        self._train_x = pipeline_report["train_x"]
-        self._train_y = pipeline_report["train_y"]
-        self._test_x = pipeline_report["test_x"]
-        self._test_y = pipeline_report["test_y"]
+        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
+        self._train_y = pipeline_report["train_y"]  # type: pd.Series
+        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
+        self._test_y = pipeline_report["test_y"]  # type: pd.Series
 
     def __modeArgCompare(
         self,
@@ -146,6 +146,7 @@ class FeatureSelector:
         transformed_x = selector.fit_transform(self._train_x, self._train_y)
         self._selected_features = selector.get_feature_names_out()
         self._train_x = pd.DataFrame(transformed_x, columns=self._selected_features)
+        self._test_x = self._test_x[self._selected_features]
 
     def run(self) -> tuple[pd.DataFrame, pd.Series, NDArray]:
         """

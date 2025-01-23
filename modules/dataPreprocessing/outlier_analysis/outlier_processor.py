@@ -5,6 +5,7 @@ import pandas as pd
 
 sys.path.insert(0, os.getcwd())
 
+from modules.dataPreprocessing.transformer import DataTransformer
 from modules.dataPreprocessing.outlier_analysis.KNN import KNNAnalysis
 from modules.dataPreprocessing.outlier_analysis.AVF import AVFAnalysis
 from modules.logging import logger
@@ -27,6 +28,10 @@ class OutlierProcessor:
         self._train_y = pipeline_report["train_y"]  # type: pd.Series
         self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
         self._test_y = pipeline_report["test_y"]  # type: pd.Series
+        self._train_df = self._train_x.copy(deep=True).join(
+            self._train_y.copy(deep=True)
+        )
+        self._test_df = self._test_x.copy(deep=True).join(self._test_y.copy(deep=True))
 
     def avf(self, k: int) -> tuple[list[int], list[int]]:
         """
@@ -43,8 +48,8 @@ class OutlierProcessor:
             Indices of outliers in train_x, test_x.
         """
         return (
-            AVFAnalysis(self._train_x.copy(deep=True)).getOutliers(k),
-            AVFAnalysis(self._test_x.copy(deep=True)).getOutliers(k),
+            AVFAnalysis(self._train_df).getOutliers(k),
+            AVFAnalysis(self._test_df).getOutliers(k),
         )
 
     def odin(self, k: int, T: int) -> tuple[list[int], list[int]]:
@@ -64,9 +69,13 @@ class OutlierProcessor:
         tuple[list[int],list[int]]
             Indices of outliers in train_x, test_x.
         """
+        dt = DataTransformer(
+            train_x=self._train_df, test_x=self._test_df, train_y=None, test_y=None
+        )
+        dt.minMaxNormalization("Dag")
         return (
-            KNNAnalysis(self._train_x.copy(deep=True)).getOutliers(k, T),
-            KNNAnalysis(self._test_x.copy(deep=True)).getOutliers(k, T),
+            KNNAnalysis(dt._train_x).getOutliers(k, T),
+            KNNAnalysis(dt._test_x).getOutliers(k, T),
         )
 
     def removeOutliers(self, outliers: tuple[list[int], list[int]]) -> None:

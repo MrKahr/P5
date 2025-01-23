@@ -14,46 +14,24 @@ from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
-    def __init__(self, pipeline_report: dict) -> None:
+    def __init__(
+        self,
+        df: pd.DataFrame,
+    ) -> None:
         """
         Perform k-nearest neighbors analysis of `df`.
 
         Parameters
         ----------
-        pipeline_report : dict
-            Pipeline report containing train/test split.
+        df : dict
+            DataFrame of features to perform KNN analysis on.
         """
-        self.train_df
-        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
-        self._train_y = pipeline_report["train_y"]  # type: pd.Series
-        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
-        self._test_y = pipeline_report["test_y"]  # type: pd.Series
-        dataset = [
-            self._train_x,
-            self._train_y,
-            self._test_x,
-            self._test_y,
-        ]
-
         # Ensure that Gris ID and Sår ID are removed as they're useless for outlier analysis
         try:
-            for item in dataset:
-                item.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
+            df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
         except KeyError:
             pass
-
-        transformer = DataTransformer(
-            train_x=self._train_x,
-            test_x=self._test_x,
-            train_y=self._train_y,
-            test_y=self._test_y,
-        )
-        transformer.minMaxNormalization("Dag")
-        pipeline_report = transformer.getPipelineReport()
-        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
-        self._train_y = pipeline_report["train_y"]  # type: pd.Series
-        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
-        self._test_y = pipeline_report["test_y"]  # type: pd.Series
+        self.df = df
 
     def knn(self, degree: int) -> None:
         """
@@ -193,7 +171,6 @@ class KNNAnalysis:
         plt.show()
 
 
-# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
 if __name__ == "__main__":
     # Testing code to check if KNN works
     from modules.pipeline import Pipeline
