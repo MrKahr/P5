@@ -489,42 +489,6 @@ class ModelTrainer:
         self._logger.info("Training model with optimal feature count")
         return self._fitWithCrossValidation(self._train_x, y)
 
-    def _fitRFE(
-        self,
-        x: Union[pd.DataFrame, ArrayLike],
-        y: Union[pd.Series, ArrayLike],
-        **kwargs,
-    ) -> FittedEstimator:
-        """
-        A Recursive Feature Elimination (RFE) with automatic
-        tuning of the number of features selected.
-
-        Parameters
-        ----------
-        **kwargs : dict
-            Additional parameters defined in the config.
-
-        Returns
-        -------
-        FittedEstimator
-            The trained model.
-
-        Links
-        -----
-        - https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-        """
-        # If the estimator was fitted with another training method
-        # because the estimator was incompatible with RFE-based training,
-        # then return that estimator.
-        estimator = self._checkModelCompatibility()
-        if estimator is not None:
-            return estimator
-
-        self._checkAllFeaturesPresent()
-        rfe = RFE(self._unfit_estimator, **kwargs).fit(x, y)
-        self._reduceFeatures(rfe.get_feature_names_out())
-        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
-
     def _fitWithCrossValidation(
         self, x: Union[pd.DataFrame, ArrayLike], y: Union[pd.Series, ArrayLike]
     ) -> FittedEstimator:

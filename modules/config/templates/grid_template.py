@@ -75,8 +75,8 @@ class GridTemplate(object):
                 "ParamGridCategoricalNaiveBayes": {"min_categories": [101]},
                 "ParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
-                        "layers": {"start": 2, "stop": 10, "step": 1},
-                        "layer_size": {"start": 2, "stop": 25, "step": 10},
+                        "layers": {"start": 2, "stop": 8, "step": 1},
+                        "layer_size": [10, 15, 20, 25],
                     },
                     "activation": [
                         "logistic",
@@ -85,29 +85,17 @@ class GridTemplate(object):
                     ],  # type: Literal["logistic", "tanh", "relu"]
                     "solver": [
                         "sgd",
-                        "lbfgs",
                         "adam",
                     ],  # type: Literal["sgd", "adam"]
                     "learning_rate": [
-                        "constant"  # type: Literal["constant"]
+                        "adaptive"  # type: Literal["constant"]
                     ],
-                    "learning_rate_init": {
-                        "start": 0.001,
-                        "stop": 0.1,
-                        "step": 0.2,
-                    },
+                    "learning_rate_init": [0.1],
                     "batch_size": [2000],
-                    "alpha": {
-                        "start": 0.0001,
-                        "stop": 0.001,
-                        "step": 0.1,
-                    },
-                    "max_iter": {"start": 1000, "stop": 10000, "step": 1000},
-                    "tol": {
-                        "start": 0.0001,
-                        "stop": 0.001,
-                        "step": 0.1,
-                    },  # NOTE: Not used by MLPClassifierGPU
+                    "alpha": [0.0001, 0.001, 0.01, 0.1],
+                    "max_iter": [10000],
+                    "tol": [0.0001],
+                    "n_iter_no_change": [20],
                 },
             },
             "RandomParamGrid": {
@@ -167,7 +155,7 @@ class GridTemplate(object):
                 "RandomParamGridNeuralNetwork": {
                     "hidden_layer_sizes": {
                         "layers": {"start": 1, "stop": 10, "step": 1},
-                        "layer_size": {"low": 2, "high": 25, "size": 100},
+                        "layer_size": [10, 15, 20, 25],
                     },
                     "activation": [
                         "logistic",
@@ -179,22 +167,14 @@ class GridTemplate(object):
                         "adam",
                     ],  # type: Literal["sgd", "adam"]
                     "learning_rate": [
-                        "constant",  # type: Literal["constant"]
+                        "adaptive",  # type: Literal["constant", "adaptive"]
                     ],
-                    "learning_rate_init": {
-                        "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.001, "high": 0.1, "size": 200},
-                    },
+                    "learning_rate_init": [0.1],
                     "batch_size": [2000],
-                    "alpha": {
-                        "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0001, "high": 0.01, "size": 200},
-                    },
-                    "max_iter": [1000],
-                    "tol": {  # NOTE: Not used by MLPClassifierGPU
-                        "dist": VariableDistribution.RANDFLOAT.name,
-                        "dist_params": {"low": 0.0001, "high": 0.001, "size": 1},
-                    },
+                    "alpha": [0.0001, 0.001, 0.01, 0.1],
+                    "max_iter": [10000],
+                    "tol": [0.0001],
+                    "n_iter_no_change": [20],
                 },
             },
         }

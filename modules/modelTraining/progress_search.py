@@ -146,7 +146,7 @@ class BaseSearchCVProgressBar(BaseSearchCV):
                         total=n_fits,
                         dynamic_ncols=True,
                         colour="#7629CC",
-                        position=0,
+                        position=1,
                         bar_format="{l_bar}{bar:50}{r_bar}",
                     )
                 )

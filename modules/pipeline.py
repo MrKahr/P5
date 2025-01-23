@@ -2,6 +2,7 @@ from typing import Any
 import pandas as pd
 from pathlib import Path
 import torch
+from absl import logging as absl_logging
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import LogLevel
@@ -53,6 +54,7 @@ class Pipeline:
 
         self._logger.setLevel(level)
         torch._logging.set_logs(all=level)
+        absl_logging.set_verbosity(level)
 
     def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
