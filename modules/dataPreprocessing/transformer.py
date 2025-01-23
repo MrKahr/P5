@@ -20,8 +20,8 @@ class DataTransformer:
     def __init__(
         self,
         train_x: pd.DataFrame,
-        test_x: pd.Series,
-        train_y: pd.DataFrame,
+        test_x: pd.DataFrame,
+        train_y: pd.Series,
         test_y: pd.Series,
     ) -> None:
         """
@@ -32,11 +32,11 @@ class DataTransformer:
         train_x : pd.DataFrame
             Training feature(s).
 
-        train_y : pd.Series
-            Target feature, i.e., "Dag".
-
         test_x : pd.DataFrame
             Test feature(s).
+
+        train_y : pd.Series
+            Target feature, i.e., "Dag".
 
         test_y : pd.Series
             Target feature, i.e., "Dag".
@@ -45,6 +45,20 @@ class DataTransformer:
         self._test_x = test_x
         self._train_y = train_y
         self._test_y = test_y
+        try:
+            self._train_df = self._train_x.copy(deep=True).join(
+                self._train_y.copy(deep=True)
+            )
+            self._test_df = self._test_x.copy(deep=True).join(
+                self._test_y.copy(deep=True)
+            )
+        except AttributeError:
+            logger.warning(
+                "Running in limited mode (1 or more data objects are missing)"
+            )
+        self._current_df: pd.DataFrame = (
+            None  # Dirty hack to enable matrix distance with KNN imputation. (Someone please refactor this mess)
+        )
 
         # Define distance matrices. Formatting is turned off for this part so the matrices don't get made into wierd shapes
         # fmt: off
@@ -198,7 +212,7 @@ class DataTransformer:
             f"One-hot encoded {size} feature{"s" if size != 1 else ""}: {", ".join(labels)}"
         )
 
-    def modeImputationByDay(self) -> None:
+    def modeImputationByDay(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Imputes missing values by replacing them with the most common value for the day where the value is missing.
         Takes no arguments and modifies the Dataframe on the class itself.
@@ -210,20 +224,19 @@ class DataTransformer:
         # find the most common value in that column for that day
         # replace the missing value (if the most common value is 100, replace with the most common value in the column)
         # repeat
-        df = self.df
-        working_df = (
-            df.copy()
+        working_df = df.copy(
+            deep=True
         )  # we will modify a deep copy of the dataset to ensure the order we do things won't affect the result
         impute_count = 0
         fallback_count = 0
         fallback_dict = dict()
-        for index, row in df.iterrows():
-            for label in df.columns.values:
+        for index, row in working_df.iterrows():
+            for label in working_df.columns.values:
 
                 if row[label] == 100:
                     day = row["Dag"]
 
-                    same_day_rows = df[df["Dag"] == day]
+                    same_day_rows = working_df[working_df["Dag"] == day]
                     day_column = same_day_rows[label]  # type: pd.Series
                     # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
                     mode = day_column.mode()[0]
@@ -232,7 +245,7 @@ class DataTransformer:
                         fallback_value = fallback_dict.get(label)
                         # if we haven't used a fallback value for this feature yet, find one and put it in the dict
                         if fallback_value == None:
-                            feature_column = df[label]  # type: pd.Series
+                            feature_column = working_df[label]  # type: pd.Series
                             fallback_value = feature_column[
                                 ~feature_column.isin({100})
                             ].mode()[0]
@@ -240,17 +253,15 @@ class DataTransformer:
                             logger.debug(
                                 f'Fallback value for imputation of "{label}" is {fallback_value}.'
                             )
-                        df.at[index, label] = fallback_value
+                        working_df.at[index, label] = fallback_value
                         fallback_count += 1
-
+                    else:
+                        working_df.at[index, label] = mode
                     impute_count += 1
-
-                    working_df.at[index, label] = mode
-
         logger.info(
             f"Mode imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
         )
-        self.df = working_df  # we're done. The working df now has all the missing values replaced and is good to go
+        return working_df  # we're done. The working df now has all the missing values replaced and is good to go
 
     def zeroOneDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
@@ -305,10 +316,8 @@ class DataTransformer:
         int
             The distance from x to y measured by counting the number of different entries in the two arrays.
         """
-
         # this is a list of the features represented by the two arrays we got as arguments
-        labels = self.df.columns.values
-
+        labels = self._current_df.columns.values
         distance = 0
         for index, entry in enumerate(x):  # NOTE enumerate makes the index available
             x_value = int(entry)
@@ -360,9 +369,10 @@ class DataTransformer:
 
     def knnImputation(
         self,
+        df: pd.DataFrame,
         distance_metric: Callable[[ArrayLike, ArrayLike, int], int],
         neighbors: int = 5,
-    ) -> None:
+    ) -> pd.DataFrame:
         """
         Imputes missing values using Scikit's KNNImputer.
         Takes no arguments and modifies the dataframe on the class itself.
@@ -372,7 +382,6 @@ class DataTransformer:
         neighbors : int
             How many nearest neighbors should be considered.
         """
-        df = self.df
         initial_count = self.countValues(df)
         imputer = KNNImputer(
             missing_values=100,
@@ -381,23 +390,22 @@ class DataTransformer:
             metric=distance_metric,
             copy=False,
         )
-
         # remove ID columns so we don't use those for distance calculations. Errors are ignored so this goes through even if the columns are already gone.
         # NOTE we do this here even if we might have done it earlier to ensure that Pig ID and Wound ID don't affect imputation regardless of whether "DeleteNonfeatures" in the config is true or not.
-        working_df = df.drop(["Gris ID", "Sår ID"], axis=1, errors="ignore")
-
+        train_y = df["Dag"]
+        train_x = df.drop(["Gris ID", "Sår ID", "Dag"], axis=1, errors="ignore")
         # NOTE this makes the imputer return a proper dataframe, rather than a numpy array
         imputer.set_output(transform="pandas")
-        working_df = imputer.fit_transform(working_df)  # type: pd.DataFrame
+        train_x = imputer.fit_transform(train_x, train_y)  # type: pd.DataFrame
 
-        for column in working_df.columns:
-            df[column] = working_df[column]
+        for column in train_x.columns:
+            df[column] = train_x[column]
 
         replaced_count = initial_count - self.countValues(df)
         logger.info(
             f"KNN Imputation replaced {replaced_count} missing value{"s" if replaced_count != 1 else ""}"
         )
-        self.df = df
+        return df
 
     def countValues(self, df: pd.DataFrame, value: int = 100) -> None:
         """
@@ -443,7 +451,9 @@ class DataTransformer:
             self._test_x[feature] - self._test_x[feature].min()
         ) / (self._test_x[feature].max() - self._test_x[feature].min())
 
-    def swapValues(self, feature: str, value1: float, value2: float) -> None:
+    def swapValues(
+        self, df: pd.DataFrame, feature: str, value1: float, value2: float
+    ) -> None:
         """
         Swap all instances of `value1` and `value2` in `feature`.
 
@@ -459,12 +469,13 @@ class DataTransformer:
             Second value.
         """
         i = 0
-        for value in self.df[feature]:
+        for value in df[feature]:
             if value == value1:
-                self.df.loc[self.df.index[i], feature] = value2
+                df.loc[df.index[i], feature] = value2
             elif value == value2:
-                self.df.loc[self.df.index[i], feature] = value1
+                df.loc[df.index[i], feature] = value1
             i += 1
+        return df
 
     def discretizeWithChiMerge(
         self,
@@ -475,30 +486,33 @@ class DataTransformer:
     ) -> list[float]:
         """
         An implementation of the ChiMerge algorithm that returns a list of interval's lower bounds given a dataframe,
-        a column of values to discretize, and a column to consider as classes(labels)
+        a column of values to discretize, and a column to consider as classes (labels).
 
         Parameters
         ----------
         class_column_name : str
-            The name of the dataframe column that the algorithm should consider as holding class labels
+            The name of the dataframe column that the algorithm should consider as holding class labels.
+
         value_column_name : str
-            The name of the dataframe column that holds the values to discretize
+            The name of the dataframe column that holds the values to discretize.
+
         merge_when_below: float
-            Intervals will only be merged when their chi-square value is below this number
+            Intervals will only be merged when their chi-square value is below this number.
+
         desired_intervals: int
-            When the number of intervals is equal to this, no more intervals will be merged
+            When the number of intervals is equal to this, no more intervals will be merged.
 
         Returns
         -------
         list[float]
-            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into
+            A list of numbers that specify the lower bounds (inclusive) of non-overlapping intervals for the values to be categorized into.
         """
         logger.info(
             f"Preparing discretization of column '{value_column_name}' with class column '{class_column_name}'"
         )
-
+        df = self._train_df
         # get values to discretize given some column name and sort them from smallest to biggest. Also handle situation where cleaner has not been used
-        values = self.df[value_column_name].dropna().to_numpy()  # type: ndarray
+        values = df[value_column_name].dropna().to_numpy()  # type: ndarray
         values.sort()
         # values of 100 are undefined, so we remove those before moving on
         values = values[values != 100]
@@ -507,7 +521,7 @@ class DataTransformer:
         lower_bounds = np.unique(values)
 
         # find distinct classes given some column name ("Dag", for example)
-        classes = self.df[class_column_name].dropna().unique()
+        classes = df[class_column_name].dropna().unique()
 
         # chi_squares[i] holds the chi-square of the intervals with the lower bounds lower_bounds[i] and lower_bounds[i+1]
         chi_squares = np.empty(lower_bounds.size - 1)
@@ -544,11 +558,11 @@ class DataTransformer:
 
                     for j in classes:
                         # find the number of examples in class j
-                        C_j = self.df[self.df[class_column_name] == j].shape[0]
+                        C_j = df[df[class_column_name] == j].shape[0]
 
                         # find the number of examples in the current interval by counting the how many Trues there are in the series returned by between() with sum()
                         R_i = (
-                            self.df[value_column_name]
+                            df[value_column_name]
                             .between(
                                 current_lower_bound,
                                 current_upper_bound,
@@ -558,9 +572,7 @@ class DataTransformer:
                         )
                         # find the number of examples of class j in the current interval
                         A_ij = (
-                            (self.df[self.df[class_column_name] == j])[
-                                value_column_name
-                            ]
+                            (df[df[class_column_name] == j])[value_column_name]
                             .between(
                                 current_lower_bound,
                                 current_upper_bound,
@@ -636,8 +648,8 @@ class DataTransformer:
             If the number of desired intervals is 0 or less, no intervals can be generated
         """
         logger.info(f"Preparing discretization of column '{column_name}'")
-
-        values = self.df[column_name].to_numpy()
+        df = self._train_df
+        values = df[column_name].to_numpy()
         # if desired intervals is 0 or less, we can't split the column into any intervals!
         if desired_intervals < 1:
             raise ValueError("Desired intervals must be 1 or more")
@@ -661,43 +673,48 @@ class DataTransformer:
 
     def assignIntervals(
         self,
+        df: pd.DataFrame,
         column_name: str,
         lower_bounds: list[float],
-    ) -> None:
+        replace_blacklist: list[float] = [100],
+    ) -> pd.DataFrame:
         """
-        Replaces values in a given column with numbers representing the interval they fit into
+        Replaces values in a given column with numbers representing the interval they fit into.
 
         Parameters
         ----------
         lower_bounds : list[float]
             A list of numbers where each number represents the lower bound of an interval.
-            Note that intervals expressed like this never overlap, and exclude their upper bound, which is the lower bound for the next interval.
-            The list should be sorted from smallest to biggest.
+            Note that intervals expressed like this never overlap, and exclude their upper bound,
+            which is the lower bound for the next interval. The list should be sorted from smallest to biggest.
+
         column_name: str
-            The name of the column whose values should be replaced
+            The name of the column whose values should be replaced.
+
         replace_blacklist: list[float]
-            A list of numbers that may or may not occur in the column and shouldn't be replaced
+            A list of values that should not be replaced. For example missing values.
         """
-        logger.info(f"Assigning intervals to values in '{column_name}'")
 
         def intervalify(
-            x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
+            x: float, lower_bounds: list[float]
         ) -> int or float:  # type: ignore
-            """Helper function for assignIntervals that maps a value to its interval
+            """
+            Helper function for assignIntervals that maps a value to its interval.
 
             Parameters
             ----------
             x : float
-                The value to map
+                The value to map.
+
             lower_bounds : list[float]
-                A list of non-overlapping intervals' lower bounds
-            replace_blacklist : list[float]
-                A list of values that should not be replaced. For example missing values.
+                A list of non-overlapping intervals' lower bounds.
+
             Returns
             -------
             int or float
-                The index of the interval that x fits into, or x, if x is in the blacklist
+                The index of the interval that x fits into, or x, if x is in the blacklist.
             """
+            nonlocal replace_blacklist
             for i in range(len(lower_bounds)):
                 if x in replace_blacklist:
                     return x
@@ -706,21 +723,16 @@ class DataTransformer:
                     upper_bound = lower_bounds[i + 1]
                 if lower_bounds[i] <= x < upper_bound:
                     return i
+            else:
+                logger.error(
+                    f"Unable to find interval for value '{x}'. Lower bounds: [{", ".join([f"{v}" for v in lower_bounds])}]"
+                )
 
-        series_to_modify = self.df[column_name]
-        self.df[column_name] = series_to_modify.apply(
-            intervalify, lower_bounds=lower_bounds
-        )
-
+        logger.info(f"Assigning intervals to values in '{column_name}'")
+        series_to_modify = df[column_name]
+        df[column_name] = series_to_modify.apply(intervalify, lower_bounds=lower_bounds)
         logger.info(f"Discretization of '{column_name}' complete")
-
-    def getPipelineReport(self) -> dict:
-        return {
-            "train_x": self._train_x,  # type: pd.DataFrame
-            "train_y": self._train_y,  # type: pd.Series
-            "test_x": self._test_x,  # type: pd.DataFrame
-            "test_y": self._test_y,  # type: pd.Series
-        }
+        return df
 
     def run(self) -> dict[str, Any]:
         """
@@ -734,31 +746,6 @@ class DataTransformer:
         config = PipelineConfig()
         if config.getValue("UseTransformer"):
 
-            # Imputation
-            imputation_method = config.getValue("ImputationMethod")
-            if imputation_method != ImputationMethod.NONE.name:
-                missing_val_key = "DeleteMissingValues"
-                if config.getValue(missing_val_key, "Cleaning"):
-                    logger.warning(
-                        f"Cannot impute correctly when {missing_val_key} is True. Aborting"
-                    )
-                elif imputation_method == ImputationMethod.MODE.name:
-                    self.modeImputationByDay()
-                elif imputation_method == ImputationMethod.KNN.name:
-                    metric = None
-                    match config.getValue("KNN_DistanceMetric"):
-                        case DistanceMetric.ZERO_ONE.name:
-                            metric = self.zeroOneDistance
-                        case DistanceMetric.MATRIX.name:
-                            metric = self.matrixDistance
-                    self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
-                else:
-                    logger.warning(
-                        f"Undefined imputation method '{imputation_method}'. Skipping"
-                    )
-            else:
-                logger.info("Skipping imputation")
-
             # Discretization
             discretize_method = config.getValue("DiscretizeMethod", "Transformer")
             if discretize_method == DiscretizeMethod.NONE.name:
@@ -769,6 +756,7 @@ class DataTransformer:
                     if value == "inf":
                         value = np.inf
 
+                    # NOTE: Intervals for train_df are used for test_df
                     interval_bounds = self.discretizeWithChiMerge(
                         column,
                         merge_when_below=value,
@@ -776,26 +764,100 @@ class DataTransformer:
                             "DiscretizeDesiredIntervals"
                         ).get(column),
                     )
-                    self.assignIntervals(
-                        column,
-                        lower_bounds=interval_bounds,
+                    self._train_x.update(
+                        self.assignIntervals(
+                            self._train_df,
+                            column,
+                            lower_bounds=interval_bounds,
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                    self._test_x.update(
+                        self.assignIntervals(
+                            self._test_df,
+                            column,
+                            lower_bounds=interval_bounds,
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
                     )
             elif discretize_method == DiscretizeMethod.NAIVE.name:
                 for column in config.getValue("DiscretizeColumns"):
+                    # NOTE: Intervals for train_df are used for test_df
                     interval_bounds = self.discretizeNaively(
                         column,
                         desired_intervals=config.getValue(
                             "DiscretizeDesiredIntervals"
                         ).get(column),
                     )
-                    self.assignIntervals(
-                        column,
-                        lower_bounds=interval_bounds,
+                    self._train_x.update(
+                        self.assignIntervals(
+                            self._train_df,
+                            column,
+                            lower_bounds=interval_bounds,
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                    self._test_x.update(
+                        self.assignIntervals(
+                            self._test_df,
+                            column,
+                            lower_bounds=interval_bounds,
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
                     )
             else:
                 logger.warning(
                     f"Undefined discretization method '{discretize_method}'. Skipping"
                 )
+
+            # Imputation
+            imputation_method = config.getValue("ImputationMethod")
+            if imputation_method != ImputationMethod.NONE.name:
+                missing_val_key = "DeleteMissingValues"
+                if config.getValue(missing_val_key, "Cleaning"):
+                    logger.warning(
+                        f"Cannot impute correctly when {missing_val_key} is True. Aborting"
+                    )
+                elif imputation_method == ImputationMethod.MODE.name:
+                    self._train_x.update(
+                        self.modeImputationByDay(self._train_df).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                    self._test_x.update(
+                        self.modeImputationByDay(self._test_df).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                elif imputation_method == ImputationMethod.KNN.name:
+                    metric = None
+                    match config.getValue("KNN_DistanceMetric"):
+                        case DistanceMetric.ZERO_ONE.name:
+                            metric = self.zeroOneDistance
+                        case DistanceMetric.MATRIX.name:
+                            metric = self.matrixDistance
+                    self._current_df = self._train_df
+                    self._train_x.update(
+                        self.knnImputation(
+                            self._current_df,
+                            metric,
+                            config.getValue("KNN_NearestNeighbors"),
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                    self._current_df = self._test_df
+                    self._test_x.update(
+                        self.knnImputation(
+                            self._current_df,
+                            metric,
+                            config.getValue("KNN_NearestNeighbors"),
+                        ).drop("Dag", axis=1),
+                        overwrite=True,
+                    )
+                else:
+                    logger.warning(
+                        f"Undefined imputation method '{imputation_method}'. Skipping"
+                    )
+            else:
+                logger.info("Skipping imputation")
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):
@@ -827,4 +889,9 @@ class DataTransformer:
                     )
         else:
             logger.info("Skipping data transformation")
-        return self.getPipelineReport()
+        return {
+            "train_x": self._train_x,  # type: pd.DataFrame
+            "train_y": self._train_y,  # type: pd.Series
+            "test_x": self._test_x,  # type: pd.DataFrame
+            "test_y": self._test_y,  # type: pd.Series
+        }
