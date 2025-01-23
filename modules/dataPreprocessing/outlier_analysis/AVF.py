@@ -25,11 +25,7 @@ class AVFAnalysis:
             A dataframe of the dataset to perform AVF analysis on.
         """
         # Ensure that Gris ID and Sår ID are removed as they're useless for outlier analysis
-        try:
-            df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
-        except KeyError:
-            pass
-
+        df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True, errors="ignore")
         self.df = df
         self._frequencies = {}
 
