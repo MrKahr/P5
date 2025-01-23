@@ -184,20 +184,23 @@ class DataTransformer:
         fallback_count = 0
         for index, row in df.iterrows():
             for label in df.columns.values:
-                # get a fallback-value: the mode of the feature
-                # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
-                feature_column = df[label]  # type: pd.Series
-                fallback_value = feature_column[~feature_column.isin[100]].mode()[0]
-                logger.info(
-                    f'Fallback value for imputation of "{label}" is {fallback_value}.'
-                )
+
                 if row[label] == 100:
                     day = row["Dag"]
 
                     same_day_rows = df[df["Dag"] == day]
                     day_column = same_day_rows[label]  # type: pd.Series
+                    # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
                     mode = day_column.mode()[0]
                     if mode == 100:
+                        # get a fallback-value: the mode of the feature
+                        feature_column = df[label]  # type: pd.Series
+                        fallback_value = feature_column[
+                            ~feature_column.isin[100]
+                        ].mode()[0]
+                        logger.debug(
+                            f'Fallback value for imputation of "{label}" at index {index} is {fallback_value}.'
+                        )
                         df.at[index, label] = fallback_value
                         fallback_count += 1
 
