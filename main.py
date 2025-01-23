@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from absl import logging as absl_logging
+from absl import logging as absl_logging  # Keras' logging module
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Set initial CWD
 
