@@ -1,6 +1,7 @@
 from typing import Any
 import pandas as pd
 from pathlib import Path
+from sklearn import model_selection
 import torch
 from absl import logging as absl_logging
 
@@ -36,7 +37,6 @@ class Pipeline:
         ----------
         train_dataset : Dataset
             Dataset used for model training.
-            Please ensure it is compatible with `test_dataset`.
         """
         self.train_dataset = train_dataset
         self.df = None  # type: pd.DataFrame
@@ -55,6 +55,41 @@ class Pipeline:
         self._logger.setLevel(level)
         torch._logging.set_logs(all=level)
         absl_logging.set_verbosity(level)
+
+    def train_test_split(self, unsplit_x: pd.DataFrame, unsplit_y: pd.Series) -> list:
+        """
+        Create train/test split.
+
+        Parameters
+        ----------
+        unsplit_x : pd.DataFrame
+            Features of full dataset.
+
+        unsplit_y : pd.Series
+            Target label of full dataset.
+
+        Returns
+        -------
+        list
+            A list of 4 elements.
+            [0] : train_x
+            [1] : test_x
+            [2] : train_y
+            [3] : test_y
+        """
+        # *_x == pd.DataFrame, *_y == pd.Series
+        train_test_args = self._config.getValue("train_test_split", "ModelTraining")
+        train_test_ratio = (
+            f"{train_test_args["train_size"]:.2f}/{1-train_test_args["train_size"]:.2f}"
+        )
+        self._logger.info(f"Train/test split: {train_test_ratio}")
+        return model_selection.train_test_split(
+            unsplit_x,
+            unsplit_y,
+            shuffle=True,
+            stratify=unsplit_y,
+            **train_test_args,
+        )
 
     def loadDataset(self, dataset: Dataset) -> pd.DataFrame:
         logger.info(f"Loading '{dataset.name}' dataset")
@@ -77,10 +112,10 @@ class Pipeline:
         # with the multi-index on Mål, we can join on multiple things at once
         return self.df.join(mål_df, how="left", on=join_columns)
 
-    def getTrainX(self) -> pd.DataFrame:
+    def getX(self) -> pd.DataFrame:
         return self.df.drop(["Dag"], axis=1, inplace=False)
 
-    def getTrueY(self) -> pd.Series:
+    def getY(self) -> pd.Series:
         return self.df["Dag"]
 
     def run(self) -> dict[str, Any]:
@@ -101,19 +136,15 @@ class Pipeline:
             self.df,
             self.train_dataset,
         ).run()
-        self.df = DataTransformer(self.df).run()
-        self.df = OutlierProcessor(self.df).run()
-
-        # Unsplit is the dataset not split into train/test
-        unsplit_x, unsplit_true_y = FeatureSelector(
-            self.getTrainX(), self.getTrueY()
+        pipeline_report = DataTransformer(
+            *self.train_test_split(self.getX(), self.getY())
         ).run()
-
+        pipeline_report = OutlierProcessor(pipeline_report).run()
+        pipeline_report = FeatureSelector(pipeline_report).run()
         pipeline_report = ModelTrainer(
             estimator=ModelSelector.getModel(),
             cross_validator=CrossValidationSelector.getCrossValidator(),
-            unsplit_x=unsplit_x,
-            unsplit_y=unsplit_true_y,
+            pipeline_report=pipeline_report,
         ).run()
         pipeline_report = ModelTester(
             pipeline_report=pipeline_report,
