@@ -626,6 +626,7 @@ class DataTransformer:
         self,
         column_name: str,
         lower_bounds: list[float],
+        force_minimum_interval: float = 0,
     ) -> None:
         """
         Replaces values in a given column with numbers representing the interval they fit into
@@ -640,8 +641,17 @@ class DataTransformer:
             The name of the column whose values should be replaced
         replace_blacklist: list[float]
             A list of numbers that may or may not occur in the column and shouldn't be replaced
+        force_minimum_interval: float
+            An override for the smallest interval lower bound used to catch edge cases where the intervals were generated without the smallest possible value in the data.
+            Defaults to 0.
         """
         logger.info(f"Assigning intervals to values in '{column_name}'")
+
+        if force_minimum_interval is not None:
+            logger.info(
+                f"Forcing smallest interval bound to be {force_minimum_interval}"
+            )
+            lower_bounds[0] = force_minimum_interval
 
         def intervalify(
             x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
