@@ -335,6 +335,8 @@ class DataTransformer:
 
         Parameters
         ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
         neighbors : int
             How many nearest neighbors should be considered.
         """
@@ -364,6 +366,24 @@ class DataTransformer:
             f"KNN Imputation replaced {replaced_count} missing value{"s" if replaced_count != 1 else ""}"
         )
         self.df = df
+
+    def fallbackKnnImputation(
+        self,
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int],
+        neighbors: int = 5,
+    ) -> None:
+        """
+        Imputes missing values using an in-house implementation of KNN-imputation.
+        Takes no arguments and modifies the dataframe on the class itself.
+
+        Parameters
+        ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
+        neighbors : int
+            How many nearest neighbors should be considered.
+        """
+        pass
 
     def countValues(self, df: pd.DataFrame, value: int = 100) -> None:
         """
