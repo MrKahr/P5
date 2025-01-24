@@ -1774,10 +1774,10 @@
         },
         "ModelEvaluation": {
             "print_model_report": true,
-            "plot_confusion_matrix": true,
-            "plot_roc_curves": true,
-            "plot_feature_importance": true,
-            "plot_tree": true,
+            "plot_confusion_matrix": false,
+            "plot_roc_curves": false,
+            "plot_feature_importance": false,
+            "plot_tree": false,
             "plot_decision_boundary": false
         }
     },

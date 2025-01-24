@@ -150,7 +150,7 @@ class ConfigTemplate(object):
                     "learning_rate_init": 0.1,
                     "batch_size": 2000,
                     "alpha": 0.001,
-                    "max_iter": 1000,
+                    "max_iter": 10000,
                     "tol": 0.0001,
                     "n_iter_no_change": 20,
                     "random_state": 678,
