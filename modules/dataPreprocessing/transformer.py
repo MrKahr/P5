@@ -231,13 +231,13 @@ class DataTransformer:
         impute_count = 0
         fallback_count = 0
         fallback_dict = dict()
-        for index, row in working_df.iterrows():
-            for label in working_df.columns.values:
+        for index, row in df.iterrows():
+            for label in df.columns.values:
 
                 if row[label] == 100:
                     day = row["Dag"]
 
-                    same_day_rows = working_df[working_df["Dag"] == day]
+                    same_day_rows = df[df["Dag"] == day]
                     day_column = same_day_rows[label]  # type: pd.Series
                     # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
                     value = day_column.mode()[0]
@@ -251,12 +251,6 @@ class DataTransformer:
                                 0
                             ]
                             fallback_dict[label] = value
-                        if fallback_value == None:
-                            feature_column = working_df[label]  # type: pd.Series
-                            fallback_value = feature_column[
-                                ~feature_column.isin({100})
-                            ].mode()[0]
-                            fallback_dict[label] = fallback_value
                             logger.debug(
                                 f'Fallback value for imputation of "{label}" is {value}.'
                             )
