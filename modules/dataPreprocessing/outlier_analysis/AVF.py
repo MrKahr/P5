@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import Any
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
@@ -24,12 +25,9 @@ class AVFAnalysis:
             A dataframe of the dataset to perform AVF analysis on.
         """
         # Ensure that Gris ID and Sår ID are removed as they're useless for outlier analysis
-        try:
-            df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
-        except KeyError:
-            pass
-
+        df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True, errors="ignore")
         self.df = df
+        self._frequencies = {}
 
     def AVF(self, row: dict) -> float:
         """
@@ -46,14 +44,11 @@ class AVFAnalysis:
             AVF score.
         """
         sum = 0
-        keys = row.keys()
-        i = 0
-        for attributeVal in row:
-            sum += self.frequency(attributeVal, keys[i])
-            i += 1
+        for k, v in row.items():
+            sum += self.frequency(v, k)
         return (1 / len(row)) * sum
 
-    def frequency(self, value: any, attribute: str, frequencies={}) -> float:
+    def frequency(self, value: Any, attribute: str) -> float:
         """
         Calculate frequency of values in the dataset and store it for future calls to this method.
 
@@ -74,11 +69,9 @@ class AVFAnalysis:
         float
             The number of times the value appears in the DataFrame.
         """
-        # `frequencies` is only initialized once (since keyword arguments are only initialized once)
-        # Thus, we can use the same dict across method calls.
-        if not frequencies.get(attribute):
-            frequencies[attribute] = self.valueOccurences(attribute)
-        return frequencies[attribute][value]
+        if not self._frequencies.get(attribute):
+            self._frequencies[attribute] = self.valueOccurences(attribute)
+        return self._frequencies[attribute][value]
 
     def valueOccurences(self, attribute: str) -> dict:
         """
@@ -169,7 +162,6 @@ class AVFAnalysis:
         plt.show()
 
 
-# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
 if __name__ == "__main__":
     # Testing code to check if AVF works
     from modules.pipeline import Pipeline

@@ -14,25 +14,21 @@ from modules.dataPreprocessing.transformer import DataTransformer
 
 
 class KNNAnalysis:
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(
+        self,
+        df: pd.DataFrame,
+    ) -> None:
         """
         Perform k-nearest neighbors analysis of `df`.
 
         Parameters
         ----------
-        df : pd.DataFrame
-            A dataframe of the dataset to perform KNN analysis on.
+        df : dict
+            DataFrame of features to perform KNN analysis on.
         """
         # Ensure that Gris ID and Sår ID are removed as they're useless for outlier analysis
-        try:
-            df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True)
-        except KeyError:
-            pass
-
+        df.drop(["Gris ID", "Sår ID"], axis=1, inplace=True, errors="ignore")
         self.df = df
-        transformer = DataTransformer(self.df)
-        transformer.minMaxNormalization("Dag")
-        self.df = transformer.df
 
     def knn(self, degree: int) -> None:
         """
@@ -172,7 +168,6 @@ class KNNAnalysis:
         plt.show()
 
 
-# TODO: Include outlier analysis in model report for plotting (soon to be: pipeline report)
 if __name__ == "__main__":
     # Testing code to check if KNN works
     from modules.pipeline import Pipeline
