@@ -677,6 +677,7 @@ class DataTransformer:
         column_name: str,
         lower_bounds: list[float],
         replace_blacklist: list[float] = [100],
+        force_minimum_interval: float = 0,
     ) -> pd.DataFrame:
         """
         Replaces values in a given column with numbers representing the interval they fit into.
@@ -693,7 +694,17 @@ class DataTransformer:
 
         replace_blacklist: list[float]
             A list of values that should not be replaced. For example missing values.
+
+        force_minimum_interval: float
+            An override for the smallest interval lower bound used to catch edge cases where the intervals were generated without the smallest possible value in the data.
+            Defaults to 0.
         """
+
+        if force_minimum_interval is not None:
+            logger.info(
+                f"Forcing smallest interval bound to be {force_minimum_interval}"
+            )
+            lower_bounds[0] = force_minimum_interval
 
         def intervalify(
             x: float, lower_bounds: list[float]
