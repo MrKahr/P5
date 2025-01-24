@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
+from heapq import *
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import (
@@ -379,6 +380,8 @@ class DataTransformer:
 
         Parameters
         ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
         neighbors : int
             How many nearest neighbors should be considered.
         """
@@ -406,6 +409,71 @@ class DataTransformer:
             f"KNN Imputation replaced {replaced_count} missing value{"s" if replaced_count != 1 else ""}"
         )
         return df
+
+    def fallbackKnnImputation(
+        self,
+        df: pd.DataFrame,
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int],
+        neighbors: int = 5,
+    ) -> pd.DataFrame:
+        """
+        Imputes missing values using an in-house implementation of KNN-imputation.
+        Takes no arguments and modifies the dataframe on the class itself.
+
+        Parameters
+        ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
+        neighbors : int
+            How many nearest neighbors should be considered.
+        """
+        working_df = df.copy()
+        impute_count = 0
+        row_heap = []
+        fallback_count = 0
+        fallback_dict = dict()
+        for outer_index, row in df.iterrows():
+            for label in df.columns.values:
+                if row[label] == 100:
+                    # we found a missing value. Find the closest neighbors using the distance function
+                    row_heap.clear()
+                    for inner_index, comparison_row in df.iterrows():
+                        if inner_index != outer_index:
+                            # we push a tuple of the format (distance, index) to the row_heap only if we're not comparing to the row we're working on
+                            heappush(
+                                row_heap,
+                                (
+                                    distance_metric(
+                                        row.to_numpy(), comparison_row.to_numpy()
+                                    ),
+                                    inner_index,
+                                ),
+                            )
+                    closest_neighbors = nsmallest(neighbors, row_heap)
+                    # get the neighbors from the dataset and get the mode of the current feature from them
+                    neighbors_feature = df.loc[[i for d, i in closest_neighbors]][
+                        label
+                    ]  # type: pd.Series
+                    value = neighbors_feature.mode()[0]
+                    if value == 100:
+                        # we need to find and use a fallback value. Reusing the code from mode imputation here.
+                        value = fallback_dict.get(label)
+                        if value == None:
+                            feature_column = df[label]  # type: pd.Series
+                            value = feature_column[~feature_column.isin({100})].mode()[
+                                0
+                            ]
+                            fallback_dict[label] = value
+                            logger.debug(
+                                f'Fallback value for imputation of "{label}" is {value}.'
+                            )
+                        fallback_count += 1
+                    working_df.at[outer_index, label] = value
+                    impute_count += 1
+        logger.info(
+            f"KNN-imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
+        )
+        return working_df  # we're done. The working df now has all the missing values replaced and is good to go
 
     def countValues(self, df: pd.DataFrame, value: int = 100) -> None:
         """
@@ -847,7 +915,7 @@ class DataTransformer:
                             metric = self.matrixDistance
                     self._current_df = self._train_df
                     self._train_x.update(
-                        self.knnImputation(
+                        self.fallbackKnnImputation(
                             self._current_df,
                             metric,
                             config.getValue("KNN_NearestNeighbors"),
@@ -856,7 +924,7 @@ class DataTransformer:
                     )
                     self._current_df = self._test_df
                     self._test_x.update(
-                        self.knnImputation(
+                        self.fallbackKnnImputation(
                             self._current_df,
                             metric,
                             config.getValue("KNN_NearestNeighbors"),
