@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
+from heapq import nsmallest, heappush
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import (
@@ -174,38 +175,46 @@ class DataTransformer:
         # for every row
         # if there is a missing value, find its day
         # find the most common value in that column for that day
-        # replace the missing value
+        # replace the missing value (if the most common value is 100, replace with the most common value in the column)
         # repeat
         df = self.df
+        working_df = (
+            df.copy()
+        )  # we will modify a deep copy of the dataset to ensure the order we do things won't affect the result
         impute_count = 0
+        fallback_count = 0
+        fallback_dict = dict()
         for index, row in df.iterrows():
             for label in df.columns.values:
+
                 if row[label] == 100:
                     day = row["Dag"]
 
-                    # logger.info(
-                    #     f"Found missing {label} at Pig ID {row['Gris ID']}, Wound ID {row['Sår ID']}, Day {day} (Internal Index {index}). Imputing..."
-                    # )  # NOTE 'Internal Index' is the index of the row in the dataframe.
-                    # It's almost the same as in the excel sheet, but not quite, because we remove unecessary or invalid rows.
                     same_day_rows = df[df["Dag"] == day]
-                    column = same_day_rows[label]
-                    mode = column.mode()[
-                        0
-                    ]  # NOTE mode() returns a dataframe, actually. Since we use it for a single column, there is only one value. Indexing the output with 0 gets us that value.
+                    day_column = same_day_rows[label]  # type: pd.Series
+                    # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
+                    value = day_column.mode()[0]
+                    if value == 100:
+                        # get a fallback-value: the mode of the feature
+                        value = fallback_dict.get(label)
+                        # if we haven't used a fallback value for this feature yet, find one and put it in the dict
+                        if value == None:
+                            feature_column = df[label]  # type: pd.Series
+                            value = feature_column[~feature_column.isin({100})].mode()[
+                                0
+                            ]
+                            fallback_dict[label] = value
+                            logger.debug(
+                                f'Fallback value for imputation of "{label}" is {value}.'
+                            )
+                        fallback_count += 1
+                    working_df.at[index, label] = value
+                    impute_count += 1
 
-                    # logger.info(f"Mode of {label} is {mode}.")
-                    if mode == 100:
-                        logger.warning(
-                            "Mode is a missing value! Cannot properly impute!"
-                        )
-                    else:
-                        impute_count += 1
-
-                    df.at[index, label] = mode
-
-                    # logger.info(f"Replaced missing value with {mode}.")
-        logger.info(f"Mode imputation replaced {impute_count} missing values")
-        self.df = df
+        logger.info(
+            f"Mode imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
+        )
+        self.df = working_df  # we're done. The working df now has all the missing values replaced and is good to go
 
     def zeroOneDistance(
         self, x: ArrayLike, y: ArrayLike, *args, missing_values: int = 100
@@ -324,6 +333,8 @@ class DataTransformer:
 
         Parameters
         ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
         neighbors : int
             How many nearest neighbors should be considered.
         """
@@ -353,6 +364,71 @@ class DataTransformer:
             f"KNN Imputation replaced {replaced_count} missing value{"s" if replaced_count != 1 else ""}"
         )
         self.df = df
+
+    def fallbackKnnImputation(
+        self,
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int],
+        neighbors: int = 5,
+    ) -> None:
+        """
+        Imputes missing values using an in-house implementation of KNN-imputation.
+        Takes no arguments and modifies the dataframe on the class itself.
+
+        Parameters
+        ----------
+        distance_metric: Callable[[ArrayLike, ArrayLike, int], int]
+            A function to return a distance between two given rows, formatted as arrays of integers
+        neighbors : int
+            How many nearest neighbors should be considered.
+        """
+        df = self.df
+        working_df = df.copy()
+        impute_count = 0
+        row_heap = []
+        fallback_count = 0
+        fallback_dict = dict()
+        for outer_index, row in df.iterrows():
+            for label in df.columns.values:
+                if row[label] == 100:
+                    # we found a missing value. Find the closest neighbors using the distance function
+                    row_heap.clear()
+                    for inner_index, comparison_row in df.iterrows():
+                        if inner_index != outer_index:
+                            # we push a tuple of the format (distance, index) to the row_heap only if we're not comparing to the row we're working on
+                            heappush(
+                                row_heap,
+                                (
+                                    distance_metric(
+                                        row.to_numpy(), comparison_row.to_numpy()
+                                    ),
+                                    inner_index,
+                                ),
+                            )
+                    closest_neighbors = nsmallest(neighbors, row_heap)
+                    # get the neighbors from the dataset and get the mode of the current feature from them
+                    neighbors_feature = df.loc[[i for d, i in closest_neighbors]][
+                        label
+                    ]  # type: pd.Series
+                    value = neighbors_feature.mode()[0]
+                    if value == 100:
+                        # we need to find and use a fallback value. Reusing the code from mode imputation here.
+                        value = fallback_dict.get(label)
+                        if value == None:
+                            feature_column = df[label]  # type: pd.Series
+                            value = feature_column[~feature_column.isin({100})].mode()[
+                                0
+                            ]
+                            fallback_dict[label] = value
+                            logger.debug(
+                                f'Fallback value for imputation of "{label}" is {value}.'
+                            )
+                        fallback_count += 1
+                    working_df.at[outer_index, label] = value
+                    impute_count += 1
+        logger.info(
+            f"KNN-imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
+        )
+        self.df = working_df  # we're done. The working df now has all the missing values replaced and is good to go
 
     def countValues(self, df: pd.DataFrame, value: int = 100) -> None:
         """
@@ -466,8 +542,11 @@ class DataTransformer:
 
         # initialise this to get the while loop going
         minimum_chi_square = -np.inf
+        current_range = range(lower_bounds.size - 1)
+        # NOTE we're working with pairs of lower bounds, so we stop iterating at the second-to-last index
+        # the first current_range covers all interval pairs to get a value for all of them. Subsequent ones will cover only intervals affected by lower bounds' removals
 
-        # NOTE see section on ChiMerge for how this works
+        # NOTE see section on ChiMerge for how the following works
         # (optimization proposed by Kerber: Only recalculate values for affected intervals i.e. lower_bounds[i-1] and lower_bounds[i], and lower_bounds[i] and lower_bounds[i+1])
 
         logger.info(
@@ -480,9 +559,7 @@ class DataTransformer:
             and lower_bounds.size != desired_intervals
         ):
             # calculate chi-square for all pairs of adjacent intervals.
-            for index in range(
-                lower_bounds.size - 1
-            ):  # we're working with pairs of lower bounds, so we stop iterating before we hit the last index
+            for index in current_range:
 
                 chi_square = 0
                 for i in range(2):
@@ -531,6 +608,27 @@ class DataTransformer:
             # intervals can be merged by deleting the largest of the two lower bounds: Merging [a,b) and [b,c) gives [a,c)!
             chi_squares = np.delete(chi_squares, index)
             lower_bounds = np.delete(lower_bounds, index + 1)
+
+            # we don't want to recalculate chi-squared values for all interval pairs, so we update current_range to only include the affected intervals
+            # 0 1 2 3 -> 0 1 2 3
+            # a b c d    a b d
+            # see above what happens when we delete interval bound c to merge its interval with interval bound b's interval
+            # we're interested in the pairs a & b and b & d. That's the interval represented by lower_bounds[index-1] & lower_bounds[index] and lower_bounds[index] & lower_bounds[index+1]
+            # but lower_bounds[index+1] does not exist in the case where index = lower_bounds.size - 1 i.e. when we have merged the last two intervals
+            # and lower_bounds[index-1] does not exist in the case where index = 0 i.e. when we have merged the first two intervals
+            # for the general case, our new current_range will be [index-1, index] (remember that we check intervals with bounds at index and index + 1 each iteration)
+            # if index = lower_bounds.size - 1, our range will be [index-1]
+            # if index = 0, our range will be [index]
+
+            if index == (lower_bounds.size - 1):
+                # we have just merged the last two intervals
+                current_range = [index - 1]
+            elif index == 0:
+                # we have just merged the first two intervals
+                current_range = [index]
+            else:
+                # we have not merged the first or last two intervals
+                current_range = [index - 1, index]
 
         logger.info(
             f"Intervals for '{value_column_name}' generated. Interval bounds are {lower_bounds.tolist()}"
@@ -593,6 +691,7 @@ class DataTransformer:
         self,
         column_name: str,
         lower_bounds: list[float],
+        force_minimum_interval: float = 0,
     ) -> None:
         """
         Replaces values in a given column with numbers representing the interval they fit into
@@ -607,8 +706,17 @@ class DataTransformer:
             The name of the column whose values should be replaced
         replace_blacklist: list[float]
             A list of numbers that may or may not occur in the column and shouldn't be replaced
+        force_minimum_interval: float
+            An override for the smallest interval lower bound used to catch edge cases where the intervals were generated without the smallest possible value in the data.
+            Defaults to 0.
         """
         logger.info(f"Assigning intervals to values in '{column_name}'")
+
+        if force_minimum_interval is not None:
+            logger.info(
+                f"Forcing smallest interval bound to be {force_minimum_interval}"
+            )
+            lower_bounds[0] = force_minimum_interval
 
         def intervalify(
             x: float, lower_bounds: list[float], replace_blacklist: list[float] = [100]
@@ -673,7 +781,9 @@ class DataTransformer:
                             metric = self.zeroOneDistance
                         case DistanceMetric.MATRIX.name:
                             metric = self.matrixDistance
-                    self.knnImputation(metric, config.getValue("KNN_NearestNeighbors"))
+                    self.fallbackKnnImputation(
+                        metric, config.getValue("KNN_NearestNeighbors")
+                    )
                 else:
                     logger.warning(
                         f"Undefined imputation method '{imputation_method}'. Skipping"
