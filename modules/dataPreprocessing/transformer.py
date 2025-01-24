@@ -193,26 +193,23 @@ class DataTransformer:
                     same_day_rows = df[df["Dag"] == day]
                     day_column = same_day_rows[label]  # type: pd.Series
                     # NOTE mode() of a series returns another series, actually. Since there can be multiple modes. Indexing the output with 0 gets us one of those modes.
-                    mode = day_column.mode()[0]
-                    if mode == 100:
+                    value = day_column.mode()[0]
+                    if value == 100:
                         # get a fallback-value: the mode of the feature
-                        fallback_value = fallback_dict.get(label)
+                        value = fallback_dict.get(label)
                         # if we haven't used a fallback value for this feature yet, find one and put it in the dict
-                        if fallback_value == None:
+                        if value == None:
                             feature_column = df[label]  # type: pd.Series
-                            fallback_value = feature_column[
-                                ~feature_column.isin({100})
-                            ].mode()[0]
-                            fallback_dict[label] = fallback_value
+                            value = feature_column[~feature_column.isin({100})].mode()[
+                                0
+                            ]
+                            fallback_dict[label] = value
                             logger.debug(
-                                f'Fallback value for imputation of "{label}" is {fallback_value}.'
+                                f'Fallback value for imputation of "{label}" is {value}.'
                             )
-                        df.at[index, label] = fallback_value
                         fallback_count += 1
-
+                    working_df.at[index, label] = value
                     impute_count += 1
-
-                    working_df.at[index, label] = mode
 
         logger.info(
             f"Mode imputation replaced {impute_count} missing values and had to use a fallback value {fallback_count} times."
