@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from numpy.typing import ArrayLike
-from heapq import *
+from heapq import nsmallest, heappush
 
 from modules.config.pipeline_config import PipelineConfig
 from modules.config.utils.config_enums import (
