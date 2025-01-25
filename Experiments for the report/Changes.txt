@@ -1,4 +1,4 @@
-=== Changes ===
+=== Changes for new experiments compared to old ===
 NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 
 
@@ -81,7 +81,7 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 
 - 7.1-NN
 	Candidates:
-	
+	672
 
 	Improvements:
 	- Fixed L2 regularization
@@ -101,6 +101,8 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	Config:
 	- n_jobs: 10
 	- max_iter: 10000
+	- layers: (2,8,1)
+	- layer_size: [10,15,20,25]
 	- alpha: [0.0001, 0.001, 0.01, 0.1]
 	- tol: [0.0001]
 	- learning_rate_init: [0.1]
@@ -110,8 +112,14 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	46080
 	
 	Time:
+	7.1 h
 	
 	Test performance:
+	- threshold			: 0.911 
+	- distance			: 0.954
+	- exact_accuracy 	: 0.553
+	- balanced_accuracy	: 0.423
+	
 	
 - 7.2-DT
 	Candidates:
@@ -146,10 +154,11 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	Config:
 	- n_jobs: 10
 	- max_iter: 10000
+	- layers: (2,8,1)
+	- layer_size: [10,15,20,25]
 	- alpha: [0.0001, 0.001, 0.01, 0.1]
 	- tol: [0.0001]
 	- learning_rate_init: [0.1]
-	- n_iter: 120 --> 67
 
 - 7.2-RF
 	Candidates:
@@ -164,12 +173,29 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- n_iter: 866250 --> 20900
 
 	Time:
+	73.6 s
 
 	Test performance:
+	- threshold			: 0.828
+	- distance			: 0.896
+	- exact_accuracy 	: 0.344
+	- balanced_accuracy	: 0.179
 
 	Config:
 	- NormalisationMethod: MIN_MAX --> NONE
+
+- 8-NB
+	Time:
+	0.071 s
 	
+	Test performance:
+	- threshold			: 0.918
+	- distance			: 0.944
+	- exact_accuracy 	: 0.493
+	- balanced_accuracy	: 0.319
+
+	NOTE:
+	Uses CROSS_VALIDATION instead of RANDOM_SEARCH
 
 - 8-NN
 	Candidates:
@@ -182,21 +208,34 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- Fixed NN-tuple generation
 	
 	Time:
+	54 m
 	
 	Test performance:
+	- threshold			: 0.828
+	- distance			: 0.804
+	- exact_accuracy 	: 0.126
+	- balanced_accuracy	: 0.000
+	
 	
 	Config:
 	- n_jobs: 10
 	- activation: Added "logistic"
+	- layers: (2,8,1)
+	- layer_size: [10,15,20,25]
 	- max_iter: 10000
 	- alpha: [0.0001, 0.001, 0.01, 0.1]
 	- tol: [0.0001]
-	- learning_rate_init: [0.1
+	- learning_rate_init: [0.1]
 	
 - 8-RF
 	Candidates:
 	- n_iter: 9216 --> 4608
 	
 	Time:
+	41 m
 	
 	Test performance:
+	- threshold			: 0.904
+	- distance			: 0.953
+	- exact_accuracy 	: 0.550
+	- balanced_accuracy	: 0.451
