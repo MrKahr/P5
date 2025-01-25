@@ -1,0 +1,202 @@
+=== Changes ===
+NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
+
+
+- 6.1-NB
+	- UseOutlierRemoval: true --> false
+
+- 6.1-NN
+	- UseStatisticalFeatureSelector: true --> false
+	- UseOutlierRemoval: true --> false
+	- ImputationMethod: NONE --> MODE
+	- Normalisation: MIN_MAX --> NONE
+	- training_method: RFECV --> FIT
+	
+- 6.2-DT
+	- NormalisationMethod: MIN_MAX --> NONE
+
+- 6.2-NB
+	- UseTransformer: false --> true
+	- OutlierRemovalMethod: AVF --> ODIN
+	
+	Transformer:
+	- UseOneHotEncoding: false
+	- ImputationMethod: MODE
+	- NormalisationMethod: NONE
+	
+	
+	- training_method: FIT --> CROSS_VALIDATION
+	
+- 6.2-NN
+	- UseStatisticalFeatureSelector: true --> false
+	- training_method: RFECV --> CROSS_VALIDATION
+	(MIN_MAX is enabled in both, but should not have been in new experiment)
+	
+- 6.2-RF
+	- UseStatisticalFeatureSelector: false --> true
+	- ImputationMethod: NONE --> MODE
+	- NormalisationMethod: MIN_MAX --> NONE
+	
+	StatisticalFeatureSelector:
+	- score_function: CHI2
+	- (GenericUnivariateSelectArgs) param: 75
+	
+- 6.3-NB
+	- UseTransformer: false --> true
+	- OutlierRemovalMethod: AVF --> ODIN
+	
+	Transformer:
+	- UseOneHotEncoding: false
+	- ImputationMethod: MODE
+	- NormalisationMethod: NONE
+
+- 6.3-NN
+	- ImputationMethod: NONE --> MODE
+	- NormalisationMethod: MIN_MAX --> NONE
+	- score_function: CHI2 --> ANOVA_F
+	- (GenericUnivariateSelectArgs) param: 50 --> 75
+	- training_method: RFECV --> CROSS_VALIDATION
+
+- 7.1-DT
+	Candidates:
+	- 209000
+
+	Time:
+	11 m
+
+	Test performance:
+	- threshold			: 0.927 
+	- distance			: 0.948
+	- exact_accuracy 	: 0.517
+	- balanced_accuracy	: 0.470
+
+	Config:
+	- UseOneHotEncoding: false --> true
+	- NormalisationMethod: MIN_MAX --> NONE
+	- min_samples_split: STOP = 10 --> 20
+	- max_leaf_nodes: STOP = 50 --> 100
+	- min_weight_fraction_leaf: (0.0, 0.5, 0.1) --> 0.0
+	- min_impurity_decrease: (0.0, 0.2, 0.03) --> 0.0
+	- ccp_alpha: (0.0, 0.5, 0.1) --> 0.0
+
+- 7.1-NN
+	Candidates:
+	
+
+	Improvements:
+	- Fixed L2 regularization
+	- Adaptive learning rate
+	- Early stopping
+	- Fixed NN-tuple generation
+	
+	Time:
+	9.3 h
+
+	Test performance:
+	- threshold			: 0.914 
+	- distance			: 0.955
+	- exact_accuracy 	: 0.579
+	- balanced_accuracy	: 0.483
+
+	Config:
+	- n_jobs: 10
+	- max_iter: 10000
+	- alpha: [0.0001, 0.001, 0.01, 0.1]
+	- tol: [0.0001]
+	- learning_rate_init: [0.1]
+
+- 7.1-RF
+	Candidates:
+	46080
+	
+	Time:
+	
+	Test performance:
+	
+- 7.2-DT
+	Candidates:
+	- n_iter: 433125 --> 20900
+
+	Time:
+	
+	Test performance:
+	
+	Config:
+	- NormalisationMethod: MIN_MAX --> NONE
+
+- 7.2-NN
+	Candidates:
+	- n_iter: 120 --> 67
+
+	Improvements:
+	- Fixed L2 regularization
+	- Adaptive learning rate
+	- Early stopping
+	- Fixed NN-tuple generation
+	
+	Time:
+	1.1 h
+	
+	Test performance:
+	- threshold			: 0.921 
+	- distance			: 0.958
+	- exact_accuracy 	: 0.563
+	- balanced_accuracy	: 0.474
+	
+	Config:
+	- n_jobs: 10
+	- max_iter: 10000
+	- alpha: [0.0001, 0.001, 0.01, 0.1]
+	- tol: [0.0001]
+	- learning_rate_init: [0.1]
+	- n_iter: 120 --> 67
+
+- 7.2-RF
+	Candidates:
+	- n_iter: 4608 (no changes)
+	
+	Time:
+	
+	Test performance:
+	
+- 8-DT
+	Candidates:
+	- n_iter: 866250 --> 20900
+
+	Time:
+
+	Test performance:
+
+	Config:
+	- NormalisationMethod: MIN_MAX --> NONE
+	
+
+- 8-NN
+	Candidates:
+	- n_iter: 360 --> 67
+
+	Improvements:
+	- Fixed L2 regularization
+	- Adaptive learning rate
+	- Early stopping
+	- Fixed NN-tuple generation
+	
+	Time:
+	
+	Test performance:
+	
+	Config:
+	- n_jobs: 10
+	- activation: Added "logistic"
+	- max_iter: 10000
+	- alpha: [0.0001, 0.001, 0.01, 0.1]
+	- tol: [0.0001]
+	- learning_rate_init: [0.1
+	
+- 8-RF
+	Candidates:
+	- n_iter: 9216 --> 4608
+	
+	Time:
+	
+	Test performance:
