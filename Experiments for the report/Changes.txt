@@ -258,10 +258,10 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 
 == NEW NEW EXPERIMENT ===
 # Try to get the most juice out of the data using hyperparameter tuning methods:
-# - Grad Student Descent
+# - Grad Student Descent (GSD)
 # - Grid Search
 
-# GSD uses domain knowledge, experience from previous experiments, and arbitrary choices in an attempt to increase model accuracy
+# GSD uses domain knowledge, experience from previous experiments, and arbitrary choices to guide search in the hyperparameter space
 # Purpose: How does using pipeline modules as hyperparameters affect model performance?
 
 - 9-DT
