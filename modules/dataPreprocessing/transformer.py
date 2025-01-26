@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 from numpy import ndarray
 import pandas as pd
 import numpy as np
@@ -18,8 +18,34 @@ from modules.logging import logger
 
 class DataTransformer:
 
-    def __init__(self, df: pd.DataFrame) -> None:
-        self.df = df
+    def __init__(
+        self,
+        train_x: pd.DataFrame,
+        test_x: pd.Series,
+        train_y: pd.DataFrame,
+        test_y: pd.Series,
+    ) -> None:
+        """
+        Data Transformer
+
+        Parameters
+        ----------
+        train_x : pd.DataFrame
+            Training feature(s).
+
+        train_y : pd.Series
+            Target feature, i.e., "Dag".
+
+        test_x : pd.DataFrame
+            Test feature(s).
+
+        test_y : pd.Series
+            Target feature, i.e., "Dag".
+        """
+        self._train_x = train_x
+        self._test_x = test_x
+        self._train_y = train_y
+        self._test_y = test_y
 
         # Define distance matrices. Formatting is turned off for this part so the matrices don't get made into wierd shapes
         # fmt: off
@@ -145,11 +171,11 @@ class DataTransformer:
         ]
         # fmt: on
 
-    def oneHotEncode(self, labels: list[str]) -> None:
+    def oneHotEncode(self, labels: list[str]) -> pd.DataFrame:
         """
         One-hot encode one or more categorical attributes, selected by `labels`.
 
-        Based on https://stackoverflow.com/questions/37292872/how-can-i-one-hot-encode-in-python
+        Based on: https://stackoverflow.com/questions/37292872/how-can-i-one-hot-encode-in-python
 
         Parameters
         ----------
@@ -157,9 +183,17 @@ class DataTransformer:
             A list of the column labels to one-hot encode.
         """
         for variable in labels:
-            one_hot = pd.get_dummies(self.df[variable], prefix=variable, dtype="int")
-            self.df.drop(variable, inplace=True, axis=1)
-            self.df = self.df.join(one_hot)
+            # Train
+            self._train_x = self._train_x.join(
+                pd.get_dummies(self._train_x[variable], prefix=variable, dtype="int")
+            )
+            self._train_x.drop(variable, inplace=True, axis=1)
+
+            # Test
+            self._test_x = self._test_x.join(
+                pd.get_dummies(self._test_x[variable], prefix=variable, dtype="int")
+            )
+            self._test_x.drop(variable, inplace=True, axis=1)
         size = len(labels)
         logger.info(
             f"One-hot encoded {size} feature{"s" if size != 1 else ""}: {", ".join(labels)}"
@@ -467,9 +501,12 @@ class DataTransformer:
         feature : str
             The feature to be normalized.
         """
-        self.df[feature] = (self.df[feature] - self.df[feature].min()) / (
-            self.df[feature].max() - self.df[feature].min()
-        )
+        self._train_x[feature] = (
+            self._train_x[feature] - self._train_x[feature].min()
+        ) / (self._train_x[feature].max() - self._train_x[feature].min())
+        self._test_x[feature] = (
+            self._test_x[feature] - self._test_x[feature].min()
+        ) / (self._test_x[feature].max() - self._test_x[feature].min())
 
     def swapValues(self, feature: str, value1: float, value2: float) -> None:
         """
@@ -752,14 +789,22 @@ class DataTransformer:
 
         logger.info(f"Discretization of '{column_name}' complete")
 
-    def run(self) -> pd.DataFrame:
+    def getPipelineReport(self) -> dict:
+        return {
+            "train_x": self._train_x,  # type: pd.DataFrame
+            "train_y": self._train_y,  # type: pd.Series
+            "test_x": self._test_x,  # type: pd.DataFrame
+            "test_y": self._test_y,  # type: pd.Series
+        }
+
+    def run(self) -> dict[str, Any]:
         """
         Runs all applicable transformation methods.
 
         Returns
         -------
-        pd.DataFrame
-            The transformed dataframe.
+        dict[str, Any]
+            Pipeline report containing transformed train/test features and target labels.
         """
         config = PipelineConfig()
         if config.getValue("UseTransformer"):
@@ -831,10 +876,11 @@ class DataTransformer:
 
             # One-hot encoding
             if config.getValue("UseOneHotEncoding"):
-                self.oneHotEncode(config.getValue("OneHotEncodeLabels"))
+                self.oneHotEncode(labels=config.getValue("OneHotEncodeLabels"))
 
             # Normalization
-            match config.getValue("NormalisationMethod"):
+            norm = config.getValue("NormalisationMethod")
+            match norm:
                 case NormalisationMethod.MIN_MAX.name:
                     normalize_features = config.getValue("NormaliseFeatures")
                     logger.info(f"Using normalisation method: min-max")
@@ -853,8 +899,9 @@ class DataTransformer:
                 case NormalisationMethod.NONE.name:
                     logger.info("Skipping normalisation")
                 case _:  # default
-                    logger.warning("Undefined normalisation method selected. Skipping")
+                    logger.warning(
+                        f"Undefined normalisation method selected ('{norm}'). Skipping"
+                    )
         else:
             logger.info("Skipping data transformation")
-
-        return self.df
+        return self.getPipelineReport()

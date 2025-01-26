@@ -11,24 +11,22 @@ from modules.tools.types import FeatureSelectScoreCallable
 
 
 class FeatureSelector:
-    def __init__(self, train_x: pd.DataFrame, true_y: pd.Series) -> None:
+    def __init__(self, pipeline_report) -> None:
         """
         Using algorithms from statistics, figure out which features to use for model training.
 
         Parameters
         ----------
-        train_x : pd.DataFrame
-            Training feature(s).
-
-        true_y : pd.Series
-            Target feature, i.e., "Dag".
+        pipeline_report : dict
+            Pipeline report containing train/test split.
         """
-        self._train_x = train_x
-        self._true_y = true_y
         self._config = PipelineConfig()
-        self._parent_key = "StatisticalFeatureSelection"
-        self.df = None
         self._selected_features = None
+        self._pipeline_report = pipeline_report
+        self._train_x = pipeline_report["train_x"]  # type: pd.DataFrame
+        self._train_y = pipeline_report["train_y"]  # type: pd.Series
+        self._test_x = pipeline_report["test_x"]  # type: pd.DataFrame
+        self._test_y = pipeline_report["test_y"]  # type: pd.Series
 
     def __modeArgCompare(
         self,
@@ -145,9 +143,10 @@ class FeatureSelector:
         """
         logger.info(f"Running feature selection using mode={mode}, param={param}")
         selector = GenericUnivariateSelect(scoreFunc, mode=mode, param=param)
-        transformed_x = selector.fit_transform(self._train_x, self._true_y)
+        transformed_x = selector.fit_transform(self._train_x, self._train_y)
         self._selected_features = selector.get_feature_names_out()
         self._train_x = pd.DataFrame(transformed_x, columns=self._selected_features)
+        self._test_x = self._test_x[self._selected_features]
 
     def run(self) -> tuple[pd.DataFrame, pd.Series, NDArray]:
         """
@@ -161,7 +160,9 @@ class FeatureSelector:
             [2]: Selected feature labels.
         """
         if self._config.getValue("UseStatisticalFeatureSelector"):
-            if self._config.getValue("GenericUnivariateSelect", self._parent_key):
+            if self._config.getValue(
+                "GenericUnivariateSelect", "StatisticalFeatureSelection"
+            ):
                 self.genericUnivariateSelect(
                     ScoreFunctionSelector.getScoreFuncFeatureSelect(),
                     *self.__modeArgCompare(),
@@ -178,4 +179,10 @@ class FeatureSelector:
                 f"Skipping statistical feature selection ({len(self._selected_features)} features present)"
             )
 
-        return self._train_x, self._true_y
+        self._pipeline_report |= {
+            "train_x": self._train_x,  # type: pd.DataFrame
+            "train_y": self._train_y,  # type: pd.Series
+            "test_x": self._test_x,  # type: pd.DataFrame
+            "test_y": self._test_y,  # type: pd.Series
+        }
+        return self._pipeline_report

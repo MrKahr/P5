@@ -26,9 +26,9 @@ class ModelTester:
         self._pipeline_report = pipeline_report
         self._estimator = pipeline_report["estimator"]
         self._train_x = pipeline_report["train_x"]
-        self._train_true_y = pipeline_report["train_true_y"]
+        self._train_true_y = pipeline_report["train_y"]
         self._test_x = pipeline_report["test_x"]
-        self._test_true_y = pipeline_report["test_true_y"]
+        self._test_true_y = pipeline_report["test_y"]
 
     def run(self) -> dict:
         """

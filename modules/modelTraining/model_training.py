@@ -5,8 +5,7 @@ from numpy.typing import NDArray, ArrayLike
 from typing import Callable, Union
 from time import time
 
-from sklearn import model_selection
-from sklearn.feature_selection import RFE, RFECV, SequentialFeatureSelector
+from sklearn.feature_selection import RFECV, SequentialFeatureSelector
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import (
     cross_validate,
@@ -40,8 +39,7 @@ class ModelTrainer:
         self,
         estimator: UnfittedEstimator,
         cross_validator: CrossValidator,
-        unsplit_x: pd.DataFrame,
-        unsplit_y: pd.Series,
+        pipeline_report: dict,
     ) -> None:
         """
         Fit an unfitted model and generate a model report of the training session.
@@ -57,38 +55,21 @@ class ModelTrainer:
         score_funcs : ModelScoreCallable
             A callable with signature `scorer(estimator, X, y)`.
 
-        unsplit_x : NDArray
-            Training feature(s).
-
-        unsplit_y : NDArray
-            Target feature, i.e., "Dag".
+        pipeline_report : dict
+            Pipeline report containing train/test split.
         """
         self._unfit_estimator = estimator
         self._cross_validator = cross_validator
         self._model_score_funcs = ScoreFunctionSelector.getScoreFuncsModel()
-        self._priority_score_func = (
-            ScoreFunctionSelector.getPriorityScoreFunc()
-        )  # Temporary
+        self._priority_score_func = ScoreFunctionSelector.getPriorityScoreFunc()
         self._parent_key = "ModelTraining"
         self._n_jobs = self._config.getValue("n_jobs", "General")
         self._training_method = None  # Created during training
-        self._pipeline_report = {}
-
-        # *_x == pd.DataFrame, *_y == pd.Series
-        train_test_args = self._config.getValue("train_test_split", "ModelTraining")
-        train_test_ratio = (
-            f"{train_test_args["train_size"]:.2f}/{1-train_test_args["train_size"]:.2f}"
-        )
-        self._logger.info(f"Train/test split: {train_test_ratio}")
-        self._train_x, self._test_x, self._train_true_y, self._test_true_y = (
-            model_selection.train_test_split(
-                unsplit_x,
-                unsplit_y,
-                shuffle=True,
-                stratify=unsplit_y,
-                **train_test_args,
-            )
-        )
+        self._pipeline_report = pipeline_report
+        self._train_x = pipeline_report["train_x"]
+        self._train_y = pipeline_report["train_y"]
+        self._test_x = pipeline_report["test_x"]
+        self._test_y = pipeline_report["test_y"]
 
     def _reduceFeatures(self, selected_feature_names: list[str]) -> None:
         """
@@ -127,7 +108,7 @@ class ModelTrainer:
             self._logger.warning(
                 f"Model {type(self._unfit_estimator).__name__} does not support RFE-based training. Switching to SFS"
             )
-            return self._fitSFS(self._train_x, self._train_true_y)
+            return self._fitSFS(self._train_x, self._train_y)
 
     def _compileModelReport(self, estimator: FittedEstimator) -> None:
         """
@@ -151,9 +132,9 @@ class ModelTrainer:
             "feature_names_in": self._train_x.columns.values,
             "feature_count": len(self._train_x.columns.values),
             "train_x": self._train_x,  # type: pd.DataFrame
-            "train_true_y": self._train_true_y,  # type: pd.Series
+            "train_y": self._train_y,  # type: pd.Series
             "test_x": self._test_x,  # type: pd.DataFrame
-            "test_true_y": self._test_true_y,  # type: pd.Series
+            "test_y": self._test_y,  # type: pd.Series
         }
 
     # TODO: Plot for both train and test set
@@ -208,7 +189,7 @@ class ModelTrainer:
         result = permutation_importance(
             estimator,
             self._train_x,
-            self._train_true_y,
+            self._train_y,
             scoring=self._model_score_funcs,
             n_jobs=self._n_jobs,
             **kwargs,
@@ -301,7 +282,7 @@ class ModelTrainer:
 
         grid = ParamGridGenerator(
             feature_count=len(self._train_x.columns),
-            target_label_count=len(self._train_true_y.name),
+            target_label_count=len(self._train_y.name),
             model=self._unfit_estimator,
         ).getParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
@@ -360,7 +341,7 @@ class ModelTrainer:
 
         grid = ParamGridGenerator(
             feature_count=len(self._train_x.columns),
-            target_label_count=len(self._train_true_y.name),
+            target_label_count=len(self._train_y.name),
             model=self._unfit_estimator,
         ).getRandomParamGrid()
         if isinstance(self._unfit_estimator, MLPClassifierGPU):
@@ -414,7 +395,7 @@ class ModelTrainer:
             n_jobs=self._n_jobs,
         ).fit(x, y)
         self._reduceFeatures(sfs.get_feature_names_out())
-        return self._fitWithCrossValidation(self._train_x, self._train_true_y)
+        return self._fitWithCrossValidation(self._train_x, self._train_y)
 
     def _fitRFEWithCrossValidation(
         self,
@@ -586,27 +567,27 @@ class ModelTrainer:
         start_time = time()
 
         if self._training_method == TrainingMethod.FIT.name:
-            fitted_estimator = self._fit(self._train_x, self._train_true_y)
+            fitted_estimator = self._fit(self._train_x, self._train_y)
         elif self._training_method == TrainingMethod.CROSS_VALIDATION.name:
             fitted_estimator = self._fitWithCrossValidation(
-                self._train_x, self._train_true_y
+                self._train_x, self._train_y
             )
         elif self._training_method == TrainingMethod.RFECV.name:
             fitted_estimator = self._fitRFEWithCrossValidation(
                 self._train_x,
-                self._train_true_y,
+                self._train_y,
                 **self._config.getValue("RFECV", self._parent_key),
             )
         elif self._training_method == TrainingMethod.RANDOM_SEARCH.name:
             random_args = self._config.getValue("RandomizedSearchCV", self._parent_key)
             grid_args = self._config.getValue("GridSearchCV", self._parent_key)
             fitted_estimator = self._fitRandomSearchWithCrossValidation(
-                self._train_x, self._train_true_y, **random_args | grid_args
+                self._train_x, self._train_y, **random_args | grid_args
             )
         elif self._training_method == TrainingMethod.GRID_SEARCH.name:
             fitted_estimator = self._fitGridSearchWithCrossValidation(
                 self._train_x,
-                self._train_true_y,
+                self._train_y,
                 **self._config.getValue("GridSearchCV", self._parent_key),
             )
         else:
