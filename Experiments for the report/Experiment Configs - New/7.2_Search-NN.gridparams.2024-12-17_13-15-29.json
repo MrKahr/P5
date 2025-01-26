@@ -2,23 +2,22 @@
     "ParamGrid": {
         "ParamGridDecisionTree": {
             "criterion": [
-                "gini",
                 "log_loss"
             ],
             "max_depth": {
-                "start": 2,
-                "stop": 22,
-                "step": 2
+                "start": 8,
+                "stop": 9,
+                "step": 5
             },
             "min_samples_split": {
-                "start": 2,
-                "stop": 10,
-                "step": 1
+                "start": 7,
+                "stop": 8,
+                "step": 5
             },
             "min_samples_leaf": {
-                "start": 1,
-                "stop": 10,
-                "step": 2
+                "start": 3,
+                "stop": 4,
+                "step": 5
             },
             "min_weight_fraction_leaf": {
                 "start": 0.0,
@@ -26,17 +25,16 @@
                 "step": 0.1
             },
             "max_features": [
-                "sqrt",
-                "log2"
+                "sqrt"
             ],
             "max_leaf_nodes": {
-                "start": 2,
-                "stop": 50,
-                "step": 2
+                "start": 50,
+                "stop": 51,
+                "step": 5
             },
             "min_impurity_decrease": {
                 "start": 0.0,
-                "stop": 0.02,
+                "stop": 0.01,
                 "step": 0.3
             },
             "ccp_alpha": {
@@ -83,9 +81,9 @@
                 ]
             },
             "activation": [
-                "logistic",
                 "relu",
-                "tanh"
+                "tanh",
+                "logistic"
             ],
             "solver": [
                 "sgd",
@@ -228,9 +226,9 @@
                 ]
             },
             "activation": [
-                "logistic",
                 "relu",
-                "tanh"
+                "tanh",
+                "logistic"
             ],
             "solver": [
                 "sgd",

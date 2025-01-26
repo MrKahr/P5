@@ -7,7 +7,7 @@
         "UseStatisticalFeatureSelector": false,
         "UseTransformer": true,
         "UseOutlierRemoval": true,
-        "UseContinuousFeatures": false
+        "UseContinuousFeatures": true
     },
     "DataPreprocessing": {
         "Cleaning": {
@@ -36,7 +36,7 @@
                     "S\u00e5rrand (cm)",
                     "Midte (cm)"
                 ],
-                "DiscretizeMethod": "NONE",
+                "DiscretizeMethod": "CHIMERGE",
                 "ChiMergeMaximumMergeThreshold": {
                     "S\u00e5rrand (cm)": "inf",
                     "Midte (cm)": "inf"
@@ -47,13 +47,13 @@
                 }
             },
             "OneHotEncoding": {
-                "UseOneHotEncoding": false,
+                "UseOneHotEncoding": true,
                 "OneHotEncodeLabels": [
                     "Eksudattype"
                 ]
             },
             "Imputation": {
-                "ImputationMethod": "MODE",
+                "ImputationMethod": "KNN",
                 "KNN_NearestNeighbors": 5,
                 "KNN_DistanceMetric": "MATRIX"
             },
@@ -66,7 +66,7 @@
             }
         },
         "StatisticalFeatureSelection": {
-            "score_function": "MUTUAL_INFO_CLASSIFIER",
+            "score_function": "MUTUAL_INFO_CLASSIFER",
             "MutualInfoClassifArgs": {
                 "discrete_features": true,
                 "n_neighbors": 3,
@@ -80,7 +80,7 @@
         }
     },
     "ModelSelection": {
-        "model": "DECISION_TREE",
+        "model": "RANDOM_FOREST",
         "DecisionTree": {
             "criterion": "gini",
             "max_depth": null,
@@ -108,13 +108,13 @@
                 10,
                 10
             ],
-            "activation": "tanh",
-            "solver": "adam",
-            "learning_rate": "adaptive",
-            "learning_rate_init": 0.1,
-            "batch_size": 2000,
+            "activation": "logistic",
+            "solver": "sgd",
+            "learning_rate": "constant",
+            "learning_rate_init": 0.001,
+            "batch_size": 500,
             "alpha": 0.0001,
-            "max_iter": 10000,
+            "max_iter": 1000,
             "tol": 0.0001,
             "n_iter_no_change": 20,
             "random_state": 678
@@ -129,7 +129,7 @@
         }
     },
     "ModelTraining": {
-        "training_method": "GRID_SEARCH",
+        "training_method": "RANDOM_SEARCH",
         "score_functions": [
             "ALL"
         ],
@@ -155,7 +155,7 @@
             "step": 1
         },
         "RandomizedSearchCV": {
-            "n_iter": 10,
+            "n_iter": 4608,
             "random_state": 378
         },
         "GridSearchCV": {

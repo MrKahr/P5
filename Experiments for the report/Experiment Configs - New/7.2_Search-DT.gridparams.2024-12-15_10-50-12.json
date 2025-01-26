@@ -57,7 +57,7 @@
             ],
             "max_samples": {
                 "start": 200,
-                "stop": 928,
+                "stop": 1000,
                 "step": 100
             }
         },
@@ -70,45 +70,49 @@
             "hidden_layer_sizes": {
                 "layers": {
                     "start": 2,
-                    "stop": 10,
-                    "step": 2
+                    "stop": 8,
+                    "step": 1
                 },
-                "layer_size": {
-                    "start": 2,
-                    "stop": 25,
-                    "step": 5
-                }
+                "layer_size": [
+                    10,
+                    15,
+                    20,
+                    25
+                ]
             },
             "activation": [
+                "logistic",
                 "relu",
-                "tanh",
-                "logistic"
+                "tanh"
             ],
             "solver": [
                 "sgd",
                 "adam"
             ],
             "learning_rate": [
-                "constant"
+                "adaptive"
             ],
             "learning_rate_init": [
-                0.001
+                0.1
             ],
-            "alpha": {
-                "start": 0.0001,
-                "stop": 0.001,
-                "step": 0.0005
-            },
-            "max_iter": {
-                "start": 500,
-                "stop": 1000,
-                "step": 100
-            },
-            "tol": {
-                "start": 0.0001,
-                "stop": 0.001,
-                "step": 0.1
-            }
+            "batch_size": [
+                2000
+            ],
+            "alpha": [
+                0.0001,
+                0.001,
+                0.01,
+                0.1
+            ],
+            "max_iter": [
+                10000
+            ],
+            "tol": [
+                0.0001
+            ],
+            "n_iter_no_change": [
+                20
+            ]
         }
     },
     "RandomParamGrid": {
@@ -121,31 +125,31 @@
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 50,
-                    "size": 100
+                    "high": 22,
+                    "size": 50
                 }
             },
             "min_samples_split": {
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 40,
-                    "size": 100
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_samples_leaf": {
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 1,
-                    "high": 30,
-                    "size": 100
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_weight_fraction_leaf": {
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 1.0,
+                    "high": 0.0,
                     "size": 100
                 }
             },
@@ -157,7 +161,7 @@
                 "dist": "RANDINT",
                 "dist_params": {
                     "low": 2,
-                    "high": 100,
+                    "high": 50,
                     "size": 100
                 }
             },
@@ -165,7 +169,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.3,
+                    "high": 0.0,
                     "size": 100
                 }
             },
@@ -173,8 +177,8 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.8,
-                    "size": 50
+                    "high": 0.0,
+                    "size": 100
                 }
             }
         },
@@ -211,16 +215,18 @@
             "hidden_layer_sizes": {
                 "layers": {
                     "start": 1,
-                    "stop": 30,
+                    "stop": 10,
                     "step": 1
                 },
-                "layer_size": {
-                    "low": 2,
-                    "high": 50,
-                    "size": 100
-                }
+                "layer_size": [
+                    10,
+                    15,
+                    20,
+                    25
+                ]
             },
             "activation": [
+                "logistic",
                 "relu",
                 "tanh"
             ],
@@ -229,30 +235,29 @@
                 "adam"
             ],
             "learning_rate": [
-                "constant"
+                "adaptive"
             ],
             "learning_rate_init": [
-                0.001
+                0.1
             ],
-            "alpha": {
-                "dist": "RANDFLOAT",
-                "dist_params": {
-                    "low": 0.0001,
-                    "high": 0.01,
-                    "size": 50
-                }
-            },
+            "batch_size": [
+                2000
+            ],
+            "alpha": [
+                0.0001,
+                0.001,
+                0.01,
+                0.1
+            ],
             "max_iter": [
-                1000
+                10000
             ],
-            "tol": {
-                "dist": "RANDFLOAT",
-                "dist_params": {
-                    "low": 0.0001,
-                    "high": 0.01,
-                    "size": 100
-                }
-            }
+            "tol": [
+                0.0001
+            ],
+            "n_iter_no_change": [
+                20
+            ]
         }
     }
 }

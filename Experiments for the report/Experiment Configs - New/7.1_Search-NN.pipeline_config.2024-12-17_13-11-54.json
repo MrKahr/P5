@@ -1,12 +1,12 @@
 {
     "General": {
-        "loglevel": "DEBUG",
-        "n_jobs": -1,
+        "loglevel": "INFO",
+        "n_jobs": 10,
         "write_figure_to_disk": true,
         "UseCleaner": true,
         "UseStatisticalFeatureSelector": false,
         "UseTransformer": true,
-        "UseOutlierRemoval": true,
+        "UseOutlierRemoval": false,
         "UseContinuousFeatures": false
     },
     "DataPreprocessing": {
@@ -47,7 +47,7 @@
                 }
             },
             "OneHotEncoding": {
-                "UseOneHotEncoding": true,
+                "UseOneHotEncoding": false,
                 "OneHotEncodeLabels": [
                     "Eksudattype"
                 ]
@@ -58,7 +58,7 @@
                 "KNN_DistanceMetric": "MATRIX"
             },
             "Normalisation": {
-                "NormalisationMethod": "MIN_MAX",
+                "NormalisationMethod": "NONE",
                 "NormaliseFeatures": [
                     "Niveau s\u00e5rv\u00e6v",
                     "S\u00e5rskorpe"
@@ -66,7 +66,7 @@
             }
         },
         "StatisticalFeatureSelection": {
-            "score_function": "MUTUAL_INFO_CLASSIFIER",
+            "score_function": "CHI2",
             "MutualInfoClassifArgs": {
                 "discrete_features": true,
                 "n_neighbors": 3,
@@ -80,16 +80,16 @@
         }
     },
     "ModelSelection": {
-        "model": "RANDOM_FOREST",
+        "model": "NEURAL_NETWORK",
         "DecisionTree": {
             "criterion": "gini",
-            "max_depth": null,
-            "min_samples_split": 2,
-            "min_samples_leaf": 1,
-            "min_weight_fraction_leaf": 0,
+            "max_depth": 10,
+            "min_samples_split": 6,
+            "min_samples_leaf": 7,
+            "min_weight_fraction_leaf": 0.0,
             "max_features": "sqrt",
             "random_state": 42,
-            "max_leaf_nodes": null,
+            "max_leaf_nodes": 22,
             "min_impurity_decrease": 0.0,
             "ccp_alpha": 0.0
         },
@@ -116,6 +116,7 @@
             "alpha": 0.0001,
             "max_iter": 1000,
             "tol": 0.0001,
+            "n_iter_no_change": 20,
             "random_state": 678
         }
     },
@@ -154,7 +155,7 @@
             "step": 1
         },
         "RandomizedSearchCV": {
-            "n_iter": 10,
+            "n_iter": 43300000,
             "random_state": 378
         },
         "GridSearchCV": {

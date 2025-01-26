@@ -2,53 +2,51 @@
     "ParamGrid": {
         "ParamGridDecisionTree": {
             "criterion": [
-                "gini",
                 "log_loss"
             ],
             "max_depth": {
-                "start": 2,
-                "stop": 22,
-                "step": 2
+                "start": 8,
+                "stop": 30,
+                "step": 4
             },
             "min_samples_split": {
-                "start": 2,
+                "start": 7,
                 "stop": 10,
                 "step": 1
             },
             "min_samples_leaf": {
-                "start": 1,
+                "start": 3,
                 "stop": 10,
                 "step": 2
             },
             "min_weight_fraction_leaf": {
                 "start": 0.0,
-                "stop": 0.01,
-                "step": 0.1
+                "stop": 0.1,
+                "step": 0.2
             },
             "max_features": [
-                "sqrt",
-                "log2"
+                "sqrt"
             ],
             "max_leaf_nodes": {
-                "start": 2,
-                "stop": 50,
-                "step": 2
+                "start": 50,
+                "stop": 70,
+                "step": 4
             },
             "min_impurity_decrease": {
                 "start": 0.0,
-                "stop": 0.02,
+                "stop": 0.2,
                 "step": 0.3
             },
             "ccp_alpha": {
                 "start": 0.0,
-                "stop": 0.01,
-                "step": 0.1
+                "stop": 0.5,
+                "step": 0.9
             }
         },
         "ParamGridRandomForest": {
             "n_estimators": {
                 "start": 100,
-                "stop": 2000,
+                "stop": 1000,
                 "step": 100
             },
             "bootstrap": [
@@ -58,7 +56,7 @@
                 false
             ],
             "max_samples": {
-                "start": 10,
+                "start": 200,
                 "stop": 1000,
                 "step": 100
             }
@@ -126,24 +124,24 @@
             "max_depth": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 50,
-                    "size": 100
+                    "low": 8,
+                    "high": 30,
+                    "size": 60
                 }
             },
             "min_samples_split": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 40,
-                    "size": 100
+                    "low": 7,
+                    "high": 10,
+                    "size": 50
                 }
             },
             "min_samples_leaf": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 1,
-                    "high": 30,
+                    "low": 3,
+                    "high": 10,
                     "size": 100
                 }
             },
@@ -151,7 +149,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 1.0,
+                    "high": 0.0,
                     "size": 100
                 }
             },
@@ -162,8 +160,8 @@
             "max_leaf_nodes": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 2,
-                    "high": 100,
+                    "low": 50,
+                    "high": 70,
                     "size": 100
                 }
             },
@@ -171,7 +169,7 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.3,
+                    "high": 0.0,
                     "size": 100
                 }
             },
@@ -179,8 +177,8 @@
                 "dist": "RANDFLOAT",
                 "dist_params": {
                     "low": 0.0,
-                    "high": 0.8,
-                    "size": 50
+                    "high": 0.0,
+                    "size": 100
                 }
             }
         },
@@ -188,8 +186,8 @@
             "n_estimators": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 50,
-                    "high": 5000,
+                    "low": 100,
+                    "high": 1000,
                     "size": 200
                 }
             },
@@ -202,9 +200,9 @@
             "max_samples": {
                 "dist": "RANDINT",
                 "dist_params": {
-                    "low": 10,
-                    "high": 1500,
-                    "size": 100
+                    "low": 200,
+                    "high": 928,
+                    "size": 200
                 }
             }
         },
