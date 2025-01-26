@@ -243,47 +243,84 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	
 	
 == NEW NEW EXPERIMENT ===
-# Get the most juice out of the data using hyperparameter tuning methods: 
+# Try to get the most juice out of the data using hyperparameter tuning methods: 
 # - Grad Student Descent 
-# - Random Search
-- 9-DT
-	Candidates:
-	
-	Time:
-	
-	Test performance:
-	- threshold			: 
-	- distance			: 
-	- exact_accuracy 	: 
-	- balanced_accuracy	: 
+# - Grid Search
 
-- 9-NB	
+# GSD uses domain knowledge, experience from previous experiments, and arbitrary choices in an attempt to increase model accuracy 
+# Purpose: How does using pipeline modules as hyperparameters affect model performance?
+
+- 9-DT
+	Candidates: 29700
+	
 	Time:
+	2 m
 	
 	Test performance:
-	- threshold			: 
-	- distance			: 
-	- exact_accuracy 	: 
-	- balanced_accuracy	: 
+	- threshold			: 0.930
+	- distance			: 0.957
+	- exact_accuracy 	: 0.553
+	- balanced_accuracy	: 0.463
+
+	Config:
+	- ImputationMethod: MODE
 
 - 9-NN
-	Candidates:
-	
 	Time:
-	
+	24 s
+
 	Test performance:
-	- threshold			: 
-	- distance			: 
-	- exact_accuracy 	: 
-	- balanced_accuracy	: 
+	- threshold			: 0.930
+	- distance			: 0.957
+	- exact_accuracy 	: 0.540
+	- balanced_accuracy	: 0.498
+
+	Config:
+	- UseContinuousFeatures: true
+	- Transformer:
+	    DiscretizeMethod: CHIMERGE
+	    UseOneHotEncoding: true
+	    ImputationMethod: MODE
+	- Model:
+	    hidden_layer_sizes: [20,10,10]
+		activation: tanh
+		solver: adam
+		learning_rate: adaptive
+		learning_rate_init: 0.1
+		batch_size: 2000
+		alpha: 0.001
+		max_iter: 10000
+		tol: 0.0001
+		n_iter_no_change: 20
+	
 
 - 9-RF
-	Candidates:
-	
 	Time:
+	0.14 s
 	
 	Test performance:
-	- threshold			: 
-	- distance			: 
-	- exact_accuracy 	: 
-	- balanced_accuracy	: 
+	- threshold			: 0.921
+	- distance			: 0.955
+	- exact_accuracy 	: 0.570
+	- balanced_accuracy	: 0.484
+
+	Config:
+	- OutlierRemovalMethod: ODIN
+	- UseOneHotEncoding: true
+	- ImputationMethod: MODE	
+	- Model:
+		"criterion": "log_loss",
+		"max_depth": null,
+		"min_samples_split": 2,
+		"min_samples_leaf": 1,
+		"min_weight_fraction_leaf": 0,
+		"max_features": "sqrt",
+		"max_leaf_nodes": null,
+		"min_impurity_decrease": 0.0,
+		"ccp_alpha": 0.0
+		"n_estimators": 100,
+		"bootstrap": true,
+		"oob_score": false,
+		"max_samples": null
+	
+	
