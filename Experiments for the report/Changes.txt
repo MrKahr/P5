@@ -59,22 +59,18 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 
 - 7.1-DT
 	Candidates:
-	- 209000
+	- 49500
 
 	Time:
-	11 m
+	3 m
 
 	Test performance:
-	- threshold			: 0.927 
-	- distance			: 0.948
-	- exact_accuracy 	: 0.517
-	- balanced_accuracy	: 0.470
+	- threshold			: 0.907
+	- distance			: 0.947
+	- exact_accuracy 	: 0.546
+	- balanced_accuracy	: 0.372
 
 	Config:
-	- UseOneHotEncoding: false --> true
-	- NormalisationMethod: MIN_MAX --> NONE
-	- min_samples_split: STOP = 10 --> 20
-	- max_leaf_nodes: STOP = 50 --> 100
 	- min_weight_fraction_leaf: (0.0, 0.5, 0.1) --> 0.0
 	- min_impurity_decrease: (0.0, 0.2, 0.03) --> 0.0
 	- ccp_alpha: (0.0, 0.5, 0.1) --> 0.0
@@ -123,14 +119,16 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	
 - 7.2-DT
 	Candidates:
-	- n_iter: 433125 --> 20900
+	- n_iter: 433125 --> 4950
 
 	Time:
+	15 s
 	
 	Test performance:
-	
-	Config:
-	- NormalisationMethod: MIN_MAX --> NONE
+	- threshold			: 0.828
+	- distance			: 0.906
+	- exact_accuracy 	: 0.328
+	- balanced_accuracy	: 0.168
 
 - 7.2-NN
 	Candidates:
@@ -165,24 +163,27 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- n_iter: 4608 (no changes)
 	
 	Time:
+	40 m
 	
 	Test performance:
+	- threshold			: 0.904
+	- distance			: 0.952
+	- exact_accuracy 	: 0.540
+	- balanced_accuracy	: 0.407
 	
 - 8-DT
 	Candidates:
-	- n_iter: 866250 --> 20900
+	- n_iter: 866250 --> 4950
 
 	Time:
-	73.6 s
-
+	17 s
+	
 	Test performance:
-	- threshold			: 0.828
-	- distance			: 0.896
-	- exact_accuracy 	: 0.344
-	- balanced_accuracy	: 0.179
-
-	Config:
-	- NormalisationMethod: MIN_MAX --> NONE
+	- threshold			: 0.844
+	- distance			: 0.932
+	- exact_accuracy 	: 0.464
+	- balanced_accuracy	: 0.359
+	
 
 - 8-NB
 	Time:
@@ -239,3 +240,50 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- distance			: 0.953
 	- exact_accuracy 	: 0.550
 	- balanced_accuracy	: 0.451
+	
+	
+== NEW NEW EXPERIMENT ===
+# Get the most juice out of the data using hyperparameter tuning methods: 
+# - Grad Student Descent 
+# - Random Search
+- 9-DT
+	Candidates:
+	
+	Time:
+	
+	Test performance:
+	- threshold			: 
+	- distance			: 
+	- exact_accuracy 	: 
+	- balanced_accuracy	: 
+
+- 9-NB	
+	Time:
+	
+	Test performance:
+	- threshold			: 
+	- distance			: 
+	- exact_accuracy 	: 
+	- balanced_accuracy	: 
+
+- 9-NN
+	Candidates:
+	
+	Time:
+	
+	Test performance:
+	- threshold			: 
+	- distance			: 
+	- exact_accuracy 	: 
+	- balanced_accuracy	: 
+
+- 9-RF
+	Candidates:
+	
+	Time:
+	
+	Test performance:
+	- threshold			: 
+	- distance			: 
+	- exact_accuracy 	: 
+	- balanced_accuracy	: 
