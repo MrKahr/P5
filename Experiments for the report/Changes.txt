@@ -11,40 +11,40 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- ImputationMethod: NONE --> MODE
 	- Normalisation: MIN_MAX --> NONE
 	- training_method: RFECV --> FIT
-	
+
 - 6.2-DT
 	- NormalisationMethod: MIN_MAX --> NONE
 
 - 6.2-NB
 	- UseTransformer: false --> true
 	- OutlierRemovalMethod: AVF --> ODIN
-	
+
 	Transformer:
 	- UseOneHotEncoding: false
 	- ImputationMethod: MODE
 	- NormalisationMethod: NONE
-	
-	
+
+
 	- training_method: FIT --> CROSS_VALIDATION
-	
+
 - 6.2-NN
 	- UseStatisticalFeatureSelector: true --> false
 	- training_method: RFECV --> CROSS_VALIDATION
 	(MIN_MAX is enabled in both, but should not have been in new experiment)
-	
+
 - 6.2-RF
 	- UseStatisticalFeatureSelector: false --> true
 	- ImputationMethod: NONE --> MODE
 	- NormalisationMethod: MIN_MAX --> NONE
-	
+
 	StatisticalFeatureSelector:
 	- score_function: CHI2
 	- (GenericUnivariateSelectArgs) param: 75
-	
+
 - 6.3-NB
 	- UseTransformer: false --> true
 	- OutlierRemovalMethod: AVF --> ODIN
-	
+
 	Transformer:
 	- UseOneHotEncoding: false
 	- ImputationMethod: MODE
@@ -84,46 +84,53 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- Adaptive learning rate
 	- Early stopping
 	- Fixed NN-tuple generation
-	
+
 	Time:
 	9.3 h
 
 	Test performance:
-	- threshold			: 0.914 
+	- threshold			: 0.914
 	- distance			: 0.955
 	- exact_accuracy 	: 0.579
 	- balanced_accuracy	: 0.483
 
 	Config:
 	- n_jobs: 10
-	- max_iter: 10000
-	- layers: (2,8,1)
-	- layer_size: [10,15,20,25]
-	- alpha: [0.0001, 0.001, 0.01, 0.1]
-	- tol: [0.0001]
-	- learning_rate_init: [0.1]
+	- UseStatisticalFeatureSelector: true --> false
+	- score_function: CHI2 --> 'NOT USED'
+	- (GenericUnivariateSelectArgs) param: 50 --> 'NOT USED'
+	- UseTransformer: false --> true
+	- ImputationMethod: NONE --> MODE
+
+	- Model
+		- max_iter: 10000
+		- layers: (2,8,1)
+		- layer_size: [10,15,20,25]
+		- alpha: [0.0001, 0.001, 0.01, 0.1]
+		- tol: [0.0001]
+		- learning_rate_init: [0.1]
 
 - 7.1-RF
 	Candidates:
 	46080
-	
+
 	Time:
 	7.1 h
-	
+
 	Test performance:
-	- threshold			: 0.911 
+	- threshold			: 0.911
 	- distance			: 0.954
 	- exact_accuracy 	: 0.553
 	- balanced_accuracy	: 0.423
-	
-	
+
+
 - 7.2-DT
 	Candidates:
 	- n_iter: 433125 --> 4950
 
 	Time:
 	15 s
-	
+
 	Test performance:
 	- threshold			: 0.828
 	- distance			: 0.906
@@ -139,56 +146,63 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- Adaptive learning rate
 	- Early stopping
 	- Fixed NN-tuple generation
-	
+
 	Time:
 	1.1 h
-	
+
 	Test performance:
-	- threshold			: 0.921 
+	- threshold			: 0.921
 	- distance			: 0.958
 	- exact_accuracy 	: 0.563
 	- balanced_accuracy	: 0.474
-	
+
 	Config:
 	- n_jobs: 10
-	- max_iter: 10000
-	- layers: (2,8,1)
-	- layer_size: [10,15,20,25]
-	- alpha: [0.0001, 0.001, 0.01, 0.1]
-	- tol: [0.0001]
-	- learning_rate_init: [0.1]
+	- UseStatisticalFeatureSelector: true --> false
+	- score_function: CHI2 --> 'NOT USED'
+	- (GenericUnivariateSelectArgs) param: 50 --> 'NOT USED'
+	- UseTransformer: false --> true
+	- ImputationMethod: NONE --> MODE
+
+	- Model:
+		- max_iter: 10000
+		- layers: (2,8,1)
+		- layer_size: [10,15,20,25]
+		- alpha: [0.0001, 0.001, 0.01, 0.1]
+		- tol: [0.0001]
+		- learning_rate_init: [0.1]
 
 - 7.2-RF
 	Candidates:
 	- n_iter: 4608 (no changes)
-	
+
 	Time:
 	40 m
-	
+
 	Test performance:
 	- threshold			: 0.904
 	- distance			: 0.952
 	- exact_accuracy 	: 0.540
 	- balanced_accuracy	: 0.407
-	
+
 - 8-DT
 	Candidates:
 	- n_iter: 866250 --> 4950
 
 	Time:
 	17 s
-	
+
 	Test performance:
 	- threshold			: 0.844
 	- distance			: 0.932
 	- exact_accuracy 	: 0.464
 	- balanced_accuracy	: 0.359
-	
+
 
 - 8-NB
 	Time:
 	0.071 s
-	
+
 	Test performance:
 	- threshold			: 0.918
 	- distance			: 0.944
@@ -207,17 +221,17 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- Adaptive learning rate
 	- Early stopping
 	- Fixed NN-tuple generation
-	
+
 	Time:
 	54 m
-	
+
 	Test performance:
 	- threshold			: 0.828
 	- distance			: 0.804
 	- exact_accuracy 	: 0.126
 	- balanced_accuracy	: 0.000
-	
-	
+
+
 	Config:
 	- n_jobs: 10
 	- activation: Added "logistic"
@@ -227,35 +241,35 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	- alpha: [0.0001, 0.001, 0.01, 0.1]
 	- tol: [0.0001]
 	- learning_rate_init: [0.1]
-	
+
 - 8-RF
 	Candidates:
 	- n_iter: 9216 --> 4608
-	
+
 	Time:
 	41 m
-	
+
 	Test performance:
 	- threshold			: 0.904
 	- distance			: 0.953
 	- exact_accuracy 	: 0.550
 	- balanced_accuracy	: 0.451
-	
-	
+
+
 == NEW NEW EXPERIMENT ===
-# Try to get the most juice out of the data using hyperparameter tuning methods: 
-# - Grad Student Descent 
+# Try to get the most juice out of the data using hyperparameter tuning methods:
+# - Grad Student Descent
 # - Grid Search
 
-# GSD uses domain knowledge, experience from previous experiments, and arbitrary choices in an attempt to increase model accuracy 
+# GSD uses domain knowledge, experience from previous experiments, and arbitrary choices in an attempt to increase model accuracy
 # Purpose: How does using pipeline modules as hyperparameters affect model performance?
 
 - 9-DT
 	Candidates: 29700
-	
+
 	Time:
 	2 m
-	
+
 	Test performance:
 	- threshold			: 0.930
 	- distance			: 0.957
@@ -292,12 +306,12 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 		max_iter: 10000
 		tol: 0.0001
 		n_iter_no_change: 20
-	
+
 
 - 9-RF
 	Time:
 	0.14 s
-	
+
 	Test performance:
 	- threshold			: 0.921
 	- distance			: 0.955
@@ -307,7 +321,7 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	Config:
 	- OutlierRemovalMethod: ODIN
 	- UseOneHotEncoding: true
-	- ImputationMethod: MODE	
+	- ImputationMethod: MODE
 	- Model:
 		"criterion": "log_loss",
 		"max_depth": null,
@@ -322,5 +336,4 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 		"bootstrap": true,
 		"oob_score": false,
 		"max_samples": null
-	
-	
+
