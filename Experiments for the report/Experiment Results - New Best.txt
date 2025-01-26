@@ -9,13 +9,13 @@ NB
 - BA: .359
 
 NN
-1:
-- EA: .579 (H)
-- BA: .495
+1: (Non-deterministic)
+- EA: .596 (H)
+- BA: .513 (H)
 
-9:
+9: (Deterministic)
 - EA: .540
-- BA: .498 (H)
+- BA: .498
 
 RF
 9:
