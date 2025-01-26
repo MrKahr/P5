@@ -1,6 +1,37 @@
 === Changes for new experiments compared to old ===
 NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 
+- 1-DT
+ "test_accuracies": {
+        "threshold": 0.927,
+        "distance": 0.954,
+        "exact_accuracy": 0.570,
+        "balanced_accuracy": 0.485
+    }
+
+- 1-NB
+"test_accuracies": {
+        "threshold": 0.924,
+        "distance": 0.953,
+        "exact_accuracy": 0.546,
+        "balanced_accuracy": 0.359
+    }
+
+- 1-NN
+"test_accuracies": {
+        "threshold": 0.927,
+        "distance": 0.955,
+        "exact_accuracy": 0.579,
+        "balanced_accuracy": 0.495
+    }
+
+- 1-RF
+"test_accuracies": {
+        "threshold": 0.921,
+        "distance": 0.956,
+        "exact_accuracy": 0.570,
+        "balanced_accuracy": 0.480
+    }
 
 - 6.1-NB
 	- UseOutlierRemoval: true --> false
@@ -65,10 +96,10 @@ NOTE: (NUMBER, NUMBER, NUMBER) == (START, STOP, STEP)
 	3 m
 
 	Test performance:
-	- threshold			: 0.907
-	- distance			: 0.947
-	- exact_accuracy 	: 0.546
-	- balanced_accuracy	: 0.372
+	- threshold			: 0.904
+	- distance			: 0.938
+	- exact_accuracy 	: 0.487
+	- balanced_accuracy	: 0.328
 
 	Config:
 	- min_weight_fraction_leaf: (0.0, 0.5, 0.1) --> 0.0

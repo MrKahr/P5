@@ -47,7 +47,7 @@
                 }
             },
             "OneHotEncoding": {
-                "UseOneHotEncoding": false,
+                "UseOneHotEncoding": true,
                 "OneHotEncodeLabels": [
                     "Eksudattype"
                 ]
